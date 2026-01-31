@@ -7,6 +7,7 @@ const SCELL_DEF_FROM_DELIMITER: char = '+';
 #[derive(Debug, serde::Deserialize)]
 pub struct SCellDef {
     pub from: FromStmt,
+    #[serde(default)]
     pub run: Vec<String>,
 }
 

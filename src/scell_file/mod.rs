@@ -14,6 +14,7 @@ const SUPPORTED_VERSION: &str = "0.1";
 #[derive(Debug, serde::Deserialize)]
 pub struct SCellFile {
     version: String,
+    #[serde(flatten)]
     pub cells: HashMap<SCellName, SCellDef>,
 }
 

@@ -11,7 +11,7 @@ use anyhow::Context;
 
 use crate::scell_file::{SCellFile, def::FromStmt, docker::DockerImageDef, name::SCellName};
 
-const SCELL_ENTRY_POINT: &str = "main";
+const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
 #[derive(Debug)]
 pub enum Link {
@@ -23,6 +23,7 @@ pub enum Link {
     },
 }
 
+#[derive(Debug)]
 pub struct SCell(Vec<Link>);
 
 impl SCell {
@@ -34,8 +35,8 @@ impl SCell {
         entry: Option<SCellName>,
     ) -> anyhow::Result<Self> {
         let entry_point_name = entry.map(|e| Ok(e)).unwrap_or_else(|| {
-            SCELL_ENTRY_POINT.parse().context(format!(
-                "'{SCELL_ENTRY_POINT}' must be a valid Shell-Cell name"
+            SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
+                "'{SCELL_DEFAULT_ENTRY_POINT}' must be a valid Shell-Cell name"
             ))
         })?;
 
