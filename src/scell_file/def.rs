@@ -11,12 +11,13 @@ pub struct SCellDef {
     pub run: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum From {
     SCellDef {
         scell_path: Option<PathBuf>,
         scell_def_name: SCellName,
     },
+    // TODO: add a separate types for `image` and `tag` fields, same as for `SCellName`
     DockerImage {
         image: String,
         tag: Option<String>,
@@ -27,7 +28,6 @@ impl FromStr for From {
     type Err = anyhow::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
-        // TODO: properly verify and process all possible string inputs
         match str.split_once(SCELL_DEF_FROM_DELIMITER) {
             Some(("", suffix)) => {
                 Ok(Self::SCellDef {
@@ -66,5 +66,39 @@ impl<'de> serde::Deserialize<'de> for From {
     where D: serde::Deserializer<'de> {
         let str = String::deserialize(deserializer)?;
         str.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
+    use std::path::PathBuf;
+
+    // We use a helper to make expected SCellNames in tests
+    fn name(s: &str) -> SCellName {
+        SCellName::from_str(s).unwrap()
+    }
+
+    #[test_case("+my-cell" => From::SCellDef { 
+        scell_path: None, 
+        scell_def_name: name("my-cell") 
+    } ; "local cell")]
+    #[test_case("path/to/dir+my-cell" => From::SCellDef { 
+        scell_path: Some(PathBuf::from("path/to/dir")), 
+        scell_def_name: name("my-cell") 
+    } ; "path and cell")]
+    
+    #[test_case("debian:12" => From::DockerImage { 
+        image: "debian".to_string(), 
+        tag: Some("12".to_string()) 
+    } ; "docker with tag")]
+    
+    #[test_case("scratch" => From::DockerImage { 
+        image: "scratch".to_string(), 
+        tag: None 
+    } ; "docker image only")]
+    fn test_from_parsing(input: &str) -> From {
+        From::from_str(input).expect("Should be a valid input")
     }
 }
