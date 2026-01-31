@@ -1,3 +1,5 @@
-fn main() {
-    println!("Hello, world!");
+#![doc = include_str!("../README.md")]
+
+fn main() -> anyhow::Result<()> {
+    Ok(())
 }
