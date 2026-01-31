@@ -1,10 +1,8 @@
 //! Implements a parsing and processing of Shell-Cell '.yaml' files
 
-#![allow(dead_code)]
-
-mod def;
-mod docker;
-mod name;
+pub mod def;
+pub mod docker;
+pub mod name;
 
 use std::{collections::HashMap, path::Path};
 
@@ -15,8 +13,7 @@ const SUPPORTED_VERSION: &str = "0.1";
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SCellFile {
-    pub version: String,
-    #[serde(flatten)]
+    version: String,
     pub cells: HashMap<SCellName, SCellDef>,
 }
 

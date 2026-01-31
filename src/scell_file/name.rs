@@ -1,4 +1,4 @@
-use std::{str::FromStr, sync::LazyLock};
+use std::{fmt::Display, str::FromStr, sync::LazyLock};
 
 use regex::Regex;
 
@@ -6,8 +6,17 @@ use regex::Regex;
 static SCELL_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[a-z][a-z0-9_-]*$").expect("Must be valid REGEX expression"));
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellName(String);
+
+impl Display for SCellName {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl FromStr for SCellName {
     type Err = anyhow::Error;

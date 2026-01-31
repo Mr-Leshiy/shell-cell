@@ -1,12 +1,12 @@
 #![doc = include_str!("../README.md")]
+#![allow(dead_code)]
 
 use crate::scell_file::SCellFile;
 
+mod scell;
 mod scell_file;
 
 fn main() -> anyhow::Result<()> {
-    let scell_f = SCellFile::from_path("scell.yml")?;
-
-    println!("{scell_f:?}");
+    let _scell_f = SCellFile::from_path("scell.yml")?;
     Ok(())
 }
