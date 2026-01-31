@@ -46,5 +46,10 @@ arithmetic_side_effects = "deny"
 
 [dependencies]
 anyhow = "1.0.100"
+regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
+test-case = "3.3.1"
 yaml_serde = "0.10.3"
+
+[dev-dependencies]
+test-case = "3.3.1"
