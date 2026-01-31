@@ -46,6 +46,7 @@ arithmetic_side_effects = "deny"
 
 [dependencies]
 anyhow = "1.0.100"
+buildkit-client = "0.1.4"
 regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
 test-case = "3.3.1"
