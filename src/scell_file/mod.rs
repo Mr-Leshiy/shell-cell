@@ -1,6 +1,9 @@
+//! Implements a parsing and processing of Shell-Cell '.yaml' files
+
 #![allow(dead_code)]
 
 mod def;
+mod docker;
 mod name;
 
 use std::{collections::HashMap, path::Path};

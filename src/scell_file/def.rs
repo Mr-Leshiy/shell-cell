@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell_file::name::SCellName;
+use crate::scell_file::{docker::DockerImageDef, name::SCellName};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 const DOCKER_IMAGE_TAG_DELIMETER: char = ':';
@@ -18,10 +18,7 @@ pub enum From {
         scell_def_name: SCellName,
     },
     // TODO: add a separate types for `image` and `tag` fields, same as for `SCellName`
-    DockerImage {
-        image: String,
-        tag: Option<String>,
-    },
+    DockerImage(DockerImageDef),
 }
 
 impl FromStr for From {
@@ -41,22 +38,7 @@ impl FromStr for From {
                     scell_def_name: suffix.parse()?,
                 })
             },
-            None => {
-                match str.split_once(DOCKER_IMAGE_TAG_DELIMETER) {
-                    Some((prefix, suffix)) => {
-                        Ok(Self::DockerImage {
-                            image: prefix.to_string(),
-                            tag: Some(suffix.to_string()),
-                        })
-                    },
-                    None => {
-                        Ok(Self::DockerImage {
-                            image: str.to_string(),
-                            tag: None,
-                        })
-                    },
-                }
-            },
+            None => Ok(Self::DockerImage(str.parse()?)),
         }
     }
 }
@@ -71,9 +53,11 @@ impl<'de> serde::Deserialize<'de> for From {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use test_case::test_case;
     use std::path::PathBuf;
+
+    use test_case::test_case;
+
+    use super::*;
 
     // We use a helper to make expected SCellNames in tests
     fn name(s: &str) -> SCellName {
@@ -81,23 +65,21 @@ mod tests {
     }
 
     #[test_case("+my-cell" => From::SCellDef { 
-        scell_path: None, 
+        scell_path: None,
         scell_def_name: name("my-cell") 
     } ; "local cell")]
     #[test_case("path/to/dir+my-cell" => From::SCellDef { 
         scell_path: Some(PathBuf::from("path/to/dir")), 
         scell_def_name: name("my-cell") 
     } ; "path and cell")]
-    
-    #[test_case("debian:12" => From::DockerImage { 
+    #[test_case("debian:12" => From::DockerImage(DockerImageDef { 
         image: "debian".to_string(), 
         tag: Some("12".to_string()) 
-    } ; "docker with tag")]
-    
-    #[test_case("scratch" => From::DockerImage { 
+    }) ; "docker with tag")]
+    #[test_case("scratch" => From::DockerImage(DockerImageDef { 
         image: "scratch".to_string(), 
-        tag: None 
-    } ; "docker image only")]
+        tag: None
+    }) ; "docker image only")]
     fn test_from_parsing(input: &str) -> From {
         From::from_str(input).expect("Should be a valid input")
     }
