@@ -11,6 +11,8 @@ use futures::StreamExt;
 pub async fn build_image(
     docker: &Docker,
     dockerfile_str: &str,
+    image_name: &str,
+    tag: Option<&str>,
 ) -> anyhow::Result<()> {
     const DOCKERFILE_NAME: &str = "Dockerfile";
     // Unix file mode,
@@ -30,7 +32,7 @@ pub async fn build_image(
 
     let options = BuildImageOptionsBuilder::new()
         .dockerfile(DOCKERFILE_NAME)
-        .t("scell-session")
+        .t(&tag.map_or_else(|| image_name.to_string(), |t| format!("{image_name}:{t}")))
         .rm(true)
         .build();
 

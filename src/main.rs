@@ -2,9 +2,9 @@
 #![allow(dead_code)]
 
 mod buildkit;
+mod cli;
 mod scell;
 mod scell_file;
-mod cli;
 
 use std::path::Path;
 
@@ -15,9 +15,9 @@ async fn main() -> anyhow::Result<()> {
     let path = Path::new("scell.yml");
     let scell_f = SCellFile::from_path(path)?;
     let scell = SCell::build(scell_f, path.to_path_buf(), None)?;
-    println!("{scell:?}");
-
     let buildkit = BuildKitD::start().await?;
-    buildkit.build_image(&scell.to_dockerfile()).await?;
+    buildkit
+        .build_image(&scell.to_dockerfile(), &scell.hex_hash(), None)
+        .await?;
     Ok(())
 }

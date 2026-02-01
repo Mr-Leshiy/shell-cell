@@ -9,6 +9,7 @@ pub struct SCellDef {
     pub from: FromStmt,
     #[serde(default)]
     pub run: Vec<String>,
+    pub shell: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

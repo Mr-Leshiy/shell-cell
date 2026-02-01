@@ -5,7 +5,7 @@
 //! Not necessarily the docker base image, but it must be some image which would be a
 //! "base" for entire Shell-Cell.
 
-use std::{fmt::Write, path::PathBuf};
+use std::{fmt::Write, hash::Hasher, path::PathBuf};
 
 use anyhow::Context;
 
@@ -48,6 +48,12 @@ impl SCell {
             scell_path.display()
         ))?;
 
+        anyhow::ensure!(
+            entry_point.shell.is_some(),
+            "{}+{entry_point_name} endpoint does not contain 'shell' statement",
+            scell_path.display()
+        );
+
         let mut links = Vec::new();
 
         let mut scell_walk_f = scell_f;
@@ -85,6 +91,30 @@ impl SCell {
         }
 
         Ok(Self(links))
+    }
+
+    /// Calculates a fast, non-cryptographic 'metrohash' hash value.
+    /// Returns a hex string value.
+    pub fn hex_hash(&self) -> String {
+        let mut hasher = metrohash::MetroHash64::new();
+
+        for link in self.0.iter() {
+            match link {
+                Link::Root(root) => hasher.write(format!("{root}").as_bytes()),
+                Link::Node {
+                    name,
+                    path,
+                    commands,
+                } => {
+                    hasher.write(format!("{name}").as_bytes());
+                    hasher.write(format!("{}", path.display()).as_bytes());
+                    for cmd in commands {
+                        hasher.write(cmd.as_bytes());
+                    }
+                },
+            }
+        }
+        format!("{:x}", hasher.finish())
     }
 
     /// Makes a Dockerfile for building an image

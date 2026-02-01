@@ -6,8 +6,7 @@ use bollard::Docker;
 
 use self::docker::{build_image, create_and_start_container};
 
-const BUILDKIT_CONTAINER_NAME: &str = "shell-cell-buildkitd";
-const BUILDKIT_CONTAINER_PORT: &str = "8372/tcp";
+const IMAGE_PREFIX: &str = "scell";
 
 pub struct BuildKitD {
     docker: Docker,
@@ -20,15 +19,22 @@ impl BuildKitD {
         docker.ping().await.map_err(|_| {
             anyhow::anyhow!("Cannot connect to the Docker daemon. Is the docker daemon running?")
         })?;
-        // create_and_start_buildkit_container(&mut docker).await?;
         Ok(Self { docker })
     }
 
     pub async fn build_image(
         &self,
         dockerfile_str: &str,
+        image_name: &str,
+        tag: Option<&str>,
     ) -> anyhow::Result<()> {
-        build_image(&self.docker, dockerfile_str).await?;
+        build_image(
+            &self.docker,
+            dockerfile_str,
+            &format!("{IMAGE_PREFIX}-{image_name}"),
+            tag,
+        )
+        .await?;
         Ok(())
     }
 }

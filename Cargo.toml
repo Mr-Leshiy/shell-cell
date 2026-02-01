@@ -49,6 +49,8 @@ anyhow = "1.0.100"
 bollard = "0.20.0"
 clap = "4.5.56"
 futures = "0.3.31"
+hex = "0.4.3"
+metrohash = "1.0.7"
 regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
 tar = "0.4.44"
