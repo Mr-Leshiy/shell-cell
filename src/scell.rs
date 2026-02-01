@@ -88,7 +88,7 @@ impl SCell {
     }
 
     /// Makes a Dockerfile for building an image
-    fn to_dockerfile(&self) -> String {
+    pub fn to_dockerfile(&self) -> String {
         let mut dockerfile = String::new();
         for link in self.0.iter().rev() {
             match link {

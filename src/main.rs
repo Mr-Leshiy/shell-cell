@@ -16,6 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let scell = SCell::build(scell_f, path.to_path_buf(), None)?;
     println!("{scell:?}");
 
-    let _buildkit = BuildKitD::start().await?;
+    let buildkit = BuildKitD::start().await?;
+    buildkit.build_image(&scell.to_dockerfile()).await?;
     Ok(())
 }

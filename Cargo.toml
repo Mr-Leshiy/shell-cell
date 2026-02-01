@@ -50,6 +50,7 @@ bollard = "0.20.0"
 futures = "0.3.31"
 regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
+tar = "0.4.44"
 test-case = "3.3.1"
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
 yaml_serde = "0.10.3"
