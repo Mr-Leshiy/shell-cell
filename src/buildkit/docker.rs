@@ -15,8 +15,6 @@ pub async fn build_image(
     const DOCKERFILE_NAME: &str = "Dockerfile";
     // Unix file mode,
     // 6 (Owner): Read (4) + Write (2) = Read & Write.
-    // 4 (Group): Read-only.
-    // 4 (Others): Read-only.
     const FILE_MODE: u32 = 0o600;
 
     // Create an in-memory tar archive containing the Dockerfile
