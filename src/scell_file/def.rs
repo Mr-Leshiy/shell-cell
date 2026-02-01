@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell_file::{docker::DockerImageDef, name::SCellName};
+use crate::scell_file::{image::ImageDef, name::SCellName};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
@@ -18,7 +18,7 @@ pub enum FromStmt {
         scell_def_name: SCellName,
     },
     // TODO: add a separate types for `image` and `tag` fields, same as for `SCellName`
-    DockerImage(DockerImageDef),
+    Image(ImageDef),
 }
 
 impl FromStr for FromStmt {
@@ -38,7 +38,7 @@ impl FromStr for FromStmt {
                     scell_def_name: suffix.parse()?,
                 })
             },
-            None => Ok(Self::DockerImage(str.parse()?)),
+            None => Ok(Self::Image(str.parse()?)),
         }
     }
 }
@@ -72,11 +72,11 @@ mod tests {
         scell_path: Some(PathBuf::from("path/to/dir")), 
         scell_def_name: name("my-cell") 
     } ; "path and cell")]
-    #[test_case("debian:12" => FromStmt::DockerImage(DockerImageDef { 
+    #[test_case("debian:12" => FromStmt::Image(ImageDef { 
         image: "debian".to_string(), 
         tag: Some("12".to_string()) 
     }) ; "docker with tag")]
-    #[test_case("scratch" => FromStmt::DockerImage(DockerImageDef { 
+    #[test_case("scratch" => FromStmt::Image(ImageDef { 
         image: "scratch".to_string(), 
         tag: None
     }) ; "docker image only")]

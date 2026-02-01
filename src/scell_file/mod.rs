@@ -1,7 +1,7 @@
 //! Implements a parsing and processing of Shell-Cell '.yaml' files
 
 pub mod def;
-pub mod docker;
+pub mod image;
 pub mod name;
 
 use std::{collections::HashMap, path::Path};

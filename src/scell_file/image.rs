@@ -1,18 +1,31 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
-const DOCKER_IMAGE_TAG_DELIMETER: char = ':';
+const IMAGE_TAG_DELIMETER: char = ':';
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct DockerImageDef {
+pub struct ImageDef {
     pub image: String,
     pub tag: Option<String>,
 }
 
-impl FromStr for DockerImageDef {
+impl Display for ImageDef {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        if let Some(tag) = &self.tag {
+            write!(f, "{}:{}", self.image, tag)
+        } else {
+            write!(f, "{}", self.image)
+        }
+    }
+}
+
+impl FromStr for ImageDef {
     type Err = anyhow::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
-        match str.split_once(DOCKER_IMAGE_TAG_DELIMETER) {
+        match str.split_once(IMAGE_TAG_DELIMETER) {
             Some((prefix, suffix)) => {
                 Ok(Self {
                     image: prefix.to_string(),

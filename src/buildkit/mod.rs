@@ -1,4 +1,4 @@
-//! BuildKit daemon client implementation.
+//! `BuildKit` daemon client implementation.
 
 use bollard::{
     Docker,
@@ -50,7 +50,7 @@ async fn create_and_start_buildkitd_container(docker: &mut Docker) -> anyhow::Re
 
     let res = docker
         .list_containers(Some(
-            ListContainersOptionsBuilder::default()
+            ListContainersOptionsBuilder::new()
                 .filters(
                     &[
                         ("name", vec![BUILDKIT_CONTAINER_NAME.to_string()]),

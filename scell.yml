@@ -1,7 +1,10 @@
 version: 0.1
 
 
+cell1:
+  from: scratch
+
 main:
-  from: something,
+  from: +cell1
   run:
     - something

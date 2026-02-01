@@ -1,21 +1,21 @@
 //! Shell-Cell definition.
 //! Its consists of the `Link`s, smallest abstraction of the whole Shell-Cell unit.
 //! Each Shell-Cell would **always** contain at least two links, the root and the node.
-//! The root link is always must be a some "base" image e.g. https://docs.docker.com/build/building/base-images/.
+//! The root link is always must be a some "base" image e.g. <https://docs.docker.com/build/building/base-images/>.
 //! Not necessarily the docker base image, but it must be some image which would be a
 //! "base" for entire Shell-Cell.
 
-use std::path::PathBuf;
+use std::{fmt::Write, path::PathBuf};
 
 use anyhow::Context;
 
-use crate::scell_file::{SCellFile, def::FromStmt, docker::DockerImageDef, name::SCellName};
+use crate::scell_file::{SCellFile, def::FromStmt, image::ImageDef, name::SCellName};
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
 #[derive(Debug)]
 pub enum Link {
-    Root(DockerImageDef),
+    Root(ImageDef),
     Node {
         name: SCellName,
         path: PathBuf,
@@ -34,11 +34,14 @@ impl SCell {
         scell_path: PathBuf,
         entry: Option<SCellName>,
     ) -> anyhow::Result<Self> {
-        let entry_point_name = entry.map(|e| Ok(e)).unwrap_or_else(|| {
-            SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
-                "'{SCELL_DEFAULT_ENTRY_POINT}' must be a valid Shell-Cell name"
-            ))
-        })?;
+        let entry_point_name = entry.map_or_else(
+            || {
+                SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
+                    "'{SCELL_DEFAULT_ENTRY_POINT}' must be a valid Shell-Cell name"
+                ))
+            },
+            Ok,
+        )?;
 
         let entry_point = scell_f.cells.remove(&entry_point_name).context(format!(
             "{} does not contain an entrypoint '{entry_point_name}'",
@@ -59,7 +62,7 @@ impl SCell {
             });
 
             match scell_walk_def.from {
-                FromStmt::DockerImage(docker_image_def) => {
+                FromStmt::Image(docker_image_def) => {
                     links.push(Link::Root(docker_image_def));
                     break;
                 },
@@ -82,5 +85,23 @@ impl SCell {
         }
 
         Ok(Self(links))
+    }
+
+    /// Makes a Dockerfile for building an image
+    fn to_dockerfile(&self) -> String {
+        let mut dockerfile = String::new();
+        for link in self.0.iter().rev() {
+            match link {
+                Link::Root(root) => {
+                    let _ = writeln!(&mut dockerfile, "FROM {root}");
+                },
+                Link::Node { commands, .. } => {
+                    for cmd in commands {
+                        let _ = writeln!(&mut dockerfile, "RUN {cmd}");
+                    }
+                },
+            }
+        }
+        dockerfile
     }
 }
