@@ -12,7 +12,7 @@ pub async fn build_image(
     docker: &Docker,
     dockerfile_str: &str,
     image_name: &str,
-    tag: Option<&str>,
+    tag: &str,
 ) -> anyhow::Result<()> {
     const DOCKERFILE_NAME: &str = "Dockerfile";
     // Unix file mode,
@@ -32,7 +32,7 @@ pub async fn build_image(
 
     let options = BuildImageOptionsBuilder::new()
         .dockerfile(DOCKERFILE_NAME)
-        .t(&tag.map_or_else(|| image_name.to_string(), |t| format!("{image_name}:{t}")))
+        .t(&format!("{image_name}:{tag}"))
         .rm(true)
         .build();
 
@@ -47,31 +47,14 @@ pub async fn build_image(
     Ok(())
 }
 
-pub async fn create_and_start_container(
+pub async fn start_container(
     docker: &mut Docker,
     image_name: &str,
     tag: &str,
     container_name: &str,
     exposed_ports: Vec<String>,
 ) -> anyhow::Result<()> {
-    // pulling 'moby/buildkit' image from the registry
-    let mut stream = docker.create_image(
-        Some(CreateImageOptions {
-            from_image: Some(image_name.to_string()),
-            tag: Some(tag.to_string()),
-            ..Default::default()
-        }),
-        None,
-        None,
-    );
-    while let Some(pulling_info) = stream.next().await {
-        let info = pulling_info?;
-        // TODO: improove logging
-        println!("{info:?}");
-    }
-
     let buildkit_image = format!("{image_name}:{tag}");
-
     let res = docker
         .list_containers(Some(
             ListContainersOptionsBuilder::new()
@@ -105,6 +88,29 @@ pub async fn create_and_start_container(
     }
 
     docker.start_container(container_name, None).await?;
+
+    Ok(())
+}
+
+pub async fn pull_image(
+    docker: &mut Docker,
+    image_name: &str,
+    tag: &str,
+) -> anyhow::Result<()> {
+    let mut stream = docker.create_image(
+        Some(CreateImageOptions {
+            from_image: Some(image_name.to_string()),
+            tag: Some(tag.to_string()),
+            ..Default::default()
+        }),
+        None,
+        None,
+    );
+    while let Some(pulling_info) = stream.next().await {
+        let info = pulling_info?;
+        // TODO: improove logging
+        println!("{info:?}");
+    }
 
     Ok(())
 }

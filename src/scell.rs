@@ -132,6 +132,8 @@ impl SCell {
                 },
             }
         }
+        // TODO: find better solution how to hang the container
+        let _ = writeln!(&mut dockerfile, "ENTRYPOINT while true; do sleep 3600; done");
         dockerfile
     }
 }

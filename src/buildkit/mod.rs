@@ -4,9 +4,8 @@ mod docker;
 
 use bollard::Docker;
 
-use self::docker::{build_image, create_and_start_container};
-
-const IMAGE_PREFIX: &str = "scell";
+use self::docker::{build_image, start_container};
+use crate::{buildkit::docker::pull_image, scell::SCell};
 
 pub struct BuildKitD {
     docker: Docker,
@@ -24,19 +23,38 @@ impl BuildKitD {
 
     pub async fn build_image(
         &self,
-        dockerfile_str: &str,
-        image_name: &str,
-        tag: Option<&str>,
+        scell: &SCell,
     ) -> anyhow::Result<()> {
         build_image(
             &self.docker,
-            dockerfile_str,
-            &format!("{IMAGE_PREFIX}-{image_name}"),
-            tag,
+            &scell.to_dockerfile(),
+            &image_name(scell),
+            "latest",
         )
         .await?;
         Ok(())
     }
+
+    pub async fn start_container(
+        &mut self,
+        scell: &SCell,
+    ) -> anyhow::Result<()> {
+        start_container(
+            &mut self.docker,
+            &image_name(scell),
+            "latest",
+            &image_name(scell),
+            vec![],
+        )
+        .await?;
+        Ok(())
+    }
+}
+
+fn image_name(scell: &SCell) -> String {
+    const IMAGE_PREFIX: &str = "scell";
+
+    format!("{IMAGE_PREFIX}-{}", scell.hex_hash())
 }
 
 async fn create_and_start_buildkit_container(docker: &mut Docker) -> anyhow::Result<()> {
@@ -44,7 +62,9 @@ async fn create_and_start_buildkit_container(docker: &mut Docker) -> anyhow::Res
     const BUILDKIT_TAG: &str = "v0.27.1";
     const BUILDKIT_CONTAINER_NAME: &str = "shell-cell-buildkitd";
     const BUILDKIT_CONTAINER_PORT: &str = "8372/tcp";
-    create_and_start_container(
+
+    pull_image(docker, BUILDKIT_IMAGE, BUILDKIT_TAG).await?;
+    start_container(
         docker,
         BUILDKIT_IMAGE,
         BUILDKIT_TAG,
