@@ -47,6 +47,7 @@ arithmetic_side_effects = "deny"
 [dependencies]
 anyhow = "1.0.100"
 bollard = "0.20.0"
+clap = "4.5.56"
 futures = "0.3.31"
 regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }

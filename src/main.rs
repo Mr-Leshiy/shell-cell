@@ -4,6 +4,7 @@
 mod buildkit;
 mod scell;
 mod scell_file;
+mod cli;
 
 use std::path::Path;
 
