@@ -2,10 +2,20 @@
 name = "shell-cell"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.90"
+description = "Shell-Cell. CLI app to spawn and manage containerized shell environments"
 authors = [
     "Alex Pozhylenkov <leshiy12345678@gmail.com>"
 ]
 license = "MIT OR Apache-2.0"
+
+# Example of customizing binaries in Cargo.toml.
+[[bin]]
+name = "scell"
+path = "src/main.rs"
+test = true
+bench = false
+doctest = false
 
 [lints.rust]
 warnings = "deny"
@@ -49,7 +59,7 @@ anyhow = "1.0.100"
 async-channel = "2.5.0"
 bollard = "0.20.0"
 bytes = "1.11.0"
-clap = "4.5.56"
+clap = { version = "4.5.56", features = ["derive"] }
 crossterm = "0.29.0"
 futures = "0.3.31"
 hex = "0.4.3"
@@ -64,3 +74,6 @@ yaml_serde = "0.10.3"
 
 [dev-dependencies]
 test-case = "3.3.1"
+
+[build-dependencies]
+built = "0.8.0"
