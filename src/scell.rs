@@ -157,7 +157,7 @@ impl SCell {
         }
         let _ = writeln!(
             &mut dockerfile,
-            "SHELL [{}, {}]",
+            "SHELL [\"{}\", {}]",
             self.shell.bin_path,
             self.shell
                 .commands
