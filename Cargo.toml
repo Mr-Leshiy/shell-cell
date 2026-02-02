@@ -46,8 +46,11 @@ arithmetic_side_effects = "deny"
 
 [dependencies]
 anyhow = "1.0.100"
+async-channel = "2.5.0"
 bollard = "0.20.0"
+bytes = "1.11.0"
 clap = "4.5.56"
+crossterm = "0.29.0"
 futures = "0.3.31"
 hex = "0.4.3"
 itertools = "0.14.0"

@@ -27,7 +27,7 @@ pub enum Link {
 #[derive(Debug)]
 pub struct SCell {
     links: Vec<Link>,
-    shell: Vec<String>,
+    pub shell: Vec<String>,
     hang: String,
 }
 
@@ -139,7 +139,11 @@ impl SCell {
             match link {
                 Link::Root(root) => {
                     let _ = writeln!(&mut dockerfile, "FROM {root}");
-                    let _ = writeln!(&mut dockerfile, "SHELL [{}]", self.shell.iter().map(|v| format!("\"{v}\"")).join(","));
+                    let _ = writeln!(
+                        &mut dockerfile,
+                        "SHELL [{}]",
+                        self.shell.iter().map(|v| format!("\"{v}\"")).join(",")
+                    );
                 },
                 Link::Node { commands, .. } => {
                     for cmd in commands {

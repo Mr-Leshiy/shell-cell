@@ -2,11 +2,13 @@
 
 mod docker;
 
+use anyhow::Context;
 use bollard::Docker;
 
 use self::docker::{build_image, start_container};
 use crate::{
     buildkit::docker::{container_iteractive_exec, pull_image},
+    pty::PtyStdStreams,
     scell::SCell,
 };
 
@@ -43,19 +45,17 @@ impl BuildKitD {
     pub async fn run_shell(
         &self,
         scell: &SCell,
-    ) -> anyhow::Result<()> {
-        container_iteractive_exec(&self.docker, &name(scell), true, vec![
-            "/bin/bash".to_string(),
+    ) -> anyhow::Result<PtyStdStreams> {
+        let (output, input) = container_iteractive_exec(&self.docker, &name(scell), true, vec![
+            scell.shell.first().context("shell is empty")?.clone(),
         ])
         .await?;
-
-        Ok(())
+        Ok(PtyStdStreams::new(output, input))
     }
 }
 
 fn name(scell: &SCell) -> String {
     const PREFIX: &str = "scell";
-
     format!("{PREFIX}-{}", scell.hex_hash())
 }
 

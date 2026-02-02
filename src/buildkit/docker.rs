@@ -1,12 +1,17 @@
+use std::pin::Pin;
+
 use bollard::{
     Docker, body_full,
+    container::LogOutput,
+    exec::{StartExecOptions, StartExecResults},
     query_parameters::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder,
     },
     secret::{ContainerCreateBody, ExecConfig},
 };
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
+use tokio::io::AsyncWrite;
 
 pub async fn build_image(
     docker: &Docker,
@@ -116,21 +121,71 @@ pub async fn start_container(
     Ok(())
 }
 
+type Output = Pin<Box<dyn Stream<Item = Result<LogOutput, bollard::errors::Error>> + Send>>;
+type Input = Pin<Box<dyn AsyncWrite + Send>>;
+
 pub async fn container_iteractive_exec(
     docker: &Docker,
     container_name: &str,
     priveleged: bool,
     cmd: Vec<String>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<(Output, Input)> {
     let config = ExecConfig {
         cmd: Some(cmd),
         attach_stdin: Some(true),
         attach_stdout: Some(true),
         attach_stderr: Some(true),
+        tty: Some(true),
         privileged: Some(priveleged),
         ..Default::default()
     };
-    docker.create_exec(container_name, config).await?;
+    let exec_id = docker.create_exec(container_name, config).await?.id;
 
-    Ok(())
+    let config = StartExecOptions {
+        detach: false,
+        tty: true,
+        output_capacity: None,
+    };
+
+    let StartExecResults::Attached { output, input } =
+        docker.start_exec(&exec_id, Some(config)).await?
+    else {
+        anyhow::bail!("it must be attached session, as `detach` flag was passed to `false");
+    };
+
+    // // 3. Set local terminal to raw mode
+    // // This ensures keystrokes are passed directly to the container
+    // let _raw = crossterm::terminal::enable_raw_mode()?;
+
+    // // Task for Container Output -> Local Stdout
+    // let output_task = tokio::spawn(async move {
+    //     while let Some(Ok(msg)) = output.next().await {
+    //         print!("{}", msg);
+    //         std::io::stdout().flush().unwrap();
+    //     }
+    // });
+
+    // // Task for Local Stdin -> Container Input
+    // let input_task = tokio::spawn(async move {
+    //     let mut stdin = std::io::stdin();
+    //     let mut buf = [0u8; 1024];
+    //     loop {
+    //         let n = stdin.read(&mut buf).unwrap();
+    //         if n == 0 {
+    //             break;
+    //         }
+    //         input.write_all(&buf[..n]).await.unwrap();
+    //         input.flush().await.unwrap();
+    //     }
+    // });
+
+    // // Wait for the output to finish (shell exit)
+    // tokio::select! {
+    //     _ = output_task => (),
+    //     _ = input_task => (),
+    // };
+
+    // crossterm::terminal::disable_raw_mode()?;
+
+    Ok((output, input))
 }

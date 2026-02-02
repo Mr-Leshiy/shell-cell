@@ -3,6 +3,7 @@
 
 mod buildkit;
 mod cli;
+mod pty;
 mod scell;
 mod scell_file;
 
@@ -19,7 +20,9 @@ async fn main() -> anyhow::Result<()> {
     let buildkit = BuildKitD::start().await?;
     buildkit.build_image(&scell).await?;
     buildkit.start_container(&scell).await?;
-    buildkit.run_shell(&scell).await?;
+    let pty_streams = buildkit.run_shell(&scell).await?;
+
+    pty::run(&pty_streams).await?;
 
     Ok(())
 }
