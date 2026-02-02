@@ -20,7 +20,6 @@ pub enum FromStmt {
         scell_path: Option<PathBuf>,
         scell_def_name: SCellName,
     },
-    // TODO: add a separate types for `image` and `tag` fields, same as for `SCellName`
     Image(ImageDef),
 }
 
