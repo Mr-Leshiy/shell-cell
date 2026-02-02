@@ -28,8 +28,23 @@ impl BuildKitD {
     pub async fn build_image(
         &self,
         scell: &SCell,
+        log_fn: impl Fn(String),
     ) -> anyhow::Result<()> {
-        build_image(&self.docker, &scell.to_dockerfile(), &name(scell), "latest").await?;
+        build_image(
+            &self.docker,
+            &scell.to_dockerfile(),
+            &name(scell),
+            "latest",
+            |info| {
+                if let Some(stream) = info.stream {
+                    log_fn(stream);
+                }
+                if let Some(status) = info.status {
+                    log_fn(status);
+                }
+            },
+        )
+        .await?;
         Ok(())
     }
 
@@ -41,7 +56,7 @@ impl BuildKitD {
         Ok(())
     }
 
-    pub async fn run_shell(
+    pub async fn attach_to_shell(
         &self,
         scell: &SCell,
     ) -> anyhow::Result<PtyStdStreams> {

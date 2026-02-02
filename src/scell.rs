@@ -41,7 +41,7 @@ impl SCell {
 
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
     /// links for the Shell-Cell definition.
-    pub fn build(
+    pub fn compile(
         mut scell_f: SCellFile,
         scell_path: PathBuf,
         entry: Option<SCellName>,

@@ -8,7 +8,7 @@ use bollard::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder,
     },
-    secret::{ContainerCreateBody, ExecConfig},
+    secret::{BuildInfo, ContainerCreateBody, ExecConfig},
 };
 use futures::{Stream, StreamExt};
 use tokio::io::AsyncWrite;
@@ -18,6 +18,7 @@ pub async fn build_image(
     dockerfile_str: &str,
     image_name: &str,
     tag: &str,
+    log_fn: impl Fn(BuildInfo),
 ) -> anyhow::Result<()> {
     const DOCKERFILE_NAME: &str = "Dockerfile";
     // Unix file mode,
@@ -45,9 +46,7 @@ pub async fn build_image(
     let mut stream = docker.build_image(options, None, Some(body_full(uncompressed_tar.into())));
 
     while let Some(build_info) = stream.next().await {
-        let info = build_info?;
-        // TODO: improove logging
-        println!("{info:?}");
+        log_fn(build_info?);
     }
 
     Ok(())
@@ -152,40 +151,6 @@ pub async fn container_iteractive_exec(
     else {
         anyhow::bail!("it must be attached session, as `detach` flag was passed to `false");
     };
-
-    // // 3. Set local terminal to raw mode
-    // // This ensures keystrokes are passed directly to the container
-    // let _raw = crossterm::terminal::enable_raw_mode()?;
-
-    // // Task for Container Output -> Local Stdout
-    // let output_task = tokio::spawn(async move {
-    //     while let Some(Ok(msg)) = output.next().await {
-    //         print!("{}", msg);
-    //         std::io::stdout().flush().unwrap();
-    //     }
-    // });
-
-    // // Task for Local Stdin -> Container Input
-    // let input_task = tokio::spawn(async move {
-    //     let mut stdin = std::io::stdin();
-    //     let mut buf = [0u8; 1024];
-    //     loop {
-    //         let n = stdin.read(&mut buf).unwrap();
-    //         if n == 0 {
-    //             break;
-    //         }
-    //         input.write_all(&buf[..n]).await.unwrap();
-    //         input.flush().await.unwrap();
-    //     }
-    // });
-
-    // // Wait for the output to finish (shell exit)
-    // tokio::select! {
-    //     _ = output_task => (),
-    //     _ = input_task => (),
-    // };
-
-    // crossterm::terminal::disable_raw_mode()?;
 
     Ok((output, input))
 }
