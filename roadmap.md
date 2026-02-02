@@ -5,4 +5,5 @@
 - [ ] Add docker-compose like configuration to each Shell-Cell.
 - [ ] Integrate metadata information into the images.
 - [ ] CLI features e.g. `ls`, `rm`.
+- [ ] After stopping the session stop the container, dont remove, just stop.
 - [ ] Use BuildKit cache feature, to cache each Cell individually.
