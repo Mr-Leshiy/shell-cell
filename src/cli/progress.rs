@@ -35,9 +35,9 @@ impl Progress {
         pb.set_position(self.current_step);
         pb.set_message(msg);
 
-        let result = f().await;
-        pb.finish();
-        result
+        let result = f().await?;
+        pb.abandon();
+        Ok(result)
     }
 
     /// Special step that includes a sub-spinner for long-running build tasks
@@ -58,9 +58,9 @@ impl Progress {
 
         let spinner = self.multi.add(ProgressBar::new_spinner());
         spinner.enable_steady_tick(Duration::from_millis(100));
-        let result = f(spinner.clone()).await;
+        let result = f(spinner.clone()).await?;
         spinner.finish_and_clear();
-        pb.finish();
-        result
+        pb.abandon();
+        Ok(result)
     }
 }

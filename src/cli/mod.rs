@@ -24,6 +24,10 @@ pub struct Cli {
     #[clap(value_name = "FILE", default_value = "./scell.yml")]
     pub scell_path: PathBuf,
 
+    /// Show detailed logs
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    pub verbose: bool,
+
     #[clap(subcommand)]
     pub command: Option<Commands>,
 }
@@ -67,7 +71,9 @@ impl Cli {
                     buildkit
                         .build_image(&scell, {
                             |msg| {
-                                sp.set_message(format!("🛠️    {msg}"));
+                                if self.verbose {
+                                    sp.println(format!("    {msg}"));
+                                }
                             }
                         })
                         .await?;
@@ -77,9 +83,9 @@ impl Cli {
 
                 // STEP 4
                 let pty = pb
-                    .run_build_step(
+                    .run_step(
                         format!("📝    Starting Shell-Cell container..."),
-                        async |_sp| {
+                        async || {
                             buildkit.start_container(&scell).await?;
                             buildkit.attach_to_shell(&scell).await
                         },

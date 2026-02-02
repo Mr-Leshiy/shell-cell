@@ -16,6 +16,10 @@ type Input = Pin<Box<dyn AsyncWrite + Send>>;
 const BUF_SIZE: usize = 1024;
 
 pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
+    crossterm::execute!(
+        std::io::stdout(),
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::UntilNewLine)
+    )?;
     crossterm::terminal::enable_raw_mode()?;
     {
         let stdout_jh: tokio::task::JoinHandle<Result<(), anyhow::Error>> = tokio::spawn({
