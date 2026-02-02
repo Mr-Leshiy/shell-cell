@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell_file::{image::ImageDef, name::SCellName};
+use crate::scell_file::{image::ImageDef, name::SCellName, shell::ShellDef};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
@@ -10,7 +10,7 @@ pub struct SCellDef {
     #[serde(default)]
     pub run: Vec<String>,
     #[serde(default)]
-    pub shell: Vec<String>,
+    pub shell: Option<ShellDef>,
     pub hang: Option<String>,
 }
 

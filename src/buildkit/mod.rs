@@ -2,7 +2,6 @@
 
 mod docker;
 
-use anyhow::Context;
 use bollard::Docker;
 
 use self::docker::{build_image, start_container};
@@ -47,7 +46,7 @@ impl BuildKitD {
         scell: &SCell,
     ) -> anyhow::Result<PtyStdStreams> {
         let (output, input) = container_iteractive_exec(&self.docker, &name(scell), true, vec![
-            scell.shell.first().context("shell is empty")?.clone(),
+            scell.shell().to_string(),
         ])
         .await?;
         Ok(PtyStdStreams::new(output, input))

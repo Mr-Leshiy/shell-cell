@@ -10,7 +10,9 @@ use std::{fmt::Write, hash::Hasher, path::PathBuf};
 use anyhow::Context;
 use itertools::Itertools;
 
-use crate::scell_file::{SCellFile, def::FromStmt, image::ImageDef, name::SCellName};
+use crate::scell_file::{
+    SCellFile, def::FromStmt, image::ImageDef, name::SCellName, shell::ShellDef,
+};
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
@@ -27,11 +29,16 @@ pub enum Link {
 #[derive(Debug)]
 pub struct SCell {
     links: Vec<Link>,
-    pub shell: Vec<String>,
+    shell: ShellDef,
     hang: String,
 }
 
 impl SCell {
+    /// Returns an underlying shell's binary path
+    pub fn shell(&self) -> &str {
+        &self.shell.bin_path
+    }
+
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
     /// links for the Shell-Cell definition.
     pub fn build(
@@ -53,12 +60,12 @@ impl SCell {
             scell_path.display()
         ))?;
 
-        anyhow::ensure!(
-            !entry_point.shell.is_empty(),
-            "{}+{entry_point_name} endpoint does not contain 'shell' statement",
-            scell_path.display()
-        );
-        let shell = entry_point.shell.clone();
+        let Some(shell) = entry_point.shell.clone() else {
+            anyhow::bail!(
+                "{}+{entry_point_name} endpoint does not contain 'shell' statement",
+                scell_path.display()
+            );
+        };
         let Some(hang) = entry_point.hang.clone() else {
             anyhow::bail!(
                 "{}+{entry_point_name} endpoint does not contain 'hang' statement",
@@ -110,7 +117,8 @@ impl SCell {
     pub fn hex_hash(&self) -> String {
         let mut hasher = metrohash::MetroHash64::new();
 
-        for v in &self.shell {
+        hasher.write(self.shell.bin_path.as_bytes());
+        for v in &self.shell.commands {
             hasher.write(v.as_bytes());
         }
         for link in &self.links {
@@ -139,11 +147,6 @@ impl SCell {
             match link {
                 Link::Root(root) => {
                     let _ = writeln!(&mut dockerfile, "FROM {root}");
-                    let _ = writeln!(
-                        &mut dockerfile,
-                        "SHELL [{}]",
-                        self.shell.iter().map(|v| format!("\"{v}\"")).join(",")
-                    );
                 },
                 Link::Node { commands, .. } => {
                     for cmd in commands {
@@ -152,6 +155,16 @@ impl SCell {
                 },
             }
         }
+        let _ = writeln!(
+            &mut dockerfile,
+            "SHELL [{}, {}]",
+            self.shell.bin_path,
+            self.shell
+                .commands
+                .iter()
+                .map(|v| format!("\"{v}\""))
+                .join(",")
+        );
         // TODO: find better solution how to hang the container
         let _ = writeln!(&mut dockerfile, "ENTRYPOINT {}", self.hang);
         dockerfile

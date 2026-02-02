@@ -3,6 +3,7 @@
 pub mod def;
 pub mod image;
 pub mod name;
+pub mod shell;
 
 use std::{collections::HashMap, path::Path};
 
