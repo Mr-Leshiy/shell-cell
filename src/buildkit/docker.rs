@@ -4,7 +4,7 @@ use bollard::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder,
     },
-    secret::ContainerCreateBody,
+    secret::{ContainerCreateBody, ExecConfig},
 };
 use futures::StreamExt;
 
@@ -34,6 +34,7 @@ pub async fn build_image(
         .dockerfile(DOCKERFILE_NAME)
         .t(&format!("{image_name}:{tag}"))
         .rm(true)
+        .forcerm(true)
         .build();
 
     let mut stream = docker.build_image(options, None, Some(body_full(uncompressed_tar.into())));
@@ -47,8 +48,31 @@ pub async fn build_image(
     Ok(())
 }
 
+pub async fn pull_image(
+    docker: &Docker,
+    image_name: &str,
+    tag: &str,
+) -> anyhow::Result<()> {
+    let mut stream = docker.create_image(
+        Some(CreateImageOptions {
+            from_image: Some(image_name.to_string()),
+            tag: Some(tag.to_string()),
+            ..Default::default()
+        }),
+        None,
+        None,
+    );
+    while let Some(pulling_info) = stream.next().await {
+        let info = pulling_info?;
+        // TODO: improove logging
+        println!("{info:?}");
+    }
+
+    Ok(())
+}
+
 pub async fn start_container(
-    docker: &mut Docker,
+    docker: &Docker,
     image_name: &str,
     tag: &str,
     container_name: &str,
@@ -92,25 +116,21 @@ pub async fn start_container(
     Ok(())
 }
 
-pub async fn pull_image(
-    docker: &mut Docker,
-    image_name: &str,
-    tag: &str,
+pub async fn container_iteractive_exec(
+    docker: &Docker,
+    container_name: &str,
+    priveleged: bool,
+    cmd: Vec<String>,
 ) -> anyhow::Result<()> {
-    let mut stream = docker.create_image(
-        Some(CreateImageOptions {
-            from_image: Some(image_name.to_string()),
-            tag: Some(tag.to_string()),
-            ..Default::default()
-        }),
-        None,
-        None,
-    );
-    while let Some(pulling_info) = stream.next().await {
-        let info = pulling_info?;
-        // TODO: improove logging
-        println!("{info:?}");
-    }
+    let config = ExecConfig {
+        cmd: Some(cmd),
+        attach_stdin: Some(true),
+        attach_stdout: Some(true),
+        attach_stderr: Some(true),
+        privileged: Some(priveleged),
+        ..Default::default()
+    };
+    docker.create_exec(container_name, config).await?;
 
     Ok(())
 }

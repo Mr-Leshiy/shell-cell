@@ -15,8 +15,11 @@ async fn main() -> anyhow::Result<()> {
     let path = Path::new("scell.yml");
     let scell_f = SCellFile::from_path(path)?;
     let scell = SCell::build(scell_f, path.to_path_buf(), None)?;
-    let mut buildkit = BuildKitD::start().await?;
+
+    let buildkit = BuildKitD::start().await?;
     buildkit.build_image(&scell).await?;
     buildkit.start_container(&scell).await?;
+    buildkit.run_shell(&scell).await?;
+
     Ok(())
 }

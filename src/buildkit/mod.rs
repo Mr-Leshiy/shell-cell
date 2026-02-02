@@ -5,7 +5,10 @@ mod docker;
 use bollard::Docker;
 
 use self::docker::{build_image, start_container};
-use crate::{buildkit::docker::pull_image, scell::SCell};
+use crate::{
+    buildkit::docker::{container_iteractive_exec, pull_image},
+    scell::SCell,
+};
 
 pub struct BuildKitD {
     docker: Docker,
@@ -25,39 +28,38 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> anyhow::Result<()> {
-        build_image(
-            &self.docker,
-            &scell.to_dockerfile(),
-            &image_name(scell),
-            "latest",
-        )
-        .await?;
+        build_image(&self.docker, &scell.to_dockerfile(), &name(scell), "latest").await?;
         Ok(())
     }
 
     pub async fn start_container(
-        &mut self,
+        &self,
         scell: &SCell,
     ) -> anyhow::Result<()> {
-        start_container(
-            &mut self.docker,
-            &image_name(scell),
-            "latest",
-            &image_name(scell),
-            vec![],
-        )
+        start_container(&self.docker, &name(scell), "latest", &name(scell), vec![]).await?;
+        Ok(())
+    }
+
+    pub async fn run_shell(
+        &self,
+        scell: &SCell,
+    ) -> anyhow::Result<()> {
+        container_iteractive_exec(&self.docker, &name(scell), true, vec![
+            "/bin/bash".to_string(),
+        ])
         .await?;
+
         Ok(())
     }
 }
 
-fn image_name(scell: &SCell) -> String {
-    const IMAGE_PREFIX: &str = "scell";
+fn name(scell: &SCell) -> String {
+    const PREFIX: &str = "scell";
 
-    format!("{IMAGE_PREFIX}-{}", scell.hex_hash())
+    format!("{PREFIX}-{}", scell.hex_hash())
 }
 
-async fn create_and_start_buildkit_container(docker: &mut Docker) -> anyhow::Result<()> {
+async fn create_and_start_buildkit_container(docker: &Docker) -> anyhow::Result<()> {
     const BUILDKIT_IMAGE: &str = "moby/buildkit";
     const BUILDKIT_TAG: &str = "v0.27.1";
     const BUILDKIT_CONTAINER_NAME: &str = "shell-cell-buildkitd";

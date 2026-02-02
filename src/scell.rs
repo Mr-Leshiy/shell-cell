@@ -8,6 +8,7 @@
 use std::{fmt::Write, hash::Hasher, path::PathBuf};
 
 use anyhow::Context;
+use itertools::Itertools;
 
 use crate::scell_file::{SCellFile, def::FromStmt, image::ImageDef, name::SCellName};
 
@@ -24,7 +25,11 @@ pub enum Link {
 }
 
 #[derive(Debug)]
-pub struct SCell(Vec<Link>);
+pub struct SCell {
+    links: Vec<Link>,
+    shell: Vec<String>,
+    hang: String,
+}
 
 impl SCell {
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
@@ -49,10 +54,17 @@ impl SCell {
         ))?;
 
         anyhow::ensure!(
-            entry_point.shell.is_some(),
+            !entry_point.shell.is_empty(),
             "{}+{entry_point_name} endpoint does not contain 'shell' statement",
             scell_path.display()
         );
+        let shell = entry_point.shell.clone();
+        let Some(hang) = entry_point.hang.clone() else {
+            anyhow::bail!(
+                "{}+{entry_point_name} endpoint does not contain 'hang' statement",
+                scell_path.display()
+            );
+        };
 
         let mut links = Vec::new();
 
@@ -90,7 +102,7 @@ impl SCell {
             }
         }
 
-        Ok(Self(links))
+        Ok(Self { links, shell, hang })
     }
 
     /// Calculates a fast, non-cryptographic 'metrohash' hash value.
@@ -98,7 +110,10 @@ impl SCell {
     pub fn hex_hash(&self) -> String {
         let mut hasher = metrohash::MetroHash64::new();
 
-        for link in self.0.iter() {
+        for v in &self.shell {
+            hasher.write(v.as_bytes());
+        }
+        for link in &self.links {
             match link {
                 Link::Root(root) => hasher.write(format!("{root}").as_bytes()),
                 Link::Node {
@@ -120,10 +135,11 @@ impl SCell {
     /// Makes a Dockerfile for building an image
     pub fn to_dockerfile(&self) -> String {
         let mut dockerfile = String::new();
-        for link in self.0.iter().rev() {
+        for link in self.links.iter().rev() {
             match link {
                 Link::Root(root) => {
                     let _ = writeln!(&mut dockerfile, "FROM {root}");
+                    let _ = writeln!(&mut dockerfile, "SHELL [{}]", self.shell.iter().map(|v| format!("\"{v}\"")).join(","));
                 },
                 Link::Node { commands, .. } => {
                     for cmd in commands {
@@ -133,7 +149,7 @@ impl SCell {
             }
         }
         // TODO: find better solution how to hang the container
-        let _ = writeln!(&mut dockerfile, "ENTRYPOINT while true; do sleep 3600; done");
+        let _ = writeln!(&mut dockerfile, "ENTRYPOINT {}", self.hang);
         dockerfile
     }
 }
