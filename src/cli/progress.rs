@@ -54,7 +54,7 @@ impl Progress {
         let pb = self.multi.add(ProgressBar::new(self.total_steps));
         pb.set_style(self.main_style.clone());
         pb.set_position(self.current_step);
-        pb.set_message(msg.to_string());
+        pb.set_message(msg.clone());
 
         let spinner = self.multi.add(ProgressBar::new_spinner());
         spinner.enable_steady_tick(Duration::from_millis(100));

@@ -15,7 +15,7 @@ impl<'de> serde::Deserialize<'de> for ShellDef {
         };
 
         Ok(Self {
-            bin_path: shell.to_string(),
+            bin_path: shell.clone(),
             commands: commands.to_vec(),
         })
     }

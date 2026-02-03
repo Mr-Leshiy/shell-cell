@@ -92,17 +92,13 @@ impl PtyStdStreams {
         let _jh = tokio::spawn(async move {
             while let Some(Ok(msg)) = output.next().await {
                 match msg {
-                    LogOutput::StdOut { message } => {
+                    LogOutput::StdOut { message }
+                    | LogOutput::StdIn { message }
+                    | LogOutput::Console { message } => {
                         stdout_in.send(message).await?;
                     },
                     LogOutput::StdErr { message } => {
                         stderr_in.send(message).await?;
-                    },
-                    LogOutput::StdIn { message } => {
-                        stdout_in.send(message).await?;
-                    },
-                    LogOutput::Console { message } => {
-                        stdout_in.send(message).await?;
                     },
                 }
             }

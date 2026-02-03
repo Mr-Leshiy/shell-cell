@@ -10,6 +10,8 @@ pub struct SCellDef {
     #[serde(default)]
     pub run: Vec<String>,
     #[serde(default)]
+    pub copy: Vec<String>,
+    #[serde(default)]
     pub shell: Option<ShellDef>,
     pub hang: Option<String>,
 }
