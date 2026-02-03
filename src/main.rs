@@ -14,8 +14,6 @@ use crate::cli::Cli;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::try_parse()?;
-
-    cli.run().await?;
-
+    cli.exec().await?;
     Ok(())
 }

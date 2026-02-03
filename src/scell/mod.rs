@@ -131,7 +131,6 @@ impl SCell {
         // TODO: find better solution how to hang the container
         self.shell.to_dockerfile(&mut dockerfile);
         let _ = writeln!(&mut dockerfile, "ENTRYPOINT {}", self.hang);
-        println!("{dockerfile}");
         dockerfile
     }
 }

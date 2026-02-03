@@ -1,6 +1,6 @@
 use std::{fmt::Write, path::PathBuf};
 
-use crate::scell_file::{copy::CopyStmt, image::ImageDef, name::SCellName, build::BuildStmt};
+use crate::scell_file::{build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName};
 
 #[derive(Debug, Hash)]
 pub enum Link {
@@ -22,7 +22,9 @@ impl Link {
             Link::Root(root) => {
                 let _ = writeln!(dockerfile, "FROM {root}");
             },
-            Link::Node { build: run, copy, .. } => {
+            Link::Node {
+                build: run, copy, ..
+            } => {
                 copy.to_dockerfile(dockerfile);
                 run.to_dockerfile(dockerfile);
             },

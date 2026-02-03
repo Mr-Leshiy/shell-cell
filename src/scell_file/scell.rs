@@ -1,7 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::scell_file::{
-    copy::CopyStmt, image::ImageDef, name::SCellName, build::BuildStmt, shell::ShellStmt,
+    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, shell::ShellStmt,
 };
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';

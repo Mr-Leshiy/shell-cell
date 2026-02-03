@@ -39,63 +39,80 @@ pub enum Commands {
 }
 
 impl Cli {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub async fn exec(self) -> anyhow::Result<()> {
         if self.command.is_none() {
-            let mut pb = Progress::new(4)?;
+            let verbose = self.verbose;
+            self.run().await.map_err(|e| {
+                if verbose {
+                    e
+                } else {
+                    anyhow::anyhow!("{e}\n To enable verbose output use -v, --verbose flags")
+                }
+            })?;
+        }
 
-            // STEP 1
-            let scell = pb
-                .run_step(
-                    format!(
-                        "⚙️    Processing Shell-Cell source file '{}'...",
-                        self.scell_path.display()
-                    ),
-                    async || {
-                        let scell_f = SCellFile::from_path(&self.scell_path)?;
-                        SCell::compile(scell_f, self.scell_path, None)
-                    },
-                )
-                .await?;
+        Ok(())
+    }
 
-            // STEP 2
-            let buildkit = pb
-                .run_step(
-                    "📡    Connecting to the BuildKit...".to_string(),
-                    async || BuildKitD::start().await,
-                )
-                .await?;
+    async fn run(self) -> anyhow::Result<()> {
+        let mut pb = Progress::new(4)?;
 
-            // STEP 3
-            pb.run_build_step(
-                "📝    Building Shell-Cell image...".to_string(),
-                async |sp| {
-                    buildkit
-                        .build_image(&scell, {
-                            |msg| {
-                                if self.verbose {
-                                    sp.println(format!("    {msg}"));
-                                }
-                            }
-                        })
-                        .await?;
-                    Ok(())
+        // STEP 1
+        let scell = pb
+            .run_step(
+                format!(
+                    "📝    Processing Shell-Cell source file '{}'...",
+                    self.scell_path.display()
+                ),
+                async || {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    let scell_f = SCellFile::from_path(&self.scell_path)?;
+                    SCell::compile(scell_f, self.scell_path, None)
                 },
             )
             .await?;
 
-            // STEP 4
-            let pty = pb
-                .run_step(
-                    "📝    Starting Shell-Cell container...".to_string(),
-                    async || {
-                        buildkit.start_container(&scell).await?;
-                        buildkit.attach_to_shell(&scell).await
-                    },
-                )
-                .await?;
+        // STEP 2
+        let buildkit = pb
+            .run_step(
+                "📡    Connecting to the BuildKit...".to_string(),
+                async || {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    BuildKitD::start().await
+                },
+            )
+            .await?;
 
-            pty::run(&pty).await?;
-        }
+        // STEP 3
+        pb.run_build_step(
+            "📝    Building Shell-Cell image...".to_string(),
+            async |sp| {
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                buildkit
+                    .build_image(&scell, {
+                        |msg| {
+                            if self.verbose {
+                                sp.println(format!("    {msg}"));
+                            }
+                        }
+                    })
+                    .await?;
+                Ok(())
+            },
+        )
+        .await?;
+
+        // STEP 4
+        let pty = pb
+            .run_step(
+                "🚀    Starting Shell-Cell container...".to_string(),
+                async || {
+                    buildkit.start_container(&scell).await?;
+                    buildkit.attach_to_shell(&scell).await
+                },
+            )
+            .await?;
+        pty::run(&pty).await?;
 
         Ok(())
     }
