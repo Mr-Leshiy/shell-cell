@@ -5,6 +5,8 @@
 //! Not necessarily the docker base image, but it must be some image which would be a
 //! "base" for entire Shell-Cell.
 
+mod link;
+
 use std::{
     fmt::Write,
     hash::{Hash, Hasher},
@@ -12,28 +14,18 @@ use std::{
 };
 
 use anyhow::Context;
-use itertools::Itertools;
 
-use crate::scell_file::{
-    SCellFile, def::FromStmt, image::ImageDef, name::SCellName, shell::ShellDef,
+use crate::{
+    scell::link::Link,
+    scell_file::{SCellFile, name::SCellName, scell::FromStmt, shell::ShellStmt},
 };
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
-#[derive(Debug, Hash)]
-pub enum Link {
-    Root(ImageDef),
-    Node {
-        name: SCellName,
-        path: PathBuf,
-        commands: Vec<String>,
-    },
-}
-
 #[derive(Debug)]
 pub struct SCell {
     links: Vec<Link>,
-    shell: ShellDef,
+    shell: ShellStmt,
     hang: String,
 }
 
@@ -87,7 +79,8 @@ impl SCell {
             links.push(Link::Node {
                 name: scell_walk_name.clone(),
                 path: scell_walk_path.clone(),
-                commands: scell_walk_def.run.clone(),
+                copy: scell_walk_def.copy.clone(),
+                run: scell_walk_def.run.clone(),
             });
 
             match scell_walk_def.from {
@@ -95,7 +88,7 @@ impl SCell {
                     links.push(Link::Root(docker_image_def));
                     break;
                 },
-                FromStmt::SCellDef {
+                FromStmt::SCellRef {
                     scell_path,
                     scell_def_name,
                 } => {
@@ -133,29 +126,12 @@ impl SCell {
     pub fn to_dockerfile(&self) -> String {
         let mut dockerfile = String::new();
         for link in self.links.iter().rev() {
-            match link {
-                Link::Root(root) => {
-                    let _ = writeln!(&mut dockerfile, "FROM {root}");
-                },
-                Link::Node { commands, .. } => {
-                    for cmd in commands {
-                        let _ = writeln!(&mut dockerfile, "RUN {cmd}");
-                    }
-                },
-            }
+            link.to_dockerfile(&mut dockerfile);
         }
-        let _ = writeln!(
-            &mut dockerfile,
-            "SHELL [\"{}\", {}]",
-            self.shell.bin_path,
-            self.shell
-                .commands
-                .iter()
-                .map(|v| format!("\"{v}\""))
-                .join(",")
-        );
         // TODO: find better solution how to hang the container
+        self.shell.to_dockerfile(&mut dockerfile);
         let _ = writeln!(&mut dockerfile, "ENTRYPOINT {}", self.hang);
+        println!("{dockerfile}");
         dockerfile
     }
 }

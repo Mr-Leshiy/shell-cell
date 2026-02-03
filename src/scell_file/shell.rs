@@ -1,10 +1,28 @@
+use std::fmt::Write;
+
+use itertools::Itertools;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ShellDef {
+pub struct ShellStmt {
     pub bin_path: String,
     pub commands: Vec<String>,
 }
 
-impl<'de> serde::Deserialize<'de> for ShellDef {
+impl ShellStmt {
+    pub fn to_dockerfile(
+        &self,
+        dockerfile: &mut String,
+    ) {
+        let _ = writeln!(
+            dockerfile,
+            "SHELL [\"{}\", {}]",
+            self.bin_path,
+            self.commands.iter().map(|v| format!("\"{v}\"")).join(",")
+        );
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for ShellStmt {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
         let vec = Vec::<String>::deserialize(deserializer)?;

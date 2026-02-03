@@ -1,13 +1,15 @@
 //! Implements a parsing and processing of Shell-Cell '.yaml' files
 
-pub mod def;
+pub mod copy;
 pub mod image;
 pub mod name;
+pub mod run;
+pub mod scell;
 pub mod shell;
 
 use std::{collections::HashMap, path::Path};
 
-use self::def::SCellDef;
+use self::scell::SCellStmt;
 use crate::scell_file::name::SCellName;
 
 const SUPPORTED_VERSION: &str = "0.1";
@@ -16,7 +18,7 @@ const SUPPORTED_VERSION: &str = "0.1";
 pub struct SCellFile {
     version: String,
     #[serde(flatten)]
-    pub cells: HashMap<SCellName, SCellDef>,
+    pub cells: HashMap<SCellName, SCellStmt>,
 }
 
 impl SCellFile {

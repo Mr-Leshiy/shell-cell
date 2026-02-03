@@ -1,24 +1,26 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell_file::{image::ImageDef, name::SCellName, shell::ShellDef};
+use crate::scell_file::{
+    copy::CopyStmt, image::ImageDef, name::SCellName, run::RunStmt, shell::ShellStmt,
+};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
-#[derive(Debug, serde::Deserialize, Hash)]
-pub struct SCellDef {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
+pub struct SCellStmt {
     pub from: FromStmt,
     #[serde(default)]
-    pub run: Vec<String>,
+    pub run: RunStmt,
     #[serde(default)]
-    pub copy: Vec<String>,
+    pub copy: CopyStmt,
     #[serde(default)]
-    pub shell: Option<ShellDef>,
+    pub shell: Option<ShellStmt>,
     pub hang: Option<String>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FromStmt {
-    SCellDef {
+    SCellRef {
         scell_path: Option<PathBuf>,
         scell_def_name: SCellName,
     },
@@ -31,13 +33,13 @@ impl FromStr for FromStmt {
     fn from_str(str: &str) -> Result<Self, Self::Err> {
         match str.split_once(SCELL_DEF_FROM_DELIMITER) {
             Some(("", suffix)) => {
-                Ok(Self::SCellDef {
+                Ok(Self::SCellRef {
                     scell_path: None,
                     scell_def_name: suffix.parse()?,
                 })
             },
             Some((prefix, suffix)) => {
-                Ok(Self::SCellDef {
+                Ok(Self::SCellRef {
                     scell_path: PathBuf::from_str(prefix).map(Some)?,
                     scell_def_name: suffix.parse()?,
                 })
@@ -68,11 +70,11 @@ mod tests {
         SCellName::from_str(s).unwrap()
     }
 
-    #[test_case("+my-cell" => FromStmt::SCellDef { 
+    #[test_case("+my-cell" => FromStmt::SCellRef { 
         scell_path: None,
         scell_def_name: name("my-cell") 
     } ; "local cell")]
-    #[test_case("path/to/dir+my-cell" => FromStmt::SCellDef { 
+    #[test_case("path/to/dir+my-cell" => FromStmt::SCellRef { 
         scell_path: Some(PathBuf::from("path/to/dir")), 
         scell_def_name: name("my-cell") 
     } ; "path and cell")]
