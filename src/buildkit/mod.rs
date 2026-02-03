@@ -6,7 +6,7 @@ use bollard::Docker;
 
 use self::docker::{build_image, start_container};
 use crate::{
-    buildkit::docker::{container_iteractive_exec, pull_image},
+    buildkit::docker::{container_iteractive_exec, pull_image, stop_container},
     pty::PtyStdStreams,
     scell::SCell,
 };
@@ -55,6 +55,14 @@ impl BuildKitD {
         scell: &SCell,
     ) -> anyhow::Result<()> {
         start_container(&self.docker, &name(scell), "latest", &name(scell), vec![]).await?;
+        Ok(())
+    }
+
+    pub async fn stop_container(
+        &self,
+        scell: &SCell,
+    ) -> anyhow::Result<()> {
+        stop_container(&self.docker, &name(scell)).await?;
         Ok(())
     }
 

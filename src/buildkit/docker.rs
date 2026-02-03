@@ -81,6 +81,7 @@ pub async fn start_container(
                     .into_iter()
                     .collect(),
                 )
+                .all(true)
                 .build(),
         ))
         .await?;
@@ -104,6 +105,14 @@ pub async fn start_container(
 
     docker.start_container(container_name, None).await?;
 
+    Ok(())
+}
+
+pub async fn stop_container(
+    docker: &Docker,
+    container_name: &str,
+) -> anyhow::Result<()> {
+    docker.stop_container(container_name, None).await?;
     Ok(())
 }
 

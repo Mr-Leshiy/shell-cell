@@ -40,22 +40,29 @@ pub enum Commands {
 
 impl Cli {
     pub async fn exec(self) -> anyhow::Result<()> {
-        if self.command.is_none() {
-            let verbose = self.verbose;
-            self.run().await.map_err(|e| {
-                if verbose {
-                    e
-                } else {
-                    anyhow::anyhow!("{e}\n To enable verbose output use -v, --verbose flags")
-                }
-            })?;
+        let verbose = self.verbose;
+        self.exec_inner().await.map_err(|e| {
+            if verbose {
+                e
+            } else {
+                anyhow::anyhow!("{e}\n To enable verbose output use -v, --verbose flags")
+            }
+        })?;
+
+        Ok(())
+    }
+
+    pub async fn exec_inner(self) -> anyhow::Result<()> {
+        match self.command {
+            None => self.run().await?,
+            Some(Commands::Ls) => self.ls().await?,
         }
 
         Ok(())
     }
 
     async fn run(self) -> anyhow::Result<()> {
-        let mut pb = Progress::new(4)?;
+        let mut pb = Progress::new(5)?;
 
         // STEP 1
         let scell = pb
@@ -65,7 +72,6 @@ impl Cli {
                     self.scell_path.display()
                 ),
                 async || {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                     let scell_f = SCellFile::from_path(&self.scell_path)?;
                     SCell::compile(scell_f, self.scell_path, None)
                 },
@@ -75,19 +81,15 @@ impl Cli {
         // STEP 2
         let buildkit = pb
             .run_step(
-                "📡    Connecting to the BuildKit...".to_string(),
-                async || {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    BuildKitD::start().await
-                },
+                "📡    Connecting to the 'BuildKit'...".to_string(),
+                async || BuildKitD::start().await,
             )
             .await?;
 
         // STEP 3
         pb.run_build_step(
-            "📝    Building Shell-Cell image...".to_string(),
+            "📝    Building 'Shell-Cell' image...".to_string(),
             async |sp| {
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 buildkit
                     .build_image(&scell, {
                         |msg| {
@@ -97,7 +99,6 @@ impl Cli {
                         }
                     })
                     .await?;
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 Ok(())
             },
         )
@@ -106,14 +107,29 @@ impl Cli {
         // STEP 4
         let pty = pb
             .run_step(
-                "🚀    Starting Shell-Cell container...".to_string(),
+                "🚀    Starting 'Shell-Cell' container...".to_string(),
                 async || {
                     buildkit.start_container(&scell).await?;
                     buildkit.attach_to_shell(&scell).await
                 },
             )
             .await?;
+
         pty::run(&pty).await?;
+
+        // FINAL STEP
+        pb.run_spinner(
+            "🏁    Stopping 'Shell-Cell' container...".to_string(),
+            async || buildkit.stop_container(&scell).await,
+        )
+        .await?;
+
+        println!("Finished 'Shell-Cell' session\n<Press any key to exit>");
+        Ok(())
+    }
+
+    async fn ls(self) -> anyhow::Result<()> {
+        let _buildkit = BuildKitD::start().await?;
 
         Ok(())
     }

@@ -4,7 +4,7 @@
 - [X] Add `copy` statement.
 - [X] Add `workspace` statement.
 - [ ] Add "a new updates" notification message at the start of the application.
-- [ ] Process global `Shell-Cell` file  `~/.scell/global.yml`.
+- [X] Process global `Shell-Cell` file  `~/.scell/global.yml`.
 - [ ] Add docker-compose like configuration to each Shell-Cell.
 - [ ] Integrate metadata information into the images.
 - [ ] CLI features e.g. `ls`, `rm`.

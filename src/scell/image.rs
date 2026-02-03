@@ -102,7 +102,8 @@ fn prepare_copy_stmt<W: std::io::Write>(
                     .parent()
                     .context("Must have a parent as its a path to the file")?;
                 let item = ctx_path.join(item);
-                let mut f = std::fs::File::open(&item)?;
+                let mut f = std::fs::File::open(&item)
+                    .context(format!("Cannot open file {}", item.display()))?;
                 let item: PathBuf = std::fs::canonicalize(item)?
                     .components()
                     .filter(|c| {
