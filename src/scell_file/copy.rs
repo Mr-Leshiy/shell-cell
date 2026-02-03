@@ -10,7 +10,7 @@ impl<'de> serde::Deserialize<'de> for CopyStmt {
 
         Ok(Self(
             copy.into_iter()
-                .map(|s| s.split(' ').map(PathBuf::from).collect())
+                .map(|s| s.split_whitespace().map(PathBuf::from).collect())
                 .collect(),
         ))
     }
