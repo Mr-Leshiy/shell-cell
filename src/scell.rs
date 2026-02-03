@@ -5,7 +5,11 @@
 //! Not necessarily the docker base image, but it must be some image which would be a
 //! "base" for entire Shell-Cell.
 
-use std::{fmt::Write, hash::Hasher, path::PathBuf};
+use std::{
+    fmt::Write,
+    hash::{Hash, Hasher},
+    path::PathBuf,
+};
 
 use anyhow::Context;
 use itertools::Itertools;
@@ -16,7 +20,7 @@ use crate::scell_file::{
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
-#[derive(Debug)]
+#[derive(Debug, Hash)]
 pub enum Link {
     Root(ImageDef),
     Node {
@@ -117,26 +121,11 @@ impl SCell {
     pub fn hex_hash(&self) -> String {
         let mut hasher = metrohash::MetroHash64::new();
 
-        hasher.write(self.shell.bin_path.as_bytes());
-        for v in &self.shell.commands {
-            hasher.write(v.as_bytes());
-        }
         for link in &self.links {
-            match link {
-                Link::Root(root) => hasher.write(format!("{root}").as_bytes()),
-                Link::Node {
-                    name,
-                    path,
-                    commands,
-                } => {
-                    hasher.write(format!("{name}").as_bytes());
-                    hasher.write(format!("{}", path.display()).as_bytes());
-                    for cmd in commands {
-                        hasher.write(cmd.as_bytes());
-                    }
-                },
-            }
+            link.hash(&mut hasher);
         }
+        self.shell.hash(&mut hasher);
+        self.hang.hash(&mut hasher);
         format!("{:x}", hasher.finish())
     }
 

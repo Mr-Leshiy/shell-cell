@@ -4,7 +4,7 @@ use crate::scell_file::{image::ImageDef, name::SCellName, shell::ShellDef};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Hash)]
 pub struct SCellDef {
     pub from: FromStmt,
     #[serde(default)]
@@ -14,7 +14,7 @@ pub struct SCellDef {
     pub hang: Option<String>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum FromStmt {
     SCellDef {
         scell_path: Option<PathBuf>,

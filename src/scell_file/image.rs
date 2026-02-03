@@ -2,7 +2,7 @@ use std::{fmt::Display, str::FromStr};
 
 const IMAGE_TAG_DELIMETER: char = ':';
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ImageDef {
     pub image: String,
     pub tag: Option<String>,
