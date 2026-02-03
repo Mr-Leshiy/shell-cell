@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Deserialize)]
-pub struct RunStmt(pub Vec<String>);
+pub struct BuildStmt(pub Vec<String>);
 
-impl RunStmt {
+impl BuildStmt {
     pub fn to_dockerfile(
         &self,
         dockerfile: &mut String,

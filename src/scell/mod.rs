@@ -80,7 +80,7 @@ impl SCell {
                 name: scell_walk_name.clone(),
                 path: scell_walk_path.clone(),
                 copy: scell_walk_def.copy.clone(),
-                run: scell_walk_def.run.clone(),
+                build: scell_walk_def.build.clone(),
             });
 
             match scell_walk_def.from {

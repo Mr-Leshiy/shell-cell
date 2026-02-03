@@ -1,7 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::scell_file::{
-    copy::CopyStmt, image::ImageDef, name::SCellName, run::RunStmt, shell::ShellStmt,
+    copy::CopyStmt, image::ImageDef, name::SCellName, build::BuildStmt, shell::ShellStmt,
 };
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
@@ -10,7 +10,7 @@ const SCELL_DEF_FROM_DELIMITER: char = '+';
 pub struct SCellStmt {
     pub from: FromStmt,
     #[serde(default)]
-    pub run: RunStmt,
+    pub build: BuildStmt,
     #[serde(default)]
     pub copy: CopyStmt,
     #[serde(default)]

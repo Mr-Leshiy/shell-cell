@@ -3,7 +3,7 @@
 pub mod copy;
 pub mod image;
 pub mod name;
-pub mod run;
+pub mod build;
 pub mod scell;
 pub mod shell;
 
