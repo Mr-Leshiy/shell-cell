@@ -41,3 +41,22 @@ impl FromStr for ImageDef {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use test_case::test_case;
+
+    use super::*;
+
+    #[test_case("image" => ImageDef { 
+        image: "image".to_string(),
+        tag: None
+    } ; "only image name")]
+    #[test_case("image:tag" => ImageDef { 
+        image: "image".to_string(),
+        tag: Some("tag".to_string()) 
+    } ; "image name with tag")]
+    fn test_from_parsing(input: &str) -> ImageDef {
+        ImageDef::from_str(input).expect("Should be a valid input")
+    }
+}

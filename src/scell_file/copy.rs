@@ -1,7 +1,6 @@
 use std::{ops::Deref, path::PathBuf};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-#[derive(serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct CopyStmt(pub Vec<Vec<PathBuf>>);
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
@@ -31,11 +30,11 @@ impl<'de> serde::Deserialize<'de> for CopyStmtEntry {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use std::path::PathBuf;
 
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case("entry" => CopyStmtEntry(
         vec![
@@ -58,6 +57,6 @@ mod tests {
     )
     ; "two entries more spaces")]
     fn test_from_parsing(input: &str) -> CopyStmtEntry {
-       input.into()
+        input.into()
     }
 }
