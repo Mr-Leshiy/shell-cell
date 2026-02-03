@@ -2,7 +2,8 @@
 
 ![logo](./logo.png)
 
-> Prototype, under heavy development
+
+> ⚠️ Prototype, under heavy development
 
 Lightweight CLI app designed to spin up instant, isolated, and reproducible development shell sessions.
 
