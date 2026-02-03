@@ -10,7 +10,7 @@ mod link;
 use std::{
     fmt::Write,
     hash::{Hash, Hasher},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use anyhow::Context;
@@ -18,7 +18,10 @@ use itertools::Itertools;
 
 use crate::{
     scell::link::Link,
-    scell_file::{SCellFile, name::SCellName, scell::FromStmt, shell::ShellStmt},
+    scell_file::{
+        SCellFile, build::BuildStmt, copy::CopyStmt, name::SCellName, scell::FromStmt,
+        shell::ShellStmt,
+    },
 };
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
@@ -138,77 +141,16 @@ impl SCell {
                     let _ = writeln!(dockerfile, "FROM {root}");
                 },
                 Link::Node {
-                    build,
-                    copy,
-                    path: ctx_path,
-                    ..
+                    build, copy, path, ..
                 } => {
-                    // Following Docker's `COPY` syntax, the last element in each
-                    // sequence is treated as the **destination**
-                    // inside the container and is excluded.
-                    //
-                    // All other elements are treated as **source paths** and are joined
-                    // with the `ctx_path` to create absolute or relative paths rooted in the build
-                    // context.
-                    for e in &copy.0 {
-                        let mut iter = e.iter().peekable();
-                        let mut cp_tmt = String::new();
-                        while let Some(item) = iter.next() {
-                            // The last item is the destination to where to copy
-                            // https://docs.docker.com/reference/dockerfile/#copy
-                            if iter.peek().is_none() {
-                                let _ = write!(&mut cp_tmt, " {}", item.display());
-                            } else {
-                                // Tweaking the original item path from the `CopyStmt` by resolving
-                                // it with the corresponding
-                                // Shell-Cell source file location where
-                                // `CopyStmt` locates. Making a path
-                                // a relative from the root
-                                // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
-                                // Copying files into the tar archive.
-                                let ctx_path = ctx_path
-                                    .parent()
-                                    .context("Must have a parent as its a path to the file")?;
-                                let item = ctx_path.join(item);
-                                let mut f = std::fs::File::open(&item)?;
-                                let item: PathBuf = std::fs::canonicalize(item)?
-                                    .components()
-                                    .filter(|c| {
-                                        !matches!(
-                                            c,
-                                            std::path::Component::Prefix(_)
-                                                | std::path::Component::RootDir
-                                        )
-                                    })
-                                    .collect();
+                    prepare_copy_stmt(&mut dockerfile, &mut tar, copy, path)?;
 
-                                tar.append_file(&item, &mut f)?;
-                                let _ = write!(&mut cp_tmt, " {}", item.display());
-                            }
-                        }
-
-                        let _ = writeln!(dockerfile, "COPY {cp_tmt}",);
-                    }
-
-                    for e in &build.0 {
-                        let _ = writeln!(dockerfile, "RUN {e}");
-                    }
+                    prepare_build_stmt(&mut dockerfile, build);
                 },
             }
         }
-
         // TODO: find better solution how to hang the container
-        let _ = writeln!(
-            dockerfile,
-            "SHELL [\"{}\", {}]",
-            self.shell.bin_path,
-            self.shell
-                .commands
-                .iter()
-                .map(|v| format!("\"{v}\""))
-                .join(",")
-        );
-        let _ = writeln!(&mut dockerfile, "ENTRYPOINT {}", self.hang);
+        prepare_shell_and_hang_stmt(&mut dockerfile, &self.shell, &self.hang);
 
         // Attach generated dockerfile string to tar
         let mut header = tar::Header::new_gnu();
@@ -220,4 +162,85 @@ impl SCell {
 
         Ok((tar, DOCKERFILE_NAME))
     }
+}
+
+/// Following Docker's `COPY` syntax, the last element in each
+/// sequence is treated as the **destination**
+/// inside the container and is excluded.
+///
+/// All other elements are treated as **source paths** and are joined
+/// with the `ctx_path` to create absolute or relative paths rooted in the build
+/// context.
+fn prepare_copy_stmt<W: std::io::Write>(
+    dockerfile: &mut String,
+    tar: &mut tar::Builder<W>,
+    copy_stmt: &CopyStmt,
+    ctx_path: &Path,
+) -> anyhow::Result<()> {
+    for e in &copy_stmt.0 {
+        let mut iter = e.iter().peekable();
+        let mut cp_tmt = String::new();
+        while let Some(item) = iter.next() {
+            // The last item is the destination to where to copy
+            // https://docs.docker.com/reference/dockerfile/#copy
+            if iter.peek().is_none() {
+                let _ = write!(&mut cp_tmt, " {}", item.display());
+            } else {
+                // Tweaking the original item path from the `CopyStmt` by resolving
+                // it with the corresponding
+                // Shell-Cell source file location where
+                // `CopyStmt` locates. Making a path
+                // a relative from the root
+                // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
+                // Copying files into the tar archive.
+                let ctx_path = ctx_path
+                    .parent()
+                    .context("Must have a parent as its a path to the file")?;
+                let item = ctx_path.join(item);
+                let mut f = std::fs::File::open(&item)?;
+                let item: PathBuf = std::fs::canonicalize(item)?
+                    .components()
+                    .filter(|c| {
+                        !matches!(
+                            c,
+                            std::path::Component::Prefix(_) | std::path::Component::RootDir
+                        )
+                    })
+                    .collect();
+
+                tar.append_file(&item, &mut f)?;
+                let _ = write!(&mut cp_tmt, " {}", item.display());
+            }
+        }
+
+        let _ = writeln!(dockerfile, "COPY {cp_tmt}",);
+    }
+    Ok(())
+}
+
+fn prepare_build_stmt(
+    dockerfile: &mut String,
+    build_stm: &BuildStmt,
+) {
+    for e in &build_stm.0 {
+        let _ = writeln!(dockerfile, "RUN {e}");
+    }
+}
+
+fn prepare_shell_and_hang_stmt(
+    dockerfile: &mut String,
+    shell_stmt: &ShellStmt,
+    hang_stmt: &str,
+) {
+    let _ = writeln!(
+        dockerfile,
+        "SHELL [\"{}\", {}]",
+        shell_stmt.bin_path,
+        shell_stmt
+            .commands
+            .iter()
+            .map(|v| format!("\"{v}\""))
+            .join(",")
+    );
+    let _ = writeln!(dockerfile, "ENTRYPOINT {}", hang_stmt);
 }
