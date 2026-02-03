@@ -137,7 +137,7 @@ fn prepare_workspace_stmt(
     workspace_stmt: &WorkspaceStmt,
 ) {
     if let Some(workspace) = &workspace_stmt.0 {
-        let _ = writeln!(dockerfile, "WORKDIR {}", workspace);
+        let _ = writeln!(dockerfile, "WORKDIR {workspace}");
     }
 }
 
@@ -156,5 +156,5 @@ fn prepare_shell_and_hang_stmt(
             .map(|v| format!("\"{v}\""))
             .join(",")
     );
-    let _ = writeln!(dockerfile, "ENTRYPOINT {}", hang_stmt);
+    let _ = writeln!(dockerfile, "ENTRYPOINT {hang_stmt}");
 }

@@ -1,7 +1,7 @@
 use std::{ops::Deref, path::PathBuf};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Deserialize)]
-pub struct CopyStmt(pub Vec<Vec<PathBuf>>);
+pub struct CopyStmt(pub Vec<CopyStmtEntry>);
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct CopyStmtEntry(Vec<PathBuf>);

@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use anyhow::Context;
 
 use super::{Link, SCell};
-use crate::scell_file::{SCellFile, name::SCellName, scell::FromStmt};
+use crate::{
+    scell_file::{SCellFile, name::SCellName, scell::FromStmt},
+    scell_home_dir,
+};
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
@@ -44,6 +47,12 @@ impl SCell {
 
         let mut links = Vec::new();
 
+        // Extend `cells` with 'global.yml' file
+        if let Some(mut global) = global()? {
+            global.cells.extend(scell_f.cells);
+            scell_f.cells = global.cells;
+        }
+
         let mut scell_walk_f = scell_f;
         let mut scell_walk_def = entry_point;
         let mut scell_walk_name = entry_point_name;
@@ -82,4 +91,19 @@ impl SCell {
 
         Ok(Self { links, shell, hang })
     }
+}
+
+fn global() -> anyhow::Result<Option<SCellFile>> {
+    const SCELL_GLOBAL: &str = "global.yml";
+    let scell_home = scell_home_dir()?;
+    SCellFile::from_path(scell_home.join(SCELL_GLOBAL))
+        .map(Some)
+        .or_else(|e| {
+            let io_e = e.downcast::<std::io::Error>()?;
+            if io_e.kind() == std::io::ErrorKind::NotFound {
+                Ok(None)
+            } else {
+                Err(io_e.into())
+            }
+        })
 }
