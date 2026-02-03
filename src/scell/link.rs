@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
-use crate::scell_file::{build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName};
+use crate::scell_file::{
+    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, workspace::WorkspaceStmt,
+};
 
 #[derive(Debug, Hash)]
 pub enum Link {
@@ -8,6 +10,7 @@ pub enum Link {
     Node {
         name: SCellName,
         path: PathBuf,
+        workspace: WorkspaceStmt,
         copy: CopyStmt,
         build: BuildStmt,
     },

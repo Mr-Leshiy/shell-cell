@@ -2,6 +2,7 @@ use std::{path::PathBuf, str::FromStr};
 
 use crate::scell_file::{
     build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, shell::ShellStmt,
+    workspace::WorkspaceStmt,
 };
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
@@ -9,6 +10,8 @@ const SCELL_DEF_FROM_DELIMITER: char = '+';
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct SCellStmt {
     pub from: FromStmt,
+    #[serde(default)]
+    pub workspace: WorkspaceStmt,
     #[serde(default)]
     pub build: BuildStmt,
     #[serde(default)]

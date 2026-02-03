@@ -6,6 +6,7 @@ pub mod image;
 pub mod name;
 pub mod scell;
 pub mod shell;
+pub mod workspace;
 
 use std::{collections::HashMap, path::Path};
 

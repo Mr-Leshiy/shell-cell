@@ -20,7 +20,7 @@ use crate::{
     scell::link::Link,
     scell_file::{
         SCellFile, build::BuildStmt, copy::CopyStmt, name::SCellName, scell::FromStmt,
-        shell::ShellStmt,
+        shell::ShellStmt, workspace::WorkspaceStmt,
     },
 };
 
@@ -83,6 +83,7 @@ impl SCell {
             links.push(Link::Node {
                 name: scell_walk_name.clone(),
                 path: scell_walk_path.clone(),
+                workspace: scell_walk_def.workspace.clone(),
                 copy: scell_walk_def.copy.clone(),
                 build: scell_walk_def.build.clone(),
             });
@@ -141,10 +142,14 @@ impl SCell {
                     let _ = writeln!(dockerfile, "FROM {root}");
                 },
                 Link::Node {
-                    build, copy, path, ..
+                    build,
+                    copy,
+                    path,
+                    workspace,
+                    ..
                 } => {
+                    prepare_workspace_stmt(&mut dockerfile, workspace);
                     prepare_copy_stmt(&mut dockerfile, &mut tar, copy, path)?;
-
                     prepare_build_stmt(&mut dockerfile, build);
                 },
             }
@@ -224,6 +229,15 @@ fn prepare_build_stmt(
 ) {
     for e in &build_stm.0 {
         let _ = writeln!(dockerfile, "RUN {e}");
+    }
+}
+
+fn prepare_workspace_stmt(
+    dockerfile: &mut String,
+    workspace_stmt: &WorkspaceStmt,
+) {
+    if let Some(workspace) = &workspace_stmt.0 {
+        let _ = writeln!(dockerfile, "WORKDIR {}", workspace);
     }
 }
 
