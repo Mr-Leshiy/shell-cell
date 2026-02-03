@@ -30,11 +30,13 @@ impl BuildKitD {
         scell: &SCell,
         log_fn: impl Fn(String),
     ) -> anyhow::Result<()> {
+        let (tar, dockerfile_path) = scell.prepare_image_tar_artifact()?;
         build_image(
             &self.docker,
-            &scell.to_dockerfile(),
             &name(scell),
             "latest",
+            dockerfile_path,
+            tar,
             |info| {
                 if let Some(stream) = info.stream {
                     log_fn(stream);

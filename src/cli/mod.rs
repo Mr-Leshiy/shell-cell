@@ -97,6 +97,7 @@ impl Cli {
                         }
                     })
                     .await?;
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 Ok(())
             },
         )

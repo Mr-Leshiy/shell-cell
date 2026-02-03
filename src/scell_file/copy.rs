@@ -1,24 +1,7 @@
-use std::{fmt::Write, path::PathBuf};
-
-use itertools::Itertools;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct CopyStmt(pub Vec<Vec<PathBuf>>);
-
-impl CopyStmt {
-    pub fn to_dockerfile(
-        &self,
-        dockerfile: &mut String,
-    ) {
-        for e in &self.0 {
-            let _ = writeln!(
-                dockerfile,
-                "COPY {}",
-                e.iter().map(|p| format!("{}", p.display())).join(" ")
-            );
-        }
-    }
-}
 
 impl<'de> serde::Deserialize<'de> for CopyStmt {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
