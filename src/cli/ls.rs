@@ -24,7 +24,7 @@ impl Cli {
                 "name",
                 "source location",
                 "created at",
-                "container name",
+                "id",
                 "status",
             ])
             .add_rows(containers.into_iter().map(cotainer_info_to_row));

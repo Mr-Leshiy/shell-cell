@@ -10,7 +10,10 @@ use itertools::Itertools;
 use super::SCell;
 use crate::{
     scell::Link,
-    scell_file::{build::BuildStmt, copy::CopyStmt, name::SCellName, shell::ShellStmt, workspace::WorkspaceStmt},
+    scell_file::{
+        build::BuildStmt, copy::CopyStmt, name::SCellName, shell::ShellStmt,
+        workspace::WorkspaceStmt,
+    },
 };
 
 impl SCell {
@@ -46,7 +49,7 @@ impl SCell {
                 Link::Node {
                     build,
                     copy,
-                    path,
+                    location: path,
                     workspace,
                     name,
                 } => {
@@ -56,7 +59,7 @@ impl SCell {
                     // The last item
                     if links_iter.peek().is_none() {
                         // Adding metadata
-                        prepare_metadata_stmt(&mut dockerfile, name, path);
+                        prepare_metadata_stmt(&mut dockerfile, name, path)?;
                     }
                 },
             }
@@ -131,9 +134,18 @@ fn prepare_copy_stmt<W: std::io::Write>(
     Ok(())
 }
 
-fn prepare_metadata_stmt(dockerfile: &mut String, name: &SCellName, location: &Path) {
+fn prepare_metadata_stmt(
+    dockerfile: &mut String,
+    name: &SCellName,
+    location: &Path,
+) -> anyhow::Result<()> {
     let _ = writeln!(dockerfile, "LABEL scell-name=\"{name}\"");
-    let _ = writeln!(dockerfile, "LABEL scell-location=\"{}\"", location.display());
+    let _ = writeln!(
+        dockerfile,
+        "LABEL scell-location=\"{}\"",
+        std::fs::canonicalize(location)?.display()
+    );
+    Ok(())
 }
 
 fn prepare_build_stmt(

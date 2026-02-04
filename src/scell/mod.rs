@@ -34,7 +34,7 @@ pub enum Link {
     Root(ImageDef),
     Node {
         name: SCellName,
-        path: PathBuf,
+        location: PathBuf,
         workspace: WorkspaceStmt,
         copy: CopyStmt,
         build: BuildStmt,

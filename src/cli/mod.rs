@@ -34,6 +34,10 @@ pub struct Cli {
 pub enum Commands {
     /// List all existing Shell-Cell containers
     Ls,
+    // TODO: Implement
+    // /// Clean up all orphaned containers and their corresponding images (those no longer
+    // /// associated with any existing Shell-Cell source files).
+    // Cleanup,
 }
 
 impl Cli {

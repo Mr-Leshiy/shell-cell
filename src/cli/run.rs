@@ -19,7 +19,7 @@ impl Cli {
                 ),
                 async || {
                     let scell_f = SCellFile::from_path(&self.scell_path)?;
-                    SCell::compile(scell_f, self.scell_path, None)
+                    SCell::compile(scell_f, None)
                 },
             )
             .await?;
