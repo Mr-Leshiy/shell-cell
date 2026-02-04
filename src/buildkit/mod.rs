@@ -1,21 +1,17 @@
 //! `BuildKit` daemon client implementation.
 
-pub mod container_info;
 mod docker;
 
 use bollard::Docker;
 
 use self::docker::{build_image, start_container};
 use crate::{
-    buildkit::{
-        container_info::ContainerInfo,
-        docker::{container_iteractive_exec, list_all_containers, pull_image, stop_container},
+    buildkit::docker::{
+        container_iteractive_exec, list_all_containers, pull_image, stop_container,
     },
     pty::PtyStdStreams,
-    scell::SCell,
+    scell::{SCell, SCellContainerInfo},
 };
-
-const NAME_PREFIX: &str = "scell-";
 
 pub struct BuildKitD {
     docker: Docker,
@@ -39,7 +35,7 @@ impl BuildKitD {
         let (tar, dockerfile_path) = scell.prepare_image_tar_artifact()?;
         build_image(
             &self.docker,
-            &name(scell),
+            &scell.name(),
             "latest",
             dockerfile_path,
             tar,
@@ -60,7 +56,7 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> anyhow::Result<()> {
-        start_container(&self.docker, &name(scell), "latest", &name(scell)).await?;
+        start_container(&self.docker, &scell.name(), "latest", &scell.name()).await?;
         Ok(())
     }
 
@@ -68,15 +64,19 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> anyhow::Result<()> {
-        stop_container(&self.docker, &name(scell)).await?;
+        stop_container(&self.docker, &scell.name()).await?;
         Ok(())
     }
 
-    pub async fn list_containers(&self) -> anyhow::Result<Vec<ContainerInfo>> {
+    pub async fn list_containers(&self) -> anyhow::Result<Vec<SCellContainerInfo>> {
         Ok(list_all_containers(&self.docker)
             .await?
             .into_iter()
-            .filter_map(|v| ContainerInfo::try_from(v).ok())
+            .filter_map(|v| {
+                SCellContainerInfo::try_from(v)
+                    .inspect_err(|e| println!("{e}"))
+                    .ok()
+            })
             .collect())
     }
 
@@ -84,16 +84,12 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> anyhow::Result<PtyStdStreams> {
-        let (output, input) = container_iteractive_exec(&self.docker, &name(scell), true, vec![
+        let (output, input) = container_iteractive_exec(&self.docker, &scell.name(), true, vec![
             scell.shell().to_string(),
         ])
         .await?;
         Ok(PtyStdStreams::new(output, input))
     }
-}
-
-fn name(scell: &SCell) -> String {
-    format!("{NAME_PREFIX}{}", scell.hex_hash())
 }
 
 async fn create_and_start_buildkit_container(docker: &Docker) -> anyhow::Result<()> {

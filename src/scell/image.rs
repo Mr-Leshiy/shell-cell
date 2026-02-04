@@ -10,7 +10,7 @@ use itertools::Itertools;
 use super::SCell;
 use crate::{
     scell::Link,
-    scell_file::{build::BuildStmt, copy::CopyStmt, shell::ShellStmt, workspace::WorkspaceStmt},
+    scell_file::{build::BuildStmt, copy::CopyStmt, name::SCellName, shell::ShellStmt, workspace::WorkspaceStmt},
 };
 
 impl SCell {
@@ -36,7 +36,9 @@ impl SCell {
         let mut tar = tar::Builder::new(Vec::new());
         let mut dockerfile = String::new();
 
-        for link in self.links.iter().rev() {
+        let mut links_iter = self.links.iter().rev().peekable();
+
+        while let Some(link) = links_iter.next() {
             match link {
                 Link::Root(root) => {
                     let _ = writeln!(dockerfile, "FROM {root}");
@@ -46,11 +48,16 @@ impl SCell {
                     copy,
                     path,
                     workspace,
-                    ..
+                    name,
                 } => {
                     prepare_workspace_stmt(&mut dockerfile, workspace);
                     prepare_copy_stmt(&mut dockerfile, &mut tar, copy, path)?;
                     prepare_build_stmt(&mut dockerfile, build);
+                    // The last item
+                    if links_iter.peek().is_none() {
+                        // Adding metadata
+                        prepare_metadata_stmt(&mut dockerfile, name, path);
+                    }
                 },
             }
         }
@@ -122,6 +129,11 @@ fn prepare_copy_stmt<W: std::io::Write>(
         let _ = writeln!(dockerfile, "COPY {cp_tmt}",);
     }
     Ok(())
+}
+
+fn prepare_metadata_stmt(dockerfile: &mut String, name: &SCellName, location: &Path) {
+    let _ = writeln!(dockerfile, "LABEL scell-name=\"{name}\"");
+    let _ = writeln!(dockerfile, "LABEL scell-location=\"{}\"", location.display());
 }
 
 fn prepare_build_stmt(
