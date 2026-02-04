@@ -1,15 +1,21 @@
 //! `BuildKit` daemon client implementation.
 
+pub mod container_info;
 mod docker;
 
 use bollard::Docker;
 
 use self::docker::{build_image, start_container};
 use crate::{
-    buildkit::docker::{container_iteractive_exec, pull_image, stop_container},
+    buildkit::{
+        container_info::ContainerInfo,
+        docker::{container_iteractive_exec, list_all_containers, pull_image, stop_container},
+    },
     pty::PtyStdStreams,
     scell::SCell,
 };
+
+const NAME_PREFIX: &str = "scell-";
 
 pub struct BuildKitD {
     docker: Docker,
@@ -54,7 +60,7 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> anyhow::Result<()> {
-        start_container(&self.docker, &name(scell), "latest", &name(scell), vec![]).await?;
+        start_container(&self.docker, &name(scell), "latest", &name(scell)).await?;
         Ok(())
     }
 
@@ -64,6 +70,14 @@ impl BuildKitD {
     ) -> anyhow::Result<()> {
         stop_container(&self.docker, &name(scell)).await?;
         Ok(())
+    }
+
+    pub async fn list_containers(&self) -> anyhow::Result<Vec<ContainerInfo>> {
+        Ok(list_all_containers(&self.docker)
+            .await?
+            .into_iter()
+            .filter_map(|v| ContainerInfo::try_from(v).ok())
+            .collect())
     }
 
     pub async fn attach_to_shell(
@@ -79,8 +93,7 @@ impl BuildKitD {
 }
 
 fn name(scell: &SCell) -> String {
-    const PREFIX: &str = "scell";
-    format!("{PREFIX}-{}", scell.hex_hash())
+    format!("{NAME_PREFIX}{}", scell.hex_hash())
 }
 
 async fn create_and_start_buildkit_container(docker: &Docker) -> anyhow::Result<()> {
@@ -95,7 +108,6 @@ async fn create_and_start_buildkit_container(docker: &Docker) -> anyhow::Result<
         BUILDKIT_IMAGE,
         BUILDKIT_TAG,
         BUILDKIT_CONTAINER_NAME,
-        vec![BUILDKIT_CONTAINER_PORT.to_string()],
     )
     .await?;
     Ok(())

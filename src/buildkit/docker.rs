@@ -8,7 +8,7 @@ use bollard::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder,
     },
-    secret::{BuildInfo, ContainerCreateBody, ExecConfig},
+    secret::{BuildInfo, ContainerCreateBody, ContainerSummary, ExecConfig},
 };
 use futures::{Stream, StreamExt};
 use tokio::io::AsyncWrite;
@@ -67,7 +67,6 @@ pub async fn start_container(
     image_name: &str,
     tag: &str,
     container_name: &str,
-    exposed_ports: Vec<String>,
 ) -> anyhow::Result<()> {
     let buildkit_image = format!("{image_name}:{tag}");
     let res = docker
@@ -96,7 +95,6 @@ pub async fn start_container(
                 }),
                 ContainerCreateBody {
                     image: Some(buildkit_image),
-                    exposed_ports: Some(exposed_ports),
                     ..Default::default()
                 },
             )
@@ -114,6 +112,13 @@ pub async fn stop_container(
 ) -> anyhow::Result<()> {
     docker.stop_container(container_name, None).await?;
     Ok(())
+}
+
+pub async fn list_all_containers(docker: &Docker) -> anyhow::Result<Vec<ContainerSummary>> {
+    let res = docker
+        .list_containers(Some(ListContainersOptionsBuilder::new().all(true).build()))
+        .await?;
+    Ok(res)
 }
 
 type Output = Pin<Box<dyn Stream<Item = Result<LogOutput, bollard::errors::Error>> + Send>>;

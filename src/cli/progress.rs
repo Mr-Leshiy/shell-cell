@@ -29,7 +29,6 @@ impl Progress {
     where
         F: AsyncFnOnce() -> anyhow::Result<T>,
     {
-
         let pb = self.multi.add(ProgressBar::new_spinner());
         pb.set_style(self.spinner_style.clone());
         pb.enable_steady_tick(Duration::from_millis(100));
