@@ -18,7 +18,9 @@ const BUF_SIZE: usize = 1024;
 pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
     crossterm::execute!(
         std::io::stdout(),
-        crossterm::terminal::Clear(crossterm::terminal::ClearType::Purge)
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::Purge),
+        crossterm::cursor::MoveTo(0, 0)
     )?;
     crossterm::terminal::enable_raw_mode()?;
     {
@@ -71,6 +73,13 @@ pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
     }
 
     crossterm::terminal::disable_raw_mode()?;
+
+    crossterm::execute!(
+        std::io::stdout(),
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::Purge),
+        crossterm::cursor::MoveTo(0, 0)
+    )?;
 
     Ok(())
 }
