@@ -7,6 +7,7 @@ use crate::buildkit::NAME_PREFIX;
 pub struct ContainerInfo {
     pub name: String,
     pub created_at: DateTime<Utc>,
+    pub status: String,
 }
 
 impl TryFrom<bollard::secret::ContainerSummary> for ContainerInfo {
@@ -41,9 +42,16 @@ impl TryFrom<bollard::secret::ContainerSummary> for ContainerInfo {
         let created_at = DateTime::from_timestamp_secs(created_at)
             .context("'Shell-Cell' container must have a valid 'created_at' timestamp")?;
 
+        let status = value
+            .state
+            .as_ref()
+            .map(ToString::to_string)
+            .unwrap_or_default();
+
         Ok(Self {
             name: c_name.to_string(),
             created_at,
+            status,
         })
     }
 }

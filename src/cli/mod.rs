@@ -1,19 +1,12 @@
 //! Command Line Interface implementation
 
+mod ls;
 mod progress;
+mod run;
 
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use comfy_table::Table;
-
-use crate::{
-    buildkit::{BuildKitD, container_info::ContainerInfo},
-    cli::progress::Progress,
-    pty,
-    scell::SCell,
-    scell_file::SCellFile,
-};
 
 #[allow(clippy::doc_markdown)]
 /// Binary build info
@@ -62,95 +55,6 @@ impl Cli {
             None => self.run().await?,
             Some(Commands::Ls) => self.ls().await?,
         }
-
-        Ok(())
-    }
-
-    async fn run(self) -> anyhow::Result<()> {
-        let mut pb = Progress::new(5)?;
-
-        // STEP 1
-        let scell = pb
-            .run_step(
-                format!(
-                    "📝    Processing Shell-Cell source file '{}'...",
-                    self.scell_path.display()
-                ),
-                async || {
-                    let scell_f = SCellFile::from_path(&self.scell_path)?;
-                    SCell::compile(scell_f, self.scell_path, None)
-                },
-            )
-            .await?;
-
-        // STEP 2
-        let buildkit = pb
-            .run_step(
-                "📡    Connecting to the 'BuildKit'...".to_string(),
-                async || BuildKitD::start().await,
-            )
-            .await?;
-
-        // STEP 3
-        pb.run_build_step(
-            "📝    Building 'Shell-Cell' image...".to_string(),
-            async |sp| {
-                buildkit
-                    .build_image(&scell, {
-                        |msg| {
-                            if self.verbose {
-                                sp.println(format!("    {msg}"));
-                            }
-                        }
-                    })
-                    .await?;
-                Ok(())
-            },
-        )
-        .await?;
-
-        // STEP 4
-        let pty = pb
-            .run_step(
-                "🚀    Starting 'Shell-Cell' container...".to_string(),
-                async || {
-                    buildkit.start_container(&scell).await?;
-                    buildkit.attach_to_shell(&scell).await
-                },
-            )
-            .await?;
-
-        pty::run(&pty).await?;
-
-        // FINAL STEP
-        pb.run_spinner(
-            "🏁    Stopping 'Shell-Cell' container...".to_string(),
-            async || buildkit.stop_container(&scell).await,
-        )
-        .await?;
-
-        println!("Finished 'Shell-Cell' session\n<Press any key to exit>");
-        Ok(())
-    }
-
-    async fn ls(self) -> anyhow::Result<()> {
-        let buildkit = BuildKitD::start().await?;
-
-        let containers = buildkit.list_containers().await?;
-        let cotainer_info_to_row = |c: ContainerInfo| {
-            [
-                c.name,
-                c.created_at
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
-            ]
-        };
-
-        let mut table = Table::new();
-        table
-            .set_header(vec!["name", "created at"])
-            .add_rows(containers.into_iter().map(cotainer_info_to_row));
-
-        println!("{table}");
         Ok(())
     }
 }
