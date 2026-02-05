@@ -21,6 +21,9 @@ pub trait WrapUserError<T, E> {
     ) -> Result<T, UserError>
     where
         D: Display + Send + Sync + 'static;
+
+    #[cfg_attr(track_caller, track_caller)]
+    fn mark_as_user_err(self) -> Result<T, UserError>;
 }
 
 pub trait OptionUserError<T> {
@@ -34,7 +37,7 @@ pub trait OptionUserError<T> {
 }
 
 impl<T, E> WrapUserError<T, E> for Result<T, E>
-where E: Send + Sync + 'static
+where E: Display + Send + Sync + 'static
 {
     fn user_err<D>(
         self,
@@ -46,6 +49,13 @@ where E: Send + Sync + 'static
         match self {
             Ok(t) => Ok(t),
             Err(_) => Err(UserError(msg.to_string())),
+        }
+    }
+
+    fn mark_as_user_err(self) -> Result<T, UserError> {
+        match self {
+            Ok(t) => Ok(t),
+            Err(e) => Err(UserError(e.to_string())),
         }
     }
 }
