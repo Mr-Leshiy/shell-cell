@@ -63,7 +63,7 @@ impl SCell {
 
 impl SCellContainerInfo {
     pub fn new(
-        name: String,
+        name: &str,
         location: PathBuf,
         container_name: String,
         created_at: DateTime<Utc>,
@@ -75,7 +75,7 @@ impl SCellContainerInfo {
         );
 
         Ok(Self {
-            name: SCellName::from_str(name.as_str())?,
+            name: name.parse()?,
             location,
             container_name,
             created_at,
@@ -128,11 +128,10 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         let name = value
             .labels
             .as_ref()
-            .map(|v| {
+            .and_then(|v| {
                 v.get(IMAGE_METADATA_NAME)
                     .map(|s| SCellName::from_str(s.as_str()))
             })
-            .flatten()
             .context(format!(
                 "'Shell-Cell' container must have a metadata {IMAGE_METADATA_NAME} item"
             ))??;
@@ -140,8 +139,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         let location = value
             .labels
             .as_ref()
-            .map(|v| v.get(IMAGE_METADATA_LOCATION).map(PathBuf::from))
-            .flatten()
+            .and_then(|v| v.get(IMAGE_METADATA_LOCATION).map(PathBuf::from))
             .context(format!(
                 "'Shell-Cell' container must have a metadata {IMAGE_METADATA_LOCATION} item"
             ))?;
