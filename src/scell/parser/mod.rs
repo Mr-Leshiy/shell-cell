@@ -13,9 +13,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::error::WrapUserError;
-
 use self::{name::TargetName, target::TargetStmt};
+use crate::error::WrapUserError;
 
 #[derive(Debug)]
 pub struct SCellFile {
