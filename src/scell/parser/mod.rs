@@ -13,6 +13,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::error::WrapUserError;
+
 use self::{name::TargetName, target::TargetStmt};
 
 #[derive(Debug)]
@@ -24,7 +26,7 @@ pub struct SCellFile {
 impl SCellFile {
     pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
         let file: std::fs::File = std::fs::File::open(&path)
-            .map_err(|_| color_eyre::eyre::eyre!("Cannot open '{}'", path.as_ref().display()))?;
+            .user_err(format!("Cannot find file '{}'", path.as_ref().display()))?;
         let cells: HashMap<TargetName, TargetStmt> = yaml_serde::from_reader(&file)?;
 
         Ok(Self {
