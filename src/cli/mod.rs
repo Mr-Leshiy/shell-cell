@@ -7,6 +7,7 @@ mod run;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use color_eyre::Section;
 
 #[allow(clippy::doc_markdown)]
 /// Binary build info
@@ -45,9 +46,9 @@ impl Cli {
         let verbose = self.verbose;
         self.exec_inner().await.map_err(|e| {
             if verbose {
-                e
+                e.suggestion("To enable verbose output use -v, --verbose flags")
             } else {
-                color_eyre::eyre::eyre!("{e}\n To enable verbose output use -v, --verbose flags")
+                e
             }
         })?;
 
