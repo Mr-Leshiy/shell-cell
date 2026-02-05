@@ -31,7 +31,7 @@ pub enum FromStmt {
 }
 
 impl FromStr for FromStmt {
-    type Err = anyhow::Error;
+    type Err = color_eyre::eyre::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
         match str.split_once(SCELL_DEF_FROM_DELIMITER) {

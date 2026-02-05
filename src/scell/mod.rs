@@ -10,8 +10,8 @@ mod image;
 
 use std::{path::PathBuf, str::FromStr};
 
-use anyhow::Context;
 use chrono::{DateTime, Utc};
+use color_eyre::eyre::ContextCompat;
 
 use crate::scell_file::{
     build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, shell::ShellStmt,
@@ -68,8 +68,8 @@ impl SCellContainerInfo {
         container_name: String,
         created_at: DateTime<Utc>,
         status: String,
-    ) -> anyhow::Result<Self> {
-        anyhow::ensure!(
+    ) -> color_eyre::Result<Self> {
+        color_eyre::eyre::ensure!(
             container_name.contains(NAME_PREFIX),
             "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
         );
@@ -85,17 +85,17 @@ impl SCellContainerInfo {
 }
 
 impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
-    type Error = anyhow::Error;
+    type Error = color_eyre::eyre::Error;
 
     fn try_from(value: bollard::secret::ContainerSummary) -> Result<Self, Self::Error> {
         let c_names = value
             .names
             .context("'Shell-Cell' container must have a name")?;
         let [container_name] = c_names.as_slice() else {
-            anyhow::bail!("'Shell-Cell' container must have only one name");
+            color_eyre::eyre::bail!("'Shell-Cell' container must have only one name");
         };
 
-        anyhow::ensure!(
+        color_eyre::eyre::ensure!(
             container_name.contains(NAME_PREFIX),
             "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
         );
@@ -105,7 +105,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .context("Container name must have a '/' prefix")?
             .to_string();
 
-        anyhow::ensure!(
+        color_eyre::eyre::ensure!(
             value
                 .image
                 .is_some_and(|i_name| i_name.starts_with(&container_name)),
@@ -113,7 +113,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         );
 
         let Some(created_at) = value.created else {
-            anyhow::bail!("'Shell-Cell' container must have creation timestamp");
+            color_eyre::eyre::bail!("'Shell-Cell' container must have creation timestamp");
         };
 
         let created_at = DateTime::from_timestamp_secs(created_at)

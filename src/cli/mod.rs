@@ -41,20 +41,20 @@ pub enum Commands {
 }
 
 impl Cli {
-    pub async fn exec(self) -> anyhow::Result<()> {
+    pub async fn exec(self) -> color_eyre::Result<()> {
         let verbose = self.verbose;
         self.exec_inner().await.map_err(|e| {
             if verbose {
                 e
             } else {
-                anyhow::anyhow!("{e}\n To enable verbose output use -v, --verbose flags")
+                color_eyre::eyre::eyre!("{e}\n To enable verbose output use -v, --verbose flags")
             }
         })?;
 
         Ok(())
     }
 
-    pub async fn exec_inner(self) -> anyhow::Result<()> {
+    pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
             None => self.run().await?,
             Some(Commands::Ls) => self.ls().await?,

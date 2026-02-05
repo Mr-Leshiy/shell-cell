@@ -19,10 +19,10 @@ impl Display for SCellName {
 }
 
 impl FromStr for SCellName {
-    type Err = anyhow::Error;
+    type Err = color_eyre::eyre::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
-        anyhow::ensure!(
+        color_eyre::eyre::ensure!(
             SCELL_NAME_REGEX.is_match(str),
             "Shell-Cell name '{str}' must matches with the REGEX pattern: {}",
             SCELL_NAME_REGEX.as_str()

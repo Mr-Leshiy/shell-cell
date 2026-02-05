@@ -1,4 +1,4 @@
-use anyhow::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 
 use super::{Link, SCell};
 use crate::{
@@ -14,7 +14,7 @@ impl SCell {
     pub fn compile(
         mut scell_f: SCellFile,
         entry: Option<SCellName>,
-    ) -> anyhow::Result<Self> {
+    ) -> color_eyre::Result<Self> {
         let entry_point_name = entry.map_or_else(
             || {
                 SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
@@ -30,13 +30,13 @@ impl SCell {
         ))?;
 
         let Some(shell) = entry_point.shell.clone() else {
-            anyhow::bail!(
+            color_eyre::eyre::bail!(
                 "{}+{entry_point_name} endpoint does not contain 'shell' statement",
                 scell_f.location.display()
             );
         };
         let Some(hang) = entry_point.hang.clone() else {
-            anyhow::bail!(
+            color_eyre::eyre::bail!(
                 "{}+{entry_point_name} endpoint does not contain 'hang' statement",
                 scell_f.location.display()
             );
@@ -66,7 +66,6 @@ impl SCell {
                     scell_def_name,
                 } => {
                     if let Some(scell_path) = scell_path {
-                        println!("{}", scell_path.display());
                         scell_walk_f = SCellFile::from_path(&scell_path)?;
                     }
 
@@ -84,7 +83,7 @@ impl SCell {
     }
 }
 
-fn global() -> anyhow::Result<Option<SCellFile>> {
+fn global() -> color_eyre::Result<Option<SCellFile>> {
     const SCELL_GLOBAL: &str = "global.yml";
     let scell_home = scell_home_dir()?;
     SCellFile::from_path(scell_home.join(SCELL_GLOBAL))

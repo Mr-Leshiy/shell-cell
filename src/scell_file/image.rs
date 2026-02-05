@@ -22,7 +22,7 @@ impl Display for ImageDef {
 }
 
 impl FromStr for ImageDef {
-    type Err = anyhow::Error;
+    type Err = color_eyre::eyre::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
         match str.split_once(IMAGE_TAG_DELIMETER) {

@@ -7,7 +7,7 @@ use crate::{
 };
 
 impl Cli {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub async fn run(self) -> color_eyre::Result<()> {
         let mut pb = Progress::new(5)?;
 
         // STEP 1

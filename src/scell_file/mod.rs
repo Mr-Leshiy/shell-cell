@@ -25,7 +25,7 @@ pub struct SCellFile {
 }
 
 impl SCellFile {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
         #[derive(serde::Deserialize)]
         struct SCellFileYml {
             version: String,
@@ -35,7 +35,7 @@ impl SCellFile {
 
         let file: std::fs::File = std::fs::File::open(&path)?;
         let scell_f: SCellFileYml = yaml_serde::from_reader(&file)?;
-        anyhow::ensure!(
+        color_eyre::eyre::ensure!(
             scell_f.version == SUPPORTED_VERSION,
             "Currently supported version is {SUPPORTED_VERSION}, provided {}.",
             scell_f.version

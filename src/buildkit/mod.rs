@@ -19,10 +19,12 @@ pub struct BuildKitD {
 
 impl BuildKitD {
     /// Runs the `BuildKit` daemon as a container.
-    pub async fn start() -> anyhow::Result<Self> {
+    pub async fn start() -> color_eyre::Result<Self> {
         let docker = Docker::connect_with_local_defaults()?;
         docker.ping().await.map_err(|_| {
-            anyhow::anyhow!("Cannot connect to the Docker daemon. Is the docker daemon running?")
+            color_eyre::eyre::eyre!(
+                "Cannot connect to the Docker daemon. Is the docker daemon running?"
+            )
         })?;
         Ok(Self { docker })
     }
@@ -31,7 +33,7 @@ impl BuildKitD {
         &self,
         scell: &SCell,
         log_fn: impl Fn(String),
-    ) -> anyhow::Result<()> {
+    ) -> color_eyre::Result<()> {
         let (tar, dockerfile_path) = scell.prepare_image_tar_artifact()?;
         build_image(
             &self.docker,
@@ -55,7 +57,7 @@ impl BuildKitD {
     pub async fn start_container(
         &self,
         scell: &SCell,
-    ) -> anyhow::Result<()> {
+    ) -> color_eyre::Result<()> {
         start_container(&self.docker, &scell.name(), "latest", &scell.name()).await?;
         Ok(())
     }
@@ -63,27 +65,23 @@ impl BuildKitD {
     pub async fn stop_container(
         &self,
         scell: &SCell,
-    ) -> anyhow::Result<()> {
+    ) -> color_eyre::Result<()> {
         stop_container(&self.docker, &scell.name()).await?;
         Ok(())
     }
 
-    pub async fn list_containers(&self) -> anyhow::Result<Vec<SCellContainerInfo>> {
+    pub async fn list_containers(&self) -> color_eyre::Result<Vec<SCellContainerInfo>> {
         Ok(list_all_containers(&self.docker)
             .await?
             .into_iter()
-            .filter_map(|v| {
-                SCellContainerInfo::try_from(v)
-                    .inspect_err(|e| println!("{e}"))
-                    .ok()
-            })
+            .filter_map(|v| SCellContainerInfo::try_from(v).ok())
             .collect())
     }
 
     pub async fn attach_to_shell(
         &self,
         scell: &SCell,
-    ) -> anyhow::Result<PtyStdStreams> {
+    ) -> color_eyre::Result<PtyStdStreams> {
         let (output, input) = container_iteractive_exec(&self.docker, &scell.name(), true, vec![
             scell.shell().to_string(),
         ])
@@ -92,7 +90,7 @@ impl BuildKitD {
     }
 }
 
-async fn create_and_start_buildkit_container(docker: &Docker) -> anyhow::Result<()> {
+async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Result<()> {
     const BUILDKIT_IMAGE: &str = "moby/buildkit";
     const BUILDKIT_TAG: &str = "v0.27.1";
     const BUILDKIT_CONTAINER_NAME: &str = "shell-cell-buildkitd";

@@ -54,12 +54,12 @@ arithmetic_side_effects = "deny"
 
 
 [dependencies]
-anyhow = "1.0.100"
 async-channel = "2.5.0"
 bollard = "0.20.0"
 bytes = "1.11.0"
 chrono = "0.4.43"
 clap = { version = "4.5.56", features = ["derive"] }
+color-eyre = "0.6.5"
 comfy-table = "7.2.2"
 crossterm = "0.29.0"
 dirs = "6.0.0"

@@ -15,7 +15,7 @@ type Input = Pin<Box<dyn AsyncWrite + Send>>;
 
 const BUF_SIZE: usize = 1024;
 
-pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
+pub async fn run(stream: &PtyStdStreams) -> color_eyre::Result<()> {
     crossterm::execute!(
         std::io::stdout(),
         crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
@@ -24,7 +24,7 @@ pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
     )?;
     crossterm::terminal::enable_raw_mode()?;
     {
-        let stdout_jh: tokio::task::JoinHandle<Result<(), anyhow::Error>> = tokio::spawn({
+        let stdout_jh = tokio::spawn({
             let pty_stdout = stream.stdout();
             async move {
                 let mut stdout = std::io::stdout();
@@ -32,11 +32,11 @@ pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
                     print!("{}", String::from_utf8_lossy(&bytes));
                     stdout.flush()?;
                 }
-                anyhow::Ok(())
+                color_eyre::eyre::Ok(())
             }
         });
 
-        let stderr_jh: tokio::task::JoinHandle<Result<(), anyhow::Error>> = tokio::spawn({
+        let stderr_jh = tokio::spawn({
             let pty_stderr = stream.stderr();
             async move {
                 let mut stderr = std::io::stderr();
@@ -44,7 +44,7 @@ pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
                     eprint!("{}", String::from_utf8_lossy(&bytes));
                     stderr.flush()?;
                 }
-                anyhow::Ok(())
+                color_eyre::eyre::Ok(())
             }
         });
 
@@ -61,7 +61,7 @@ pub async fn run(stream: &PtyStdStreams) -> anyhow::Result<()> {
                     }
                     pty_stdin.send(Bytes::copy_from_slice(&buf[..n]))?;
                 }
-                anyhow::Ok(())
+                color_eyre::eyre::Ok(())
             }
         });
 
@@ -111,7 +111,7 @@ impl PtyStdStreams {
                     },
                 }
             }
-            anyhow::Ok(())
+            color_eyre::eyre::Ok(())
         });
 
         let (stdin, mut stdin_out) = tokio::sync::mpsc::unbounded_channel::<Bytes>();
@@ -120,7 +120,7 @@ impl PtyStdStreams {
                 input.write_all(&bytes).await?;
                 input.flush().await?;
             }
-            anyhow::Ok(())
+            color_eyre::eyre::Ok(())
         });
 
         Self {
