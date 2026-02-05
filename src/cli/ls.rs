@@ -3,7 +3,7 @@ use comfy_table::Table;
 use crate::{buildkit::BuildKitD, cli::Cli, scell::SCellContainerInfo};
 
 impl Cli {
-    pub async fn ls(self) -> anyhow::Result<()> {
+    pub async fn ls(self) -> color_eyre::Result<()> {
         let buildkit = BuildKitD::start().await?;
 
         let containers = buildkit.list_containers().await?;

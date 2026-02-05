@@ -20,7 +20,7 @@ pub async fn build_image(
     dockerfile_path: &str,
     tar: tar::Builder<Vec<u8>>,
     log_fn: impl Fn(BuildInfo),
-) -> anyhow::Result<()> {
+) -> color_eyre::Result<()> {
     let tar = body_full(tar.into_inner()?.into());
 
     let options = BuildImageOptionsBuilder::new()
@@ -43,7 +43,7 @@ pub async fn pull_image(
     docker: &Docker,
     image_name: &str,
     tag: &str,
-) -> anyhow::Result<()> {
+) -> color_eyre::Result<()> {
     let mut stream = docker.create_image(
         Some(CreateImageOptions {
             from_image: Some(image_name.to_string()),
@@ -67,7 +67,7 @@ pub async fn start_container(
     image_name: &str,
     tag: &str,
     container_name: &str,
-) -> anyhow::Result<()> {
+) -> color_eyre::Result<()> {
     let buildkit_image = format!("{image_name}:{tag}");
     let res = docker
         .list_containers(Some(
@@ -109,12 +109,12 @@ pub async fn start_container(
 pub async fn stop_container(
     docker: &Docker,
     container_name: &str,
-) -> anyhow::Result<()> {
+) -> color_eyre::Result<()> {
     docker.stop_container(container_name, None).await?;
     Ok(())
 }
 
-pub async fn list_all_containers(docker: &Docker) -> anyhow::Result<Vec<ContainerSummary>> {
+pub async fn list_all_containers(docker: &Docker) -> color_eyre::Result<Vec<ContainerSummary>> {
     let res = docker
         .list_containers(Some(ListContainersOptionsBuilder::new().all(true).build()))
         .await?;
@@ -129,7 +129,7 @@ pub async fn container_iteractive_exec(
     container_name: &str,
     priveleged: bool,
     cmd: Vec<String>,
-) -> anyhow::Result<(Output, Input)> {
+) -> color_eyre::Result<(Output, Input)> {
     let config = ExecConfig {
         cmd: Some(cmd),
         attach_stdin: Some(true),
@@ -150,7 +150,9 @@ pub async fn container_iteractive_exec(
     let StartExecResults::Attached { output, input } =
         docker.start_exec(&exec_id, Some(config)).await?
     else {
-        anyhow::bail!("it must be attached session, as `detach` flag was passed to `false");
+        color_eyre::eyre::bail!(
+            "it must be attached session, as `detach` flag was passed to `false"
+        );
     };
 
     Ok((output, input))

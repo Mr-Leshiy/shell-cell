@@ -7,14 +7,15 @@
 
 mod compile;
 mod image;
+mod parser;
 
 use std::{path::PathBuf, str::FromStr};
 
-use anyhow::Context;
 use chrono::{DateTime, Utc};
+use color_eyre::eyre::ContextCompat;
 
-use crate::scell_file::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, shell::ShellStmt,
+use self::parser::{
+    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
     workspace::WorkspaceStmt,
 };
 
@@ -33,7 +34,7 @@ pub struct SCell {
 pub enum Link {
     Root(ImageDef),
     Node {
-        name: SCellName,
+        name: TargetName,
         location: PathBuf,
         workspace: WorkspaceStmt,
         copy: CopyStmt,
@@ -43,7 +44,7 @@ pub enum Link {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCellContainerInfo {
-    pub name: SCellName,
+    pub name: TargetName,
     pub location: PathBuf,
     pub container_name: String,
     pub created_at: DateTime<Utc>,
@@ -63,19 +64,19 @@ impl SCell {
 
 impl SCellContainerInfo {
     pub fn new(
-        name: String,
+        name: &str,
         location: PathBuf,
         container_name: String,
         created_at: DateTime<Utc>,
         status: String,
-    ) -> anyhow::Result<Self> {
-        anyhow::ensure!(
+    ) -> color_eyre::Result<Self> {
+        color_eyre::eyre::ensure!(
             container_name.contains(NAME_PREFIX),
             "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
         );
 
         Ok(Self {
-            name: SCellName::from_str(name.as_str())?,
+            name: name.parse()?,
             location,
             container_name,
             created_at,
@@ -85,17 +86,17 @@ impl SCellContainerInfo {
 }
 
 impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
-    type Error = anyhow::Error;
+    type Error = color_eyre::eyre::Error;
 
     fn try_from(value: bollard::secret::ContainerSummary) -> Result<Self, Self::Error> {
         let c_names = value
             .names
             .context("'Shell-Cell' container must have a name")?;
         let [container_name] = c_names.as_slice() else {
-            anyhow::bail!("'Shell-Cell' container must have only one name");
+            color_eyre::eyre::bail!("'Shell-Cell' container must have only one name");
         };
 
-        anyhow::ensure!(
+        color_eyre::eyre::ensure!(
             container_name.contains(NAME_PREFIX),
             "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
         );
@@ -105,7 +106,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .context("Container name must have a '/' prefix")?
             .to_string();
 
-        anyhow::ensure!(
+        color_eyre::eyre::ensure!(
             value
                 .image
                 .is_some_and(|i_name| i_name.starts_with(&container_name)),
@@ -113,7 +114,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         );
 
         let Some(created_at) = value.created else {
-            anyhow::bail!("'Shell-Cell' container must have creation timestamp");
+            color_eyre::eyre::bail!("'Shell-Cell' container must have creation timestamp");
         };
 
         let created_at = DateTime::from_timestamp_secs(created_at)
@@ -128,11 +129,10 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         let name = value
             .labels
             .as_ref()
-            .map(|v| {
+            .and_then(|v| {
                 v.get(IMAGE_METADATA_NAME)
-                    .map(|s| SCellName::from_str(s.as_str()))
+                    .map(|s| TargetName::from_str(s.as_str()))
             })
-            .flatten()
             .context(format!(
                 "'Shell-Cell' container must have a metadata {IMAGE_METADATA_NAME} item"
             ))??;
@@ -140,8 +140,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         let location = value
             .labels
             .as_ref()
-            .map(|v| v.get(IMAGE_METADATA_LOCATION).map(PathBuf::from))
-            .flatten()
+            .and_then(|v| v.get(IMAGE_METADATA_LOCATION).map(PathBuf::from))
             .context(format!(
                 "'Shell-Cell' container must have a metadata {IMAGE_METADATA_LOCATION} item"
             ))?;

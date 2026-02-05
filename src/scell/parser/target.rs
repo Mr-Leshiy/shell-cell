@@ -1,14 +1,14 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell_file::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, shell::ShellStmt,
+use super::{
+    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
     workspace::WorkspaceStmt,
 };
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
-pub struct SCellStmt {
+pub struct TargetStmt {
     pub from: FromStmt,
     #[serde(default)]
     pub workspace: WorkspaceStmt,
@@ -23,28 +23,28 @@ pub struct SCellStmt {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FromStmt {
-    SCellRef {
-        scell_path: Option<PathBuf>,
-        scell_def_name: SCellName,
+    TargetRef {
+        location: Option<PathBuf>,
+        name: TargetName,
     },
     Image(ImageDef),
 }
 
 impl FromStr for FromStmt {
-    type Err = anyhow::Error;
+    type Err = color_eyre::eyre::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
         match str.split_once(SCELL_DEF_FROM_DELIMITER) {
             Some(("", suffix)) => {
-                Ok(Self::SCellRef {
-                    scell_path: None,
-                    scell_def_name: suffix.parse()?,
+                Ok(Self::TargetRef {
+                    location: None,
+                    name: suffix.parse()?,
                 })
             },
             Some((prefix, suffix)) => {
-                Ok(Self::SCellRef {
-                    scell_path: PathBuf::from_str(prefix).map(Some)?,
-                    scell_def_name: suffix.parse()?,
+                Ok(Self::TargetRef {
+                    location: PathBuf::from_str(prefix).map(Some)?,
+                    name: suffix.parse()?,
                 })
             },
             None => Ok(Self::Image(str.parse()?)),
@@ -69,17 +69,17 @@ mod tests {
     use super::*;
 
     // We use a helper to make expected SCellNames in tests
-    fn name(s: &str) -> SCellName {
-        SCellName::from_str(s).unwrap()
+    fn name(s: &str) -> TargetName {
+        TargetName::from_str(s).unwrap()
     }
 
-    #[test_case("+my-cell" => FromStmt::SCellRef { 
-        scell_path: None,
-        scell_def_name: name("my-cell") 
+    #[test_case("+my-cell" => FromStmt::TargetRef { 
+        location: None,
+        name: name("my-cell") 
     } ; "local cell")]
-    #[test_case("path/to/dir+my-cell" => FromStmt::SCellRef { 
-        scell_path: Some(PathBuf::from("path/to/dir")), 
-        scell_def_name: name("my-cell") 
+    #[test_case("path/to/dir+my-cell" => FromStmt::TargetRef { 
+        location: Some(PathBuf::from("path/to/dir")), 
+        name: name("my-cell") 
     } ; "path and cell")]
     #[test_case("debian:12" => FromStmt::Image(ImageDef { 
         image: "debian".to_string(), 

@@ -3,6 +3,7 @@ name = "shell-cell"
 version = "0.1.0"
 edition = "2024"
 description = "Shell-Cell. CLI app to spawn and manage containerized shell environments"
+repository = "https://github.com/Mr-Leshiy/shell-cell"
 authors = [
     "Alex Pozhylenkov <leshiy12345678@gmail.com>"
 ]
@@ -17,6 +18,7 @@ bench = false
 doctest = false
 
 [lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(track_caller)'] }
 warnings = "deny"
 missing_docs = "allow"
 let_underscore_drop = "deny"
@@ -54,12 +56,12 @@ arithmetic_side_effects = "deny"
 
 
 [dependencies]
-anyhow = "1.0.100"
 async-channel = "2.5.0"
 bollard = "0.20.0"
 bytes = "1.11.0"
 chrono = "0.4.43"
 clap = { version = "4.5.56", features = ["derive"] }
+color-eyre = "0.6.5"
 comfy-table = "7.2.2"
 crossterm = "0.29.0"
 dirs = "6.0.0"
@@ -72,6 +74,7 @@ regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
 tar = "0.4.44"
 test-case = "3.3.1"
+thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
 yaml_serde = "0.10.3"
 

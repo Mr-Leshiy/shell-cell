@@ -1,8 +1,13 @@
-use anyhow::Context;
+use std::path::Path;
 
-use super::{Link, SCell};
+use color_eyre::eyre::Context;
+
+use super::{
+    Link, SCell,
+    parser::{SCellFile, name::TargetName, target::FromStmt},
+};
 use crate::{
-    scell_file::{SCellFile, name::SCellName, scell::FromStmt},
+    error::{OptionUserError, UserError, WrapUserError},
     scell_home_dir,
 };
 
@@ -11,11 +16,12 @@ const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 impl SCell {
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
     /// links for the Shell-Cell definition.
-    pub fn compile(
-        mut scell_f: SCellFile,
-        entry: Option<SCellName>,
-    ) -> anyhow::Result<Self> {
-        let entry_point_name = entry.map_or_else(
+    pub fn compile<P: AsRef<Path>>(
+        path: P,
+        entry: Option<TargetName>,
+    ) -> color_eyre::Result<Self> {
+        let mut scell_f = SCellFile::from_path(path)?;
+        let entry_point_target = entry.map_or_else(
             || {
                 SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
                     "'{SCELL_DEFAULT_ENTRY_POINT}' must be a valid Shell-Cell name"
@@ -24,58 +30,57 @@ impl SCell {
             Ok,
         )?;
 
-        let entry_point = scell_f.cells.remove(&entry_point_name).context(format!(
-            "{} does not contain an entrypoint '{entry_point_name}'",
+        let entry_point = scell_f.cells.remove(&entry_point_target).user_err(format!(
+            "Shell-Cell file '{}' does not contain an entrypoint target '{entry_point_target}'",
             scell_f.location.display()
         ))?;
 
+        // TODO: do not early return, return as much errors as possible
         let Some(shell) = entry_point.shell.clone() else {
-            anyhow::bail!(
-                "{}+{entry_point_name} endpoint does not contain 'shell' statement",
+            return UserError::bail(format!(
+                "entrypoint target '{entry_point_target}' in '{}' does not contain 'shell' statement",
                 scell_f.location.display()
-            );
+            ))?;
         };
         let Some(hang) = entry_point.hang.clone() else {
-            anyhow::bail!(
-                "{}+{entry_point_name} endpoint does not contain 'hang' statement",
+            return UserError::bail(format!(
+                "entrypoint target '{entry_point_target}' in '{}' does not contain 'hang' statement",
                 scell_f.location.display()
-            );
+            ))?;
         };
 
         let mut links = Vec::new();
 
-        let mut scell_walk_f = scell_f;
-        let mut scell_walk_def = entry_point;
-        let mut scell_walk_name = entry_point_name;
+        let mut walk_f = scell_f;
+        let mut walk_target = entry_point;
+        let mut walk_target_name = entry_point_target;
         loop {
             links.push(Link::Node {
-                name: scell_walk_name.clone(),
-                location: scell_walk_f.location.clone(),
-                workspace: scell_walk_def.workspace.clone(),
-                copy: scell_walk_def.copy.clone(),
-                build: scell_walk_def.build.clone(),
+                name: walk_target_name.clone(),
+                location: walk_f.location.clone(),
+                workspace: walk_target.workspace.clone(),
+                copy: walk_target.copy.clone(),
+                build: walk_target.build.clone(),
             });
 
-            match scell_walk_def.from {
+            match walk_target.from {
                 FromStmt::Image(docker_image_def) => {
                     links.push(Link::Root(docker_image_def));
                     break;
                 },
-                FromStmt::SCellRef {
-                    scell_path,
-                    scell_def_name,
-                } => {
-                    if let Some(scell_path) = scell_path {
-                        println!("{}", scell_path.display());
-                        scell_walk_f = SCellFile::from_path(&scell_path)?;
+                FromStmt::TargetRef { location, name } => {
+                    if let Some(location) = location {
+                        walk_f = SCellFile::from_path(&location).user_err(format!(
+                            "Fail to process 'from' statement for target '{name}' at '{}'",
+                            location.display()
+                        ))?;
                     }
 
-                    scell_walk_def =
-                        scell_walk_f.cells.remove(&scell_def_name).context(format!(
-                            "{} does not contain a '{scell_def_name}'",
-                            scell_walk_f.location.display()
-                        ))?;
-                    scell_walk_name = scell_def_name;
+                    walk_target = walk_f.cells.remove(&name).user_err(format!(
+                        "Shell-Cell file '{}' does not contain a target '{name}'",
+                        walk_f.location.display()
+                    ))?;
+                    walk_target_name = name;
                 },
             }
         }
@@ -84,7 +89,7 @@ impl SCell {
     }
 }
 
-fn global() -> anyhow::Result<Option<SCellFile>> {
+fn global() -> color_eyre::Result<Option<SCellFile>> {
     const SCELL_GLOBAL: &str = "global.yml";
     let scell_home = scell_home_dir()?;
     SCellFile::from_path(scell_home.join(SCELL_GLOBAL))

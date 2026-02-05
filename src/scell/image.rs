@@ -4,14 +4,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 use itertools::Itertools;
 
-use super::SCell;
-use crate::{
-    scell::Link,
-    scell_file::{
-        build::BuildStmt, copy::CopyStmt, name::SCellName, shell::ShellStmt,
+use super::{
+    Link, SCell,
+    parser::{
+        build::BuildStmt, copy::CopyStmt, name::TargetName, shell::ShellStmt,
         workspace::WorkspaceStmt,
     },
 };
@@ -30,7 +29,7 @@ impl SCell {
         format!("{:x}", hasher.finish())
     }
 
-    pub fn prepare_image_tar_artifact(&self) -> anyhow::Result<(tar::Builder<Vec<u8>>, &str)> {
+    pub fn prepare_image_tar_artifact(&self) -> color_eyre::Result<(tar::Builder<Vec<u8>>, &str)> {
         const DOCKERFILE_NAME: &str = "Dockerfile";
         // Unix file mode,
         // 6 (Owner): Read (4) + Write (2) = Read & Write.
@@ -91,7 +90,7 @@ fn prepare_copy_stmt<W: std::io::Write>(
     tar: &mut tar::Builder<W>,
     copy_stmt: &CopyStmt,
     ctx_path: &Path,
-) -> anyhow::Result<()> {
+) -> color_eyre::Result<()> {
     for e in &copy_stmt.0 {
         let mut iter = e.iter().peekable();
         let mut cp_tmt = String::new();
@@ -136,9 +135,9 @@ fn prepare_copy_stmt<W: std::io::Write>(
 
 fn prepare_metadata_stmt(
     dockerfile: &mut String,
-    name: &SCellName,
+    name: &TargetName,
     location: &Path,
-) -> anyhow::Result<()> {
+) -> color_eyre::Result<()> {
     let _ = writeln!(dockerfile, "LABEL scell-name=\"{name}\"");
     let _ = writeln!(
         dockerfile,

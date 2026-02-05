@@ -11,7 +11,7 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(total_steps: u64) -> anyhow::Result<Self> {
+    pub fn new(total_steps: u64) -> color_eyre::Result<Self> {
         Ok(Self {
             multi: MultiProgress::with_draw_target(ProgressDrawTarget::stdout()),
             common_style: ProgressStyle::with_template("[{pos}/{len}] {msg}")?,
@@ -25,9 +25,9 @@ impl Progress {
         &mut self,
         msg: String,
         f: F,
-    ) -> anyhow::Result<T>
+    ) -> color_eyre::Result<T>
     where
-        F: AsyncFnOnce() -> anyhow::Result<T>,
+        F: AsyncFnOnce() -> color_eyre::Result<T>,
     {
         let pb = self.multi.add(ProgressBar::new_spinner());
         pb.set_style(self.spinner_style.clone());
@@ -43,9 +43,9 @@ impl Progress {
         &mut self,
         msg: String,
         f: F,
-    ) -> anyhow::Result<T>
+    ) -> color_eyre::Result<T>
     where
-        F: AsyncFnOnce() -> anyhow::Result<T>,
+        F: AsyncFnOnce() -> color_eyre::Result<T>,
     {
         self.current_step = self.current_step.saturating_add(1);
 
@@ -65,9 +65,9 @@ impl Progress {
         &mut self,
         msg: String,
         f: F,
-    ) -> anyhow::Result<T>
+    ) -> color_eyre::Result<T>
     where
-        F: AsyncFnOnce(ProgressBar) -> anyhow::Result<T>,
+        F: AsyncFnOnce(ProgressBar) -> color_eyre::Result<T>,
     {
         self.current_step = self.current_step.saturating_add(1);
 
