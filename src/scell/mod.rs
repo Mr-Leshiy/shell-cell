@@ -23,14 +23,14 @@ const NAME_PREFIX: &str = "scell-";
 const IMAGE_METADATA_NAME: &str = "scell-name";
 const IMAGE_METADATA_LOCATION: &str = "scell-location";
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SCell {
     links: Vec<Link>,
     shell: ShellStmt,
     hang: String,
 }
 
-#[derive(Debug, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Link {
     Root(ImageDef),
     Node {
