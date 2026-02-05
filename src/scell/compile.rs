@@ -6,7 +6,7 @@ use super::{
     Link, SCell,
     parser::{SCellFile, name::TargetName, target::FromStmt},
 };
-use crate::scell_home_dir;
+use crate::{error::WrapUserError, scell_home_dir};
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
@@ -64,20 +64,19 @@ impl SCell {
                     links.push(Link::Root(docker_image_def));
                     break;
                 },
-                FromStmt::SCellRef {
-                    scell_path,
-                    scell_def_name,
-                } => {
-                    if let Some(scell_path) = scell_path {
-                        scell_walk_f = SCellFile::from_path(&scell_path)?;
+                FromStmt::TargetRef { location, name } => {
+                    if let Some(location) = location {
+                        scell_walk_f = SCellFile::from_path(&location).user_err(format!(
+                            "Fail to process 'from' statement for target '{name}' at '{}'",
+                            location.display()
+                        ))?;
                     }
 
-                    scell_walk_def =
-                        scell_walk_f.cells.remove(&scell_def_name).context(format!(
-                            "{} does not contain a '{scell_def_name}'",
-                            scell_walk_f.location.display()
-                        ))?;
-                    scell_walk_name = scell_def_name;
+                    scell_walk_def = scell_walk_f.cells.remove(&name).context(format!(
+                        "{} does not contain a '{name}'",
+                        scell_walk_f.location.display()
+                    ))?;
+                    scell_walk_name = name;
                 },
             }
         }

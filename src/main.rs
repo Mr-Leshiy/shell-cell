@@ -3,6 +3,7 @@
 
 mod buildkit;
 mod cli;
+mod error;
 mod pty;
 mod scell;
 

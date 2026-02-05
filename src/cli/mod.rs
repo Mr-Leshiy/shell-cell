@@ -9,6 +9,8 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
 
+use crate::error::UserError;
+
 #[allow(clippy::doc_markdown)]
 /// Binary build info
 mod built_info {
@@ -47,8 +49,14 @@ impl Cli {
         self.exec_inner().await.map_err(|e| {
             if verbose {
                 e.suggestion("To enable verbose output use -v, --verbose flags")
-            } else {
+            } else if e.is::<UserError>() {
                 e
+            } else {
+                e.note(format!(
+                    "Internal bug, please report it `{}/issues/new`",
+                    built_info::PKG_REPOSITORY
+                ))
+                .suggestion("If you've got a second, please toss a full backtrace into your ticket—it helps us squash the bug way faster! You can grab it by running the app with `RUST_BACKTRACE=1`.")
             }
         })?;
 

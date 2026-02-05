@@ -23,7 +23,8 @@ pub struct SCellFile {
 
 impl SCellFile {
     pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
-        let file: std::fs::File = std::fs::File::open(&path)?;
+        let file: std::fs::File = std::fs::File::open(&path)
+            .map_err(|_| color_eyre::eyre::eyre!("Cannot open '{}'", path.as_ref().display()))?;
         let cells: HashMap<TargetName, TargetStmt> = yaml_serde::from_reader(&file)?;
 
         Ok(Self {
