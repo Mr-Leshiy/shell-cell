@@ -3,7 +3,6 @@ use crate::{
     cli::{Cli, progress::Progress},
     pty,
     scell::SCell,
-    scell_file::SCellFile,
 };
 
 impl Cli {
@@ -17,10 +16,7 @@ impl Cli {
                     "📝    Processing Shell-Cell source file '{}'...",
                     self.scell_path.display()
                 ),
-                async || {
-                    let scell_f = SCellFile::from_path(&self.scell_path)?;
-                    SCell::compile(scell_f, None)
-                },
+                async || SCell::compile(&self.scell_path, None),
             )
             .await?;
 

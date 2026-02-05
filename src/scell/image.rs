@@ -7,11 +7,10 @@ use std::{
 use color_eyre::eyre::{Context, ContextCompat};
 use itertools::Itertools;
 
-use super::SCell;
-use crate::{
-    scell::Link,
-    scell_file::{
-        build::BuildStmt, copy::CopyStmt, name::SCellName, shell::ShellStmt,
+use super::{
+    Link, SCell,
+    parser::{
+        build::BuildStmt, copy::CopyStmt, name::TargetName, shell::ShellStmt,
         workspace::WorkspaceStmt,
     },
 };
@@ -136,7 +135,7 @@ fn prepare_copy_stmt<W: std::io::Write>(
 
 fn prepare_metadata_stmt(
     dockerfile: &mut String,
-    name: &SCellName,
+    name: &TargetName,
     location: &Path,
 ) -> color_eyre::Result<()> {
     let _ = writeln!(dockerfile, "LABEL scell-name=\"{name}\"");

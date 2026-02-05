@@ -7,14 +7,15 @@
 
 mod compile;
 mod image;
+mod parser;
 
 use std::{path::PathBuf, str::FromStr};
 
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use crate::scell_file::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::SCellName, shell::ShellStmt,
+use self::parser::{
+    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
     workspace::WorkspaceStmt,
 };
 
@@ -33,7 +34,7 @@ pub struct SCell {
 pub enum Link {
     Root(ImageDef),
     Node {
-        name: SCellName,
+        name: TargetName,
         location: PathBuf,
         workspace: WorkspaceStmt,
         copy: CopyStmt,
@@ -43,7 +44,7 @@ pub enum Link {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCellContainerInfo {
-    pub name: SCellName,
+    pub name: TargetName,
     pub location: PathBuf,
     pub container_name: String,
     pub created_at: DateTime<Utc>,
@@ -130,7 +131,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .as_ref()
             .and_then(|v| {
                 v.get(IMAGE_METADATA_NAME)
-                    .map(|s| SCellName::from_str(s.as_str()))
+                    .map(|s| TargetName::from_str(s.as_str()))
             })
             .context(format!(
                 "'Shell-Cell' container must have a metadata {IMAGE_METADATA_NAME} item"

@@ -5,7 +5,6 @@ mod buildkit;
 mod cli;
 mod pty;
 mod scell;
-mod scell_file;
 
 use std::path::PathBuf;
 

@@ -3,13 +3,13 @@ use std::{fmt::Display, str::FromStr, sync::LazyLock};
 use regex::Regex;
 
 #[allow(clippy::expect_used)]
-static SCELL_NAME_REGEX: LazyLock<Regex> =
+static TARGET_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[a-z][a-z0-9_-]*$").expect("Must be valid REGEX expression"));
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SCellName(String);
+pub struct TargetName(String);
 
-impl Display for SCellName {
+impl Display for TargetName {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -18,20 +18,20 @@ impl Display for SCellName {
     }
 }
 
-impl FromStr for SCellName {
+impl FromStr for TargetName {
     type Err = color_eyre::eyre::Error;
 
     fn from_str(str: &str) -> Result<Self, Self::Err> {
         color_eyre::eyre::ensure!(
-            SCELL_NAME_REGEX.is_match(str),
+            TARGET_NAME_REGEX.is_match(str),
             "Shell-Cell name '{str}' must matches with the REGEX pattern: {}",
-            SCELL_NAME_REGEX.as_str()
+            TARGET_NAME_REGEX.as_str()
         );
         Ok(Self(str.to_string()))
     }
 }
 
-impl<'de> serde::Deserialize<'de> for SCellName {
+impl<'de> serde::Deserialize<'de> for TargetName {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
         let str = String::deserialize(deserializer)?;
@@ -52,7 +52,7 @@ mod tests {
     #[test_case("v1-beta" ; "with numbers after start")]
     #[test_case("a-1-b_2" ; "complex mix")]
     fn test_scell_name_valid(input: &str) {
-        assert_eq!(SCellName::from_str(input).unwrap().0, input);
+        assert_eq!(TargetName::from_str(input).unwrap().0, input);
     }
 
     // Failure cases
@@ -63,6 +63,6 @@ mod tests {
     #[test_case(" cell" ; "leading space")]
     #[test_case("cell\n" ; "contains new line")]
     fn test_scell_name_invalid(input: &str) {
-        assert!(SCellName::from_str(input).is_err());
+        assert!(TargetName::from_str(input).is_err());
     }
 }

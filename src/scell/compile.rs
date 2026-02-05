@@ -1,20 +1,23 @@
+use std::path::Path;
+
 use color_eyre::eyre::{Context, ContextCompat};
 
-use super::{Link, SCell};
-use crate::{
-    scell_file::{SCellFile, name::SCellName, scell::FromStmt},
-    scell_home_dir,
+use super::{
+    Link, SCell,
+    parser::{SCellFile, name::TargetName, target::FromStmt},
 };
+use crate::scell_home_dir;
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
 impl SCell {
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
     /// links for the Shell-Cell definition.
-    pub fn compile(
-        mut scell_f: SCellFile,
-        entry: Option<SCellName>,
+    pub fn compile<P: AsRef<Path>>(
+        path: P,
+        entry: Option<TargetName>,
     ) -> color_eyre::Result<Self> {
+        let mut scell_f = SCellFile::from_path(path)?;
         let entry_point_name = entry.map_or_else(
             || {
                 SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
