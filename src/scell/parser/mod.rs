@@ -28,7 +28,7 @@ impl SCellFile {
     pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
         let file_path = path.as_ref().join(SCELL_FILE_NAME);
         let file: std::fs::File = std::fs::File::open(&file_path)
-            .user_err(format!("Cannot find file '{}'", file_path.display()))?;
+            .wrap_user_err(format!("Cannot open file '{}'", file_path.display()))?;
         let cells: HashMap<TargetName, TargetStmt> =
             yaml_serde::from_reader(&file).mark_as_user_err()?;
 
