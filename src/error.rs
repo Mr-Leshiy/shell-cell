@@ -1,15 +1,35 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 /// Represents an error caused by invalid user interaction or input.
-#[derive(Debug, thiserror::Error)]
-#[error("{0}")]
-pub struct UserError(String);
+#[derive(Debug)]
+pub struct UserError(color_eyre::eyre::Error);
+
+impl Display for UserError {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl std::error::Error for UserError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.0.source()
+    }
+}
+
+impl UserError {
+    pub fn inner(self) -> color_eyre::eyre::Error {
+        self.0
+    }
+}
 
 impl UserError {
     #[cfg_attr(track_caller, track_caller)]
     pub fn bail<T, D>(msg: D) -> Result<T, UserError>
-    where D: Display + Send + Sync + 'static {
-        Err(Self(msg.to_string()))
+    where D: Display + Debug + Send + Sync + 'static {
+        Err(Self(color_eyre::eyre::Error::msg(msg)))
     }
 }
 
@@ -20,7 +40,15 @@ pub trait WrapUserError<T, E> {
         msg: D,
     ) -> Result<T, UserError>
     where
-        D: Display + Send + Sync + 'static;
+        D: Display + Debug + Send + Sync + 'static;
+
+    #[cfg_attr(track_caller, track_caller)]
+    fn wrap_user_err<D>(
+        self,
+        msg: D,
+    ) -> Result<T, UserError>
+    where
+        D: Display + Debug + Send + Sync + 'static;
 
     #[cfg_attr(track_caller, track_caller)]
     fn mark_as_user_err(self) -> Result<T, UserError>;
@@ -33,29 +61,42 @@ pub trait OptionUserError<T> {
         msg: D,
     ) -> Result<T, UserError>
     where
-        D: Display + Send + Sync + 'static;
+        D: Display + Debug + Send + Sync + 'static;
 }
 
 impl<T, E> WrapUserError<T, E> for Result<T, E>
-where E: Display + Send + Sync + 'static
+where E: Display + Debug + Send + Sync + 'static
 {
     fn user_err<D>(
         self,
         msg: D,
     ) -> Result<T, UserError>
     where
-        D: Display + Send + Sync + 'static,
+        D: Display + Debug + Send + Sync + 'static,
     {
         match self {
             Ok(t) => Ok(t),
-            Err(_) => Err(UserError(msg.to_string())),
+            Err(_) => Err(UserError(color_eyre::eyre::Error::msg(msg))),
+        }
+    }
+
+    fn wrap_user_err<D>(
+        self,
+        msg: D,
+    ) -> Result<T, UserError>
+    where
+        D: Display + Debug + Send + Sync + 'static,
+    {
+        match self {
+            Ok(t) => Ok(t),
+            Err(e) => Err(UserError(color_eyre::eyre::Error::msg(e).wrap_err(msg))),
         }
     }
 
     fn mark_as_user_err(self) -> Result<T, UserError> {
         match self {
             Ok(t) => Ok(t),
-            Err(e) => Err(UserError(e.to_string())),
+            Err(e) => Err(UserError(color_eyre::eyre::Error::msg(e))),
         }
     }
 }
@@ -66,11 +107,11 @@ impl<T> OptionUserError<T> for Option<T> {
         msg: D,
     ) -> Result<T, UserError>
     where
-        D: Display + Send + Sync + 'static,
+        D: Display + Debug + Send + Sync + 'static,
     {
         match self {
             Some(t) => Ok(t),
-            None => Err(UserError(msg.to_string())),
+            None => Err(UserError(color_eyre::eyre::Error::msg(msg))),
         }
     }
 }
