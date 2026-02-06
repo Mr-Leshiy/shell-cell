@@ -26,3 +26,5 @@ jobs:
       run: cargo clippy --all-targets
     - name: Run tests
       run: cargo test -- --test-threads 1
+    - name: Deny
+      uses: EmbarkStudios/cargo-deny-action@v2
