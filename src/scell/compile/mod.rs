@@ -73,9 +73,12 @@ impl SCell {
                 },
                 FromStmt::TargetRef { location, name } => {
                     if let Some(location) = location {
+                        let location = walk_f.location.join(location);
+                        let location = std::fs::canonicalize(location).user_err(format!("Something went wront"))?;
                         walk_f = SCellFile::from_path(&location).user_err(format!(
-                            "Fail to process 'from' statement for target '{name}' at '{}'",
-                            location.display()
+                            "Cannot find load Shell-Cell file at '{}' while processing 'from' statement for target '{name}' at '{}'",
+                            location.display(),
+                            walk_f.location.display()
                         ))?;
                     }
 

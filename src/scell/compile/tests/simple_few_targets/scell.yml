@@ -1,0 +1,7 @@
+other:
+  from: from
+
+main:
+  from: +other
+  shell: [shell]
+  hang: hang

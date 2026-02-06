@@ -16,6 +16,8 @@ use std::{
 use self::{name::TargetName, target::TargetStmt};
 use crate::error::WrapUserError;
 
+const SCELL_FILE_NAME: &str = "scell.yml";
+
 #[derive(Debug)]
 pub struct SCellFile {
     pub cells: HashMap<TargetName, TargetStmt>,
@@ -24,8 +26,9 @@ pub struct SCellFile {
 
 impl SCellFile {
     pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
-        let file: std::fs::File = std::fs::File::open(&path)
-            .user_err(format!("Cannot find file '{}'", path.as_ref().display()))?;
+        let file_path = path.as_ref().join(SCELL_FILE_NAME);
+        let file: std::fs::File = std::fs::File::open(&file_path)
+            .user_err(format!("Cannot find file '{}'", file_path.display()))?;
         let cells: HashMap<TargetName, TargetStmt> =
             yaml_serde::from_reader(&file).mark_as_user_err()?;
 
