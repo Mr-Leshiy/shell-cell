@@ -16,6 +16,11 @@ use crate::{
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+
+}
+
 impl SCell {
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
     /// links for the Shell-Cell definition.

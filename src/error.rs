@@ -1,23 +1,9 @@
 use std::fmt::{Debug, Display};
 
 /// Represents an error caused by invalid user interaction or input.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
 pub struct UserError(color_eyre::eyre::Error);
-
-impl Display for UserError {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.0, f)
-    }
-}
-
-impl std::error::Error for UserError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.0.source()
-    }
-}
 
 impl UserError {
     pub fn inner(self) -> color_eyre::eyre::Error {
