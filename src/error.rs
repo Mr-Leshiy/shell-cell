@@ -34,6 +34,7 @@ impl UserError {
 }
 
 pub trait WrapUserError<T, E> {
+    /// Wraps the provided `msg` into the `UserError` type, drop the existing error
     #[cfg_attr(track_caller, track_caller)]
     fn user_err<D>(
         self,
@@ -42,6 +43,8 @@ pub trait WrapUserError<T, E> {
     where
         D: Display + Debug + Send + Sync + 'static;
 
+    /// Wraps the provided `msg` into the `UserError` type, keeping the existing error as
+    /// well.
     #[cfg_attr(track_caller, track_caller)]
     fn wrap_user_err<D>(
         self,
@@ -50,6 +53,7 @@ pub trait WrapUserError<T, E> {
     where
         D: Display + Debug + Send + Sync + 'static;
 
+    /// Wraps the current error into the `UserError` type.
     #[cfg_attr(track_caller, track_caller)]
     fn mark_as_user_err(self) -> Result<T, UserError>;
 }
