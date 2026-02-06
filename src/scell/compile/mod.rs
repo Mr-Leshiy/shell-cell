@@ -80,7 +80,7 @@ impl SCell {
                                 location.display(),
                                 walk_f.location.display()
                             ))?;
-                        walk_f = SCellFile::from_path(&location).user_err(format!(
+                        walk_f = SCellFile::from_path(&location).wrap_user_err(format!(
                             "Cannot find load Shell-Cell file at '{}' while processing 'from' statement for target '{name}' at '{}'",
                             location.display(),
                             walk_f.location.display()
