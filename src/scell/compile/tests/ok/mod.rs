@@ -119,5 +119,9 @@ fn compile_ok_test(
     dir_path: &str,
     target: Option<TargetName>,
 ) -> SCell {
-    SCell::compile(Path::new("src/scell/compile/tests/ok").join(dir_path), target).unwrap()
+    SCell::compile(
+        Path::new("src/scell/compile/tests/ok").join(dir_path),
+        target,
+    )
+    .unwrap()
 }

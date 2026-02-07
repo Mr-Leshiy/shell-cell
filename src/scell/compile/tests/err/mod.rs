@@ -1,53 +1,34 @@
-use std::path::{Path, PathBuf};
+use std::{marker::PhantomData, path::Path};
 
 use test_case::test_case;
 
-use crate::scell::{
-    Link, SCell,
-    parser::{
-        build::BuildStmt, copy::CopyStmt, name::TargetName, shell::ShellStmt,
-        workspace::WorkspaceStmt,
-    },
+use crate::{
+    error::UserError,
+    scell::{compile::errors::{CircularTargets, MissingTarget}, parser::name::TargetName, SCell},
 };
 
+// TODO add test cases for `DirNotFoundFromStmt` and `FileLoadFromStmt`
+// TODO replace `PhantomData` with returning an error object, instead of just a type
+#[test_case(
+    "missing_target", None 
+    => PhantomData::<MissingTarget>
+    ; "missing target"
+)]
 #[test_case(
     "circular_targets", None 
-    => SCell {
-        links: vec![
-            Link::Node {
-                name: "main".parse().unwrap(),
-                location: PathBuf::from("src/scell/compile/tests/ok/ref_other_files"),
-                workspace: WorkspaceStmt::default(),
-                copy: CopyStmt::default(),
-                build: BuildStmt::default(),
-            },
-            Link::Node {
-                name: "other".parse().unwrap(),
-                location: std::fs::canonicalize("src/scell/compile/tests/ok/ref_other_files/other").unwrap(),
-                workspace: WorkspaceStmt::default(),
-                copy: CopyStmt::default(),
-                build: BuildStmt::default(),
-            },
-            Link::Node {
-                name: "other".parse().unwrap(),
-                location: std::fs::canonicalize("src/scell/compile/tests/ok/few_targets").unwrap(),
-                workspace: WorkspaceStmt::default(),
-                copy: CopyStmt::default(),
-                build: BuildStmt::default(),
-            },
-            Link::Root("from".parse().unwrap())
-        ],
-        shell: ShellStmt {
-            bin_path: "shell".to_string(),
-            commands: vec![]
-        },
-        hang: "hang".to_string(),
-    }
+    => PhantomData::<CircularTargets>
     ; "circular targets"
 )]
-fn compile_err_test(
+fn compile_err_test<E: std::error::Error + Sync + Send + 'static>(
     dir_path: &str,
     target: Option<TargetName>,
-) -> SCell {
-    SCell::compile(Path::new("src/scell/compile/tests/err").join(dir_path), target).unwrap()
+) -> PhantomData<E> {
+    let err = SCell::compile(
+        Path::new("src/scell/compile/tests/err").join(dir_path),
+        target,
+    )
+    .expect_err("Must fail");
+    let err = err.downcast::<UserError>().expect("Must be a UserError");
+    assert!(err.inner().is::<E>());
+    PhantomData::<E>
 }

@@ -1,3 +1,4 @@
+pub mod errors;
 #[cfg(test)]
 mod tests;
 
@@ -11,15 +12,11 @@ use super::{
 };
 use crate::{
     error::{OptionUserError, UserError, WrapUserError},
+    scell::compile::errors::{DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget},
     scell_home_dir,
 };
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-
-}
 
 impl SCell {
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
@@ -44,6 +41,7 @@ impl SCell {
         ))?;
 
         // TODO: do not early return, return as much errors as possible
+        // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
         let Some(shell) = entry_point.shell.clone() else {
             return UserError::bail(format!(
                 "entrypoint target '{entry_point_target}' in '{}' does not contain 'shell' statement",
@@ -79,23 +77,24 @@ impl SCell {
                 FromStmt::TargetRef { location, name } => {
                     if let Some(location) = location {
                         let location = walk_f.location.join(location);
-                        let location = std::fs::canonicalize(&location)
-                            .user_err(format!(
-                                "Cannot resolve a directory location at {} while processing 'from' statement for target '{name}' at '{}'",
-                                location.display(),
-                                walk_f.location.display()
+                        let location =
+                            std::fs::canonicalize(&location).user_err(DirNotFoundFromStmt(
+                                location.clone(),
+                                name.clone(),
+                                walk_f.location.clone(),
                             ))?;
-                        walk_f = SCellFile::from_path(&location).wrap_user_err(format!(
-                            "Cannot find load Shell-Cell file at '{}' while processing 'from' statement for target '{name}' at '{}'",
-                            location.display(),
-                            walk_f.location.display()
-                        ))?;
+                        walk_f =
+                            SCellFile::from_path(&location).wrap_user_err(FileLoadFromStmt(
+                                location.clone(),
+                                name.clone(),
+                                walk_f.location.clone(),
+                            ))?;
                     }
 
-                    walk_target = walk_f.cells.remove(&name).user_err(format!(
-                        "Shell-Cell file '{}' does not contain a target '{name}'",
-                        walk_f.location.display()
-                    ))?;
+                    walk_target = walk_f
+                        .cells
+                        .remove(&name)
+                        .user_err(MissingTarget(name.clone(), walk_f.location.clone()))?;
                     walk_target_name = name;
                 },
             }
