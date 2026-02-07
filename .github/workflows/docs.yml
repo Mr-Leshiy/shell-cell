@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
     paths:
       - 'docs/**'
+      - '**.md'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'docs/**'
+      - '**.md'
 
 
 jobs:
