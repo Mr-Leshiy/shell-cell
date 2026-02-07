@@ -4,7 +4,11 @@ use test_case::test_case;
 
 use crate::{
     error::UserError,
-    scell::{compile::errors::{CircularTargets, MissingTarget}, parser::name::TargetName, SCell},
+    scell::{
+        SCell,
+        compile::errors::{CircularTargets, MissingTarget},
+        parser::name::TargetName,
+    },
 };
 
 // TODO add test cases for `DirNotFoundFromStmt` and `FileLoadFromStmt`

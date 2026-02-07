@@ -2,7 +2,7 @@ pub mod errors;
 #[cfg(test)]
 mod tests;
 
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 use color_eyre::eyre::Context;
 
@@ -12,7 +12,9 @@ use super::{
 };
 use crate::{
     error::{OptionUserError, UserError, WrapUserError},
-    scell::compile::errors::{DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget},
+    scell::compile::errors::{
+        CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
+    },
     scell_home_dir,
 };
 
@@ -55,6 +57,9 @@ impl SCell {
             ))?;
         };
 
+        // Store processed target's name and location, to detect circular target dependencies
+        let mut visited_targets = HashSet::new();
+
         let mut links = Vec::new();
 
         let mut walk_f = scell_f;
@@ -75,20 +80,28 @@ impl SCell {
                     break;
                 },
                 FromStmt::TargetRef { location, name } => {
+                    let current_target_location = walk_f.location.clone();
                     if let Some(location) = location {
-                        let location = walk_f.location.join(location);
+                        let location = current_target_location.join(location);
                         let location =
                             std::fs::canonicalize(&location).user_err(DirNotFoundFromStmt(
                                 location.clone(),
                                 name.clone(),
-                                walk_f.location.clone(),
+                                current_target_location.clone(),
                             ))?;
                         walk_f =
                             SCellFile::from_path(&location).wrap_user_err(FileLoadFromStmt(
                                 location.clone(),
                                 name.clone(),
-                                walk_f.location.clone(),
+                                current_target_location.clone(),
                             ))?;
+                    }
+
+                    if visited_targets.contains(&(name.clone(), current_target_location.clone())) {
+                        return UserError::bail(CircularTargets(
+                            name.clone(),
+                            current_target_location,
+                        ))?;
                     }
 
                     walk_target = walk_f
@@ -96,6 +109,8 @@ impl SCell {
                         .remove(&name)
                         .user_err(MissingTarget(name.clone(), walk_f.location.clone()))?;
                     walk_target_name = name;
+
+                    visited_targets.insert((walk_target_name.clone(), walk_f.location.clone()));
                 },
             }
         }

@@ -19,5 +19,7 @@ pub struct FileLoadFromStmt(pub PathBuf, pub TargetName, pub PathBuf);
 pub struct MissingTarget(pub TargetName, pub PathBuf);
 
 #[derive(Debug, thiserror::Error)]
-#[error("Shell-Cell file '{0}' does not contain a target '{1}'")]
+#[error(
+    "A circular dependency was identified within the target graph. While processing 'from' statement for '{0}' at '{1}'"
+)]
 pub struct CircularTargets(pub TargetName, pub PathBuf);
