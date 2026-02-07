@@ -42,21 +42,6 @@ impl SCell {
             scell_f.location.display()
         ))?;
 
-        // TODO: do not early return, return as much errors as possible
-        // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
-        let Some(shell) = entry_point.shell.clone() else {
-            return UserError::bail(format!(
-                "entrypoint target '{entry_point_target}' in '{}' does not contain 'shell' statement",
-                scell_f.location.display()
-            ))?;
-        };
-        let Some(hang) = entry_point.hang.clone() else {
-            return UserError::bail(format!(
-                "entrypoint target '{entry_point_target}' in '{}' does not contain 'hang' statement",
-                scell_f.location.display()
-            ))?;
-        };
-
         // Store processed target's name and location, to detect circular target dependencies
         let mut visited_targets = HashSet::new();
 
@@ -65,7 +50,16 @@ impl SCell {
         let mut walk_f = scell_f;
         let mut walk_target = entry_point;
         let mut walk_target_name = entry_point_target;
+        let mut shell = None;
+        let mut hang = None;
         loop {
+            // Use only the most recent 'shell` and 'hang' statements from the targets graph.
+            if shell.is_none() {
+                shell = walk_target.shell;
+            }
+            if hang.is_none() {
+                hang = walk_target.hang;
+            }
             links.push(Link::Node {
                 name: walk_target_name.clone(),
                 location: walk_f.location.clone(),
@@ -110,6 +104,19 @@ impl SCell {
                 },
             }
         }
+
+        // TODO: do not early return, return as much errors as possible
+        // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
+        let Some(shell) = shell.clone() else {
+            return UserError::bail(format!(
+                "Shell-Cell must have 'shell' statement in some target"
+            ))?;
+        };
+        let Some(hang) = hang.clone() else {
+            return UserError::bail(format!(
+                "Shell-Cell must have 'hang' statement in some target"
+            ))?;
+        };
 
         Ok(Self { links, shell, hang })
     }
