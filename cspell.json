@@ -6,6 +6,7 @@
     "useGitignore": true,
     "dictionaries": ["html", "css"],
     "files": [
+        "docs/**",
         "**.md"
     ],
     "words": [
