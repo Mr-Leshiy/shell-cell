@@ -80,28 +80,24 @@ impl SCell {
                     break;
                 },
                 FromStmt::TargetRef { location, name } => {
-                    let current_target_location = walk_f.location.clone();
                     if let Some(location) = location {
-                        let location = current_target_location.join(location);
+                        let location = walk_f.location.join(location);
                         let location =
                             std::fs::canonicalize(&location).user_err(DirNotFoundFromStmt(
                                 location.clone(),
                                 name.clone(),
-                                current_target_location.clone(),
+                                walk_f.location.clone(),
                             ))?;
                         walk_f =
                             SCellFile::from_path(&location).wrap_user_err(FileLoadFromStmt(
                                 location.clone(),
                                 name.clone(),
-                                current_target_location.clone(),
+                                walk_f.location.clone(),
                             ))?;
                     }
 
-                    if visited_targets.contains(&(name.clone(), current_target_location.clone())) {
-                        return UserError::bail(CircularTargets(
-                            name.clone(),
-                            current_target_location,
-                        ))?;
+                    if visited_targets.contains(&(name.clone(), walk_f.location.clone())) {
+                        return UserError::bail(CircularTargets(name.clone(), walk_f.location))?;
                     }
 
                     walk_target = walk_f
