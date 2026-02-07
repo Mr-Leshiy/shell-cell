@@ -38,7 +38,7 @@ Inside each target, during the `Shell-Cell` image building process,
 the instructions are executed in a specific, strict order:
 1. `workspace`
 2. `from`
-3. `run`
+3. `build`
 
 ### `from`
 
@@ -99,14 +99,14 @@ copy:
     - file3 file4 .
 ```
 
-### `run` (optional)
+### `build` (optional)
 
 Will execute any commands to create a new layer on top of the current image,
 during the image building process.
 Similar to the Dockerfile [`RUN`](https://docs.docker.com/reference/dockerfile/#run) instruction.
 
 ```yml
-run:
+build:
     - <command_1>
     - <command_2>
 ```
