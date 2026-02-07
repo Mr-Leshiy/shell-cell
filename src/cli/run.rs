@@ -7,7 +7,7 @@ use crate::{
 
 impl Cli {
     pub async fn run(self) -> color_eyre::Result<()> {
-        let mut pb = Progress::new(4)?;
+        let mut pb = Progress::new(5)?;
 
         // STEP 1
         let scell = pb
@@ -56,6 +56,16 @@ impl Cli {
                 },
             )
             .await?;
+
+        // STEP 5
+        pb.run_step(
+            "🚀    Starting 'Shell-Cell' session...".to_string(),
+            async || {
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                color_eyre::eyre::Ok(())
+            },
+        )
+        .await?;
 
         pty::run(&pty).await?;
 
