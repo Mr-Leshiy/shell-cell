@@ -57,14 +57,17 @@ impl Cli {
             )
             .await?;
 
-        pty::run(&pty).await?;
-
-        // FINAL STEP
-        pb.run_spinner(
-            "🏁    Stopping 'Shell-Cell' container...".to_string(),
-            async || buildkit.stop_container(&scell).await,
+        // STEP 5
+        pb.run_step(
+            "🚀    Starting 'Shell-Cell' session...".to_string(),
+            async || {
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                color_eyre::eyre::Ok(())
+            },
         )
         .await?;
+
+        pty::run(&pty).await?;
 
         println!("Finished 'Shell-Cell' session\n<Press any key to exit>");
         Ok(())

@@ -5,14 +5,10 @@ use std::{
 };
 
 use color_eyre::eyre::{Context, ContextCompat};
-use itertools::Itertools;
 
 use super::{
     Link, SCell,
-    parser::{
-        build::BuildStmt, copy::CopyStmt, name::TargetName, shell::ShellStmt,
-        workspace::WorkspaceStmt,
-    },
+    parser::{build::BuildStmt, copy::CopyStmt, name::TargetName, workspace::WorkspaceStmt},
 };
 
 impl SCell {
@@ -64,7 +60,7 @@ impl SCell {
             }
         }
         // TODO: find better solution how to hang the container
-        prepare_shell_and_hang_stmt(&mut dockerfile, &self.shell, &self.hang);
+        prepare_hang_stmt(&mut dockerfile, &self.hang);
 
         // Attach generated dockerfile string to tar
         let mut header = tar::Header::new_gnu();
@@ -165,20 +161,9 @@ fn prepare_workspace_stmt(
     }
 }
 
-fn prepare_shell_and_hang_stmt(
+fn prepare_hang_stmt(
     dockerfile: &mut String,
-    shell_stmt: &ShellStmt,
     hang_stmt: &str,
 ) {
-    let _ = writeln!(
-        dockerfile,
-        "SHELL [\"{}\", {}]",
-        shell_stmt.bin_path,
-        shell_stmt
-            .commands
-            .iter()
-            .map(|v| format!("\"{v}\""))
-            .join(",")
-    );
     let _ = writeln!(dockerfile, "ENTRYPOINT {hang_stmt}");
 }

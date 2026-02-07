@@ -1,4 +1,4 @@
 main:
   from: other+other
-  shell: [shell]
+  shell: shell
   hang: hang

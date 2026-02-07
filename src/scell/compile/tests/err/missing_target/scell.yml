@@ -1,4 +1,4 @@
 main:
   from: +missing_target
-  shell: [shell]
+  shell: shell
   hang: hang

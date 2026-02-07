@@ -3,5 +3,5 @@ other:
 
 main:
   from: +other
-  shell: [shell]
+  shell: shell
   hang: hang

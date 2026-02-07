@@ -54,7 +54,7 @@ pub struct SCellContainerInfo {
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
-        &self.shell.bin_path
+        &self.shell.0
     }
 
     pub fn name(&self) -> String {
