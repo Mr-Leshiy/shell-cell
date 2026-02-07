@@ -47,9 +47,7 @@ impl Cli {
     pub async fn exec(self) -> color_eyre::Result<()> {
         let verbose = self.verbose;
         self.exec_inner().await.map_err(|e| {
-            if !verbose {
-                e.suggestion("To enable verbose output use -v, --verbose flags")
-            } else {
+            if verbose {
                 match e.downcast::<UserError>() {
                     Ok(e) => e.inner(),
                     Err(e) =>  {
@@ -62,6 +60,8 @@ impl Cli {
                         .suggestion("If you've got a second, please toss a full backtrace into your ticket—it helps us squash the bug way faster! You can grab it by running the app with `RUST_BACKTRACE=1`.")
                     }
                 }
+            } else {
+                e.suggestion("To enable verbose output use -v, --verbose flags")
             }
         })?;
 

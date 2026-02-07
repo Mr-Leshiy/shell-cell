@@ -7,7 +7,7 @@ use crate::{
 
 impl Cli {
     pub async fn run(self) -> color_eyre::Result<()> {
-        let mut pb = Progress::new(5)?;
+        let mut pb = Progress::new(4)?;
 
         // STEP 1
         let scell = pb
@@ -58,13 +58,6 @@ impl Cli {
             .await?;
 
         pty::run(&pty).await?;
-
-        // FINAL STEP
-        pb.run_spinner(
-            "🏁    Stopping 'Shell-Cell' container...".to_string(),
-            async || buildkit.stop_container(&scell).await,
-        )
-        .await?;
 
         println!("Finished 'Shell-Cell' session\n<Press any key to exit>");
         Ok(())

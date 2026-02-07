@@ -23,10 +23,7 @@ use crate::scell::{
             },
             Link::Root("from".parse().unwrap())
         ],
-        shell: ShellStmt {
-            bin_path: "shell".to_string(),
-            commands: vec![]
-        },
+        shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
     }
     ; "default target"
@@ -44,10 +41,7 @@ use crate::scell::{
             },
             Link::Root("from".parse().unwrap())
         ],
-        shell: ShellStmt {
-            bin_path: "shell".to_string(),
-            commands: vec![]
-        },
+        shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
     }
     ; "other target"
@@ -72,10 +66,7 @@ use crate::scell::{
             },
             Link::Root("from".parse().unwrap())
         ],
-        shell: ShellStmt {
-            bin_path: "shell".to_string(),
-            commands: vec![]
-        },
+        shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
     }
     ; "few targets"
@@ -107,10 +98,7 @@ use crate::scell::{
             },
             Link::Root("from".parse().unwrap())
         ],
-        shell: ShellStmt {
-            bin_path: "shell".to_string(),
-            commands: vec![]
-        },
+        shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
     }
     ; "ref other files"
