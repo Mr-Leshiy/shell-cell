@@ -21,8 +21,8 @@ mod built_info {
 #[clap(version = built_info::PKG_VERSION)]
 #[clap(about = built_info::PKG_DESCRIPTION)]
 pub struct Cli {
-    /// Path to the 'scell.yml' file (Optional),
-    #[clap(value_name = "FILE", default_value = "./scell.yml")]
+    /// Path to the directory with 'scell.yml' file (Optional),
+    #[clap(value_name = "FILE", default_value = ".")]
     pub scell_path: PathBuf,
 
     /// Show detailed logs

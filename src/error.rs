@@ -1,23 +1,9 @@
 use std::fmt::{Debug, Display};
 
 /// Represents an error caused by invalid user interaction or input.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
 pub struct UserError(color_eyre::eyre::Error);
-
-impl Display for UserError {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.0, f)
-    }
-}
-
-impl std::error::Error for UserError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.0.source()
-    }
-}
 
 impl UserError {
     pub fn inner(self) -> color_eyre::eyre::Error {
@@ -34,6 +20,7 @@ impl UserError {
 }
 
 pub trait WrapUserError<T, E> {
+    /// Wraps the provided `msg` into the `UserError` type, drop the existing error
     #[cfg_attr(track_caller, track_caller)]
     fn user_err<D>(
         self,
@@ -42,6 +29,8 @@ pub trait WrapUserError<T, E> {
     where
         D: Display + Debug + Send + Sync + 'static;
 
+    /// Wraps the provided `msg` into the `UserError` type, keeping the existing error as
+    /// well.
     #[cfg_attr(track_caller, track_caller)]
     fn wrap_user_err<D>(
         self,
@@ -50,6 +39,7 @@ pub trait WrapUserError<T, E> {
     where
         D: Display + Debug + Send + Sync + 'static;
 
+    /// Wraps the current error into the `UserError` type.
     #[cfg_attr(track_caller, track_caller)]
     fn mark_as_user_err(self) -> Result<T, UserError>;
 }

@@ -1,7 +1,8 @@
+pub mod errors;
 #[cfg(test)]
 mod tests;
 
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 use color_eyre::eyre::Context;
 
@@ -11,6 +12,9 @@ use super::{
 };
 use crate::{
     error::{OptionUserError, UserError, WrapUserError},
+    scell::compile::errors::{
+        CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
+    },
     scell_home_dir,
 };
 
@@ -39,6 +43,7 @@ impl SCell {
         ))?;
 
         // TODO: do not early return, return as much errors as possible
+        // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
         let Some(shell) = entry_point.shell.clone() else {
             return UserError::bail(format!(
                 "entrypoint target '{entry_point_target}' in '{}' does not contain 'shell' statement",
@@ -51,6 +56,9 @@ impl SCell {
                 scell_f.location.display()
             ))?;
         };
+
+        // Store processed target's name and location, to detect circular target dependencies
+        let mut visited_targets = HashSet::new();
 
         let mut links = Vec::new();
 
@@ -74,24 +82,31 @@ impl SCell {
                 FromStmt::TargetRef { location, name } => {
                     if let Some(location) = location {
                         let location = walk_f.location.join(location);
-                        let location = std::fs::canonicalize(&location)
-                            .user_err(format!(
-                                "Cannot resolve a directory location at {} while processing 'from' statement for target '{name}' at '{}'",
-                                location.display(),
-                                walk_f.location.display()
+                        let location =
+                            std::fs::canonicalize(&location).user_err(DirNotFoundFromStmt(
+                                location.clone(),
+                                name.clone(),
+                                walk_f.location.clone(),
                             ))?;
-                        walk_f = SCellFile::from_path(&location).user_err(format!(
-                            "Cannot find load Shell-Cell file at '{}' while processing 'from' statement for target '{name}' at '{}'",
-                            location.display(),
-                            walk_f.location.display()
-                        ))?;
+                        walk_f =
+                            SCellFile::from_path(&location).wrap_user_err(FileLoadFromStmt(
+                                location.clone(),
+                                name.clone(),
+                                walk_f.location.clone(),
+                            ))?;
                     }
 
-                    walk_target = walk_f.cells.remove(&name).user_err(format!(
-                        "Shell-Cell file '{}' does not contain a target '{name}'",
-                        walk_f.location.display()
-                    ))?;
+                    if visited_targets.contains(&(name.clone(), walk_f.location.clone())) {
+                        return UserError::bail(CircularTargets(name.clone(), walk_f.location))?;
+                    }
+
+                    walk_target = walk_f
+                        .cells
+                        .remove(&name)
+                        .user_err(MissingTarget(name.clone(), walk_f.location.clone()))?;
                     walk_target_name = name;
+
+                    visited_targets.insert((walk_target_name.clone(), walk_f.location.clone()));
                 },
             }
         }
