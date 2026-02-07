@@ -1,54 +1,28 @@
-<h1>🐚 Shell-Cell</h1>
-
-![logo](./logo.png)
-
-
-> ⚠️ Prototype, under heavy development
+<h1><span style="font-family: 'Courier New', monospace; color: #00FF41; border-radius: 3px; font-weight: bold;text-shadow: 0 0 5px #00FF41;">Shell-Cell</span></h1>
 
 Lightweight CLI app designed to spin up instant, isolated, and reproducible development shell sessions.
 
-## Table of contents
-- [Table of contents](#table-of-contents)
-- [Installation and configuration](#installation-and-configuration)
-  - [UNIX socket configuration (UNIX)](#unix-socket-configuration-unix)
-- [Run](#run)
-- [How it works](#how-it-works)
+> ⚠️ Prototype, under heavy development
 
-## Installation and configuration
+<div align="center">
+  <img src="./logo.png" alt="logo" />
+</div>
 
-To install `Shell-Cell` use cargo
-```shell
-cargo isntall --git https://github.com/Mr-Leshiy/shell-cell.git --locked
-```
+## 🚀 Getting Started
 
-`Shell-Cell` requires a running instace either [Docker] or [Podman] daemon.
+We want to get you up and running as smoothly as possible.
+Whether you’re looking to install, configure, or learn how it works,
+our documentation has your back:
 
-### UNIX socket configuration (UNIX)
+👉 [Explore the Docs](./docs/index.md)
 
-To interact with the [Docker] or [Podman] daemon
-`Shell-Cell` uses a UNIX socket connection on UNIX based operating systems.
+## ➡️ Whats next?
 
-If `Shell-Cell` cannot locate the `docker.sock` file you could run
-- for [Docker]
-```shell
-docker context inspect
-```
-- for [Podman]
-```shell
-???
-```
+Want to see what we’re working on or suggest a new idea? Check out our journey here:
 
-And set the env var `DOCKER_HOST` (even if you are using [Podman]) with the found path location.
+👉 [Roadmap](./roadmap.md)
 
-## Run
+## ❤️ Contributing & Feedback
 
-```shell
-scell
-```
+If you run into a bug or have a "what if" idea, don't be a stranger — open an issue, start a discussion or make a pull-request!
 
-## How it works
-
-Curious about the check out the [architecture.md](/architecture.md)
-
-[Docker]: https://www.docker.com
-[Podman]: https://podman.io
