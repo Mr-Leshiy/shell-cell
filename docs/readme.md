@@ -10,7 +10,7 @@
 
 It could be really handy, when you want to have secure, isolated place for your development.
 
-## 🏛️ Architecture conecepts
+## 🏛️ Architecture concepts
 
 1. **The blueprint file (`scell.yml`)**.<br>
     Everything starts with the configuration file. It defines your `Shell-Cell` targets (the environment layers).
