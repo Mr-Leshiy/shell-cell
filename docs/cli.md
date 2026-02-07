@@ -24,6 +24,8 @@ scell
 That’s it, simple as that!
 `Shell-Cell` will automatically look for a file named `scell.yml` in your current location and start the `Shell-Cell` session on the spot.
 
+It would try to locate an entry point target - `main`.
+
 
 If your configuration file is located elsewhere and you don't want to change directories, you can point `Shell-Cell` directly to it:
 
