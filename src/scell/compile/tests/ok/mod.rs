@@ -5,8 +5,8 @@ use test_case::test_case;
 use crate::scell::{
     Link, SCell,
     parser::{
-        build::BuildStmt, copy::CopyStmt, name::TargetName, shell::ShellStmt,
-        workspace::WorkspaceStmt,
+        name::TargetName,
+        target::{build::BuildStmt, copy::CopyStmt, shell::ShellStmt, workspace::WorkspaceStmt},
     },
 };
 

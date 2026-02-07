@@ -8,7 +8,10 @@ use color_eyre::eyre::{Context, ContextCompat};
 
 use super::{
     Link, SCell,
-    parser::{build::BuildStmt, copy::CopyStmt, name::TargetName, workspace::WorkspaceStmt},
+    parser::{
+        name::TargetName,
+        target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
+    },
 };
 
 impl SCell {

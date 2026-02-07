@@ -1,12 +1,7 @@
 //! Implements a parsing and processing of Shell-Cell '.yaml' files
 
-pub mod build;
-pub mod copy;
-pub mod image;
 pub mod name;
-pub mod shell;
 pub mod target;
-pub mod workspace;
 
 use std::{
     collections::HashMap,

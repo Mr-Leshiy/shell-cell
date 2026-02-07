@@ -15,8 +15,11 @@ use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
 use self::parser::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
-    workspace::WorkspaceStmt,
+    name::TargetName,
+    target::{
+        build::BuildStmt, copy::CopyStmt, image::ImageDef, shell::ShellStmt,
+        workspace::WorkspaceStmt,
+    },
 };
 
 const NAME_PREFIX: &str = "scell-";

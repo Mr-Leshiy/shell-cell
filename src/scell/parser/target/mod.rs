@@ -1,8 +1,18 @@
+pub mod build;
+pub mod config;
+pub mod copy;
+pub mod image;
+pub mod shell;
+pub mod workspace;
+
 use std::{path::PathBuf, str::FromStr};
 
 use super::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
-    workspace::WorkspaceStmt,
+    name::TargetName,
+    target::{
+        build::BuildStmt, copy::CopyStmt, image::ImageDef, shell::ShellStmt,
+        workspace::WorkspaceStmt,
+    },
 };
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
