@@ -13,7 +13,7 @@ impl Cli {
         let scell = pb
             .run_step(
                 format!(
-                    "📝    Processing Shell-Cell source file '{}'...",
+                    "📝    Processing Shell-Cell blueprint file '{}'...",
                     self.scell_path.display()
                 ),
                 async || SCell::compile(&self.scell_path, None),

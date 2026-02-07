@@ -1,4 +1,4 @@
-# `Shell-Cell` Source File Reference
+# `Shell-Cell` Blueprint File Reference
 
 `Shell-Cell` builds your environment by reading a set of instructions from a `scell.yml` files.
 

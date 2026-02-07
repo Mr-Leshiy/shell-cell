@@ -22,7 +22,7 @@ impl Cli {
         table
             .set_header(vec![
                 "name",
-                "source location",
+                "blueprint location",
                 "created at",
                 "id",
                 "status",

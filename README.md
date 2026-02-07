@@ -14,7 +14,7 @@ We want to get you up and running as smoothly as possible.
 Whether you’re looking to install, configure, or learn how it works,
 our documentation has your back:
 
-👉 [Explore the Docs](./docs/index.md)
+👉 [Explore the Docs](./docs/readme.md)
 
 ## ➡️ Whats next?
 
