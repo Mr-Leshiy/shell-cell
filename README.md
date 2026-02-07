@@ -1,4 +1,4 @@
-<h1>`Shell-Cell`</h1>
+# `Shell-Cell`
 
 Lightweight CLI app designed to spin up instant, isolated, and reproducible development shell sessions.
 
