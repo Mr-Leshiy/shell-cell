@@ -14,6 +14,7 @@ use super::{
         workspace::WorkspaceStmt,
     },
 };
+use crate::scell::parser::target::config::ConfigStmt;
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
@@ -26,9 +27,9 @@ pub struct TargetStmt {
     pub build: BuildStmt,
     #[serde(default)]
     pub copy: CopyStmt,
-    #[serde(default)]
     pub shell: Option<ShellStmt>,
     pub hang: Option<String>,
+    pub config: Option<ConfigStmt>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

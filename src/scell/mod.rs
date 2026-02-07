@@ -21,6 +21,7 @@ use self::parser::{
         workspace::WorkspaceStmt,
     },
 };
+use crate::scell::parser::target::config::ConfigStmt;
 
 const NAME_PREFIX: &str = "scell-";
 const IMAGE_METADATA_NAME: &str = "scell-name";
@@ -31,6 +32,7 @@ pub struct SCell {
     links: Vec<Link>,
     shell: ShellStmt,
     hang: String,
+    config: Option<ConfigStmt>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -58,6 +60,10 @@ impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
         &self.shell.0
+    }
+
+    pub fn mounts(&self) -> Vec<String> {
+        self.config.as_ref().map(|c| c.mounts.clone()).unwrap_or_default()
     }
 
     pub fn name(&self) -> String {

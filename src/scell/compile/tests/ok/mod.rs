@@ -25,6 +25,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Default::default(),
     }
     ; "default target"
 )]
@@ -43,6 +44,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Default::default(),
     }
     ; "other target"
 )]
@@ -68,6 +70,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Default::default(),
     }
     ; "few targets"
 )]
@@ -100,6 +103,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Default::default(),
     }
     ; "ref other files"
 )]

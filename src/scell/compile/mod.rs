@@ -52,6 +52,7 @@ impl SCell {
         let mut walk_target_name = entry_point_target;
         let mut shell = None;
         let mut hang = None;
+        let mut config = None;
         loop {
             // Use only the most recent 'shell` and 'hang' statements from the targets graph.
             if shell.is_none() {
@@ -59,6 +60,9 @@ impl SCell {
             }
             if hang.is_none() {
                 hang = walk_target.hang;
+            }
+            if config.is_none() {
+                config = walk_target.config;
             }
             links.push(Link::Node {
                 name: walk_target_name.clone(),
@@ -114,7 +118,12 @@ impl SCell {
             return UserError::bail("Shell-Cell must have 'hang' statement in some target")?;
         };
 
-        Ok(Self { links, shell, hang })
+        Ok(Self {
+            links,
+            shell,
+            hang,
+            config,
+        })
     }
 }
 
