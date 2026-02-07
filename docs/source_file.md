@@ -45,7 +45,7 @@ the instructions are executed in a specific, strict order:
 Similar to the Dockerfile [`FROM`](https://docs.docker.com/reference/dockerfile/#from) instruction,
 it specifies the base of the `Shell-Cell` image.
 
-It could be ither a plain image, or reference to other [`Shell-Cell` target](#shell-cell-target)
+It could be either a plain image, or reference to other [`Shell-Cell` target](#shell-cell-target)
 
 - Image with tag
 ```yml
@@ -54,12 +54,12 @@ from: <image>:<tag>
 
 - `Shell-Cell` target reference
 ```yml
-from: path/to/file+<taget_name>
+from: path/to/file+<target_name>
 ```
 
 ### `shell`
 
-A location to the shell, which would be abailable in the build image and running container.
+A location to the shell, which would be available in the build image and running container.
 
 Such shell would be used for a `Shell-Cell` session.
 
