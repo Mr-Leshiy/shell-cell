@@ -47,7 +47,7 @@ impl Cli {
     pub async fn exec(self) -> color_eyre::Result<()> {
         let verbose = self.verbose;
         self.exec_inner().await.map_err(|e| {
-            if verbose {
+            if !verbose {
                 e.suggestion("To enable verbose output use -v, --verbose flags")
             } else {
                 match e.downcast::<UserError>() {
