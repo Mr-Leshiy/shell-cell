@@ -108,14 +108,10 @@ impl SCell {
         // TODO: do not early return, return as much errors as possible
         // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
         let Some(shell) = shell.clone() else {
-            return UserError::bail(format!(
-                "Shell-Cell must have 'shell' statement in some target"
-            ))?;
+            return UserError::bail("Shell-Cell must have 'shell' statement in some target")?;
         };
         let Some(hang) = hang.clone() else {
-            return UserError::bail(format!(
-                "Shell-Cell must have 'hang' statement in some target"
-            ))?;
+            return UserError::bail("Shell-Cell must have 'hang' statement in some target")?;
         };
 
         Ok(Self { links, shell, hang })
