@@ -2,7 +2,7 @@
 
 `Shell-Cell` builds your environment by reading a set of instructions from a `scell.yml` files.
 
-`scell.yml` is a [YAML](https://yaml.org) formatted file that contains everything needed to configure your session.
+`scell.yml` - is a [YAML](https://yaml.org) formatted file that contains everything needed to configure your session.
 Here is a minimal functional example:
 ```yml
 main:
@@ -110,6 +110,3 @@ run:
     - <command_1>
     - <command_2>
 ```
-
-
-[YAML] https://yaml.org
