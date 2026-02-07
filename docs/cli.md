@@ -1,5 +1,5 @@
 
-# <span style="font-family: 'Courier New', monospace; color: #00FF41; border-radius: 3px; font-weight: bold;text-shadow: 0 0 5px #00FF41;">Shell-Cell</span> CLI Reference
+# `Shell-Cell` CLI Reference
 
 Now that you’ve [installed and configured](./install.md) **Shell-Cell**, you’re ready to launch your very first session!
 

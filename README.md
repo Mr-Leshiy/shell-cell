@@ -1,4 +1,4 @@
-<h1><span style="font-family: 'Courier New', monospace; color: #00FF41; border-radius: 3px; font-weight: bold;text-shadow: 0 0 5px #00FF41;">Shell-Cell</span></h1>
+<h1>`Shell-Cell`</h1>
 
 Lightweight CLI app designed to spin up instant, isolated, and reproducible development shell sessions.
 

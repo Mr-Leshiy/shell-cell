@@ -1,4 +1,4 @@
-# Install and Configure <span style="font-family: 'Courier New', monospace; color: #00FF41; border-radius: 3px; font-weight: bold;text-shadow: 0 0 5px #00FF41;">Shell-Cell</span> 
+# Install and Configure `Shell-Cell`
 
 `Shell-Cell` requires a running instace of either [Docker] or [Podman] daemon.
 So firstly prepare and install [Docker] or [Podman] daemons.
