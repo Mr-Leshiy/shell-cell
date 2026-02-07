@@ -4,8 +4,13 @@ name: Docs
 on:
   # Runs on pushes targeting the default branch
   push:
+    branches: ["main"]
     paths:
       - 'docs/**'
+  pull_request:
+    paths:
+      - 'docs/**'
+
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
