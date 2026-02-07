@@ -5,7 +5,7 @@ Now that youâ€™ve [installed and configured](./install.md) **Shell-Cell**, youâ€
 
 To get started, place a `scell.yml` file in your project directory.
 This file defines the environment your shell will live in.
-(For a deep dive into the source file specification, check out the [Source File Guide](./source_file.md)).
+(For a deep dive into the blueprint file specification, check out the [Blueprint File Guide](./blueprint_file.md)).
 
 **Example `scell.yml`:**
 ```yml

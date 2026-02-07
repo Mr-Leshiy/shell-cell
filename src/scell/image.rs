@@ -98,7 +98,7 @@ fn prepare_copy_stmt<W: std::io::Write>(
             } else {
                 // Tweaking the original item path from the `CopyStmt` by resolving
                 // it with the corresponding
-                // Shell-Cell source file location where
+                // Shell-Cell blueprint file location where
                 // `CopyStmt` locates. Making a path
                 // a relative from the root
                 // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.

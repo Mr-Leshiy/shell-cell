@@ -1,0 +1,24 @@
+name: Docs
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: cspell check
+        uses: streetsidesoftware/cspell-action@v8
+        with:
+          strict: true
+          suggestions: true
+          incremental_files_only: false
+          use_cspell_files: true
+          # files: 'src/**'
+          config: 'cspell.json'
