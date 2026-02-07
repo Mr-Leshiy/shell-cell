@@ -6,10 +6,7 @@
     "useGitignore": true,
     "dictionaries": ["html", "css"],
     "files": [
-        "src/**"
-    ],
-    "ignorePaths": [
-        "src/lib/**"
+        "**.md"
     ],
     "words": [
         "Pozhylenkov",
