@@ -9,14 +9,11 @@ This file defines the environment your shell will live in.
 
 **Example `scell.yml`:**
 ```yml
-rust-base:
-  from: rust:1.93-trixie
+main:
+  from: debian:bookworm
+  workspace: workdir
   shell: /bin/bash
   hang: while true; do sleep 3600; done
-
-main:
-  from: +rust-base
-  workspace: my_project
 ```
 
 Once your file is ready, simply open your terminal in that directory and run:
