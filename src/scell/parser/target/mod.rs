@@ -1,9 +1,20 @@
+pub mod build;
+pub mod config;
+pub mod copy;
+pub mod image;
+pub mod shell;
+pub mod workspace;
+
 use std::{path::PathBuf, str::FromStr};
 
 use super::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
-    workspace::WorkspaceStmt,
+    name::TargetName,
+    target::{
+        build::BuildStmt, copy::CopyStmt, image::ImageDef, shell::ShellStmt,
+        workspace::WorkspaceStmt,
+    },
 };
+use crate::scell::parser::target::config::ConfigStmt;
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 
@@ -16,9 +27,9 @@ pub struct TargetStmt {
     pub build: BuildStmt,
     #[serde(default)]
     pub copy: CopyStmt,
-    #[serde(default)]
     pub shell: Option<ShellStmt>,
     pub hang: Option<String>,
+    pub config: Option<ConfigStmt>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -89,7 +100,7 @@ mod tests {
         image: "scratch".to_string(), 
         tag: None
     }) ; "docker image only")]
-    fn test_from_parsing(input: &str) -> FromStmt {
+    fn parsing_test(input: &str) -> FromStmt {
         FromStmt::from_str(input).expect("Should be a valid input")
     }
 }

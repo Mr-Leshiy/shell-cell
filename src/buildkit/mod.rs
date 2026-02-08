@@ -2,7 +2,10 @@
 
 mod docker;
 
-use bollard::Docker;
+use bollard::{
+    Docker,
+    secret::{ContainerCreateBody, HostConfig},
+};
 
 use self::docker::{build_image, start_container};
 use crate::{
@@ -58,7 +61,21 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
-        start_container(&self.docker, &scell.name(), "latest", &scell.name()).await?;
+        let config = ContainerCreateBody {
+            host_config: Some(HostConfig {
+                binds: Some(
+                    scell
+                        .mounts()
+                        .0
+                        .iter()
+                        .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
+                        .collect(),
+                ),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        start_container(&self.docker, &scell.name(), "latest", &scell.name(), config).await?;
         Ok(())
     }
 
@@ -102,6 +119,7 @@ async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Res
         BUILDKIT_IMAGE,
         BUILDKIT_TAG,
         BUILDKIT_CONTAINER_NAME,
+        ContainerCreateBody::default(),
     )
     .await?;
     Ok(())

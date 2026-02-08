@@ -5,8 +5,8 @@ use test_case::test_case;
 use crate::scell::{
     Link, SCell,
     parser::{
-        build::BuildStmt, copy::CopyStmt, name::TargetName, shell::ShellStmt,
-        workspace::WorkspaceStmt,
+        name::TargetName,
+        target::{build::BuildStmt, copy::CopyStmt, shell::ShellStmt, workspace::WorkspaceStmt},
     },
 };
 
@@ -25,6 +25,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Option::default(),
     }
     ; "default target"
 )]
@@ -43,6 +44,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Option::default(),
     }
     ; "other target"
 )]
@@ -68,6 +70,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Option::default(),
     }
     ; "few targets"
 )]
@@ -100,6 +103,7 @@ use crate::scell::{
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
+        config: Option::default(),
     }
     ; "ref other files"
 )]

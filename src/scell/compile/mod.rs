@@ -12,8 +12,12 @@ use super::{
 };
 use crate::{
     error::{OptionUserError, UserError, WrapUserError},
-    scell::compile::errors::{
-        CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
+    scell::{
+        compile::errors::{
+            CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
+            MountHostDirNotFound,
+        },
+        parser::target::config::ConfigStmt,
     },
     scell_home_dir,
 };
@@ -52,6 +56,7 @@ impl SCell {
         let mut walk_target_name = entry_point_target;
         let mut shell = None;
         let mut hang = None;
+        let mut config = None;
         loop {
             // Use only the most recent 'shell` and 'hang' statements from the targets graph.
             if shell.is_none() {
@@ -59,6 +64,9 @@ impl SCell {
             }
             if hang.is_none() {
                 hang = walk_target.hang;
+            }
+            if config.is_none() {
+                config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
             }
             links.push(Link::Node {
                 name: walk_target_name.clone(),
@@ -114,8 +122,38 @@ impl SCell {
             return UserError::bail("Shell-Cell must have 'hang' statement in some target")?;
         };
 
-        Ok(Self { links, shell, hang })
+        Ok(Self {
+            links,
+            shell,
+            hang,
+            config,
+        })
     }
+}
+
+fn resolve_config(
+    location: &Path,
+    target_name: &TargetName,
+    config: Option<ConfigStmt>,
+) -> color_eyre::Result<Option<ConfigStmt>> {
+    config
+        .map(|mut c| {
+            // resolve mounts
+            c.mounts.0 = c
+                .mounts
+                .0
+                .into_iter()
+                .map(|mut m| {
+                    m.host = std::fs::canonicalize(location.join(&m.host)).user_err(
+                        MountHostDirNotFound(m.host, target_name.clone(), location.to_path_buf()),
+                    )?;
+                    color_eyre::eyre::Ok(m)
+                })
+                .collect::<Result<_, _>>()?;
+
+            color_eyre::eyre::Ok(c)
+        })
+        .transpose()
 }
 
 fn global() -> color_eyre::Result<Option<SCellFile>> {

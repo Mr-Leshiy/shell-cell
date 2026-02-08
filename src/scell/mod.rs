@@ -15,19 +15,24 @@ use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
 use self::parser::{
-    build::BuildStmt, copy::CopyStmt, image::ImageDef, name::TargetName, shell::ShellStmt,
-    workspace::WorkspaceStmt,
+    name::TargetName,
+    target::{
+        build::BuildStmt, copy::CopyStmt, image::ImageDef, shell::ShellStmt,
+        workspace::WorkspaceStmt,
+    },
 };
+use crate::scell::parser::target::config::{ConfigStmt, mounts::MountsStmt};
 
 const NAME_PREFIX: &str = "scell-";
 const IMAGE_METADATA_NAME: &str = "scell-name";
 const IMAGE_METADATA_LOCATION: &str = "scell-location";
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct SCell {
     links: Vec<Link>,
     shell: ShellStmt,
     hang: String,
+    config: Option<ConfigStmt>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -55,6 +60,13 @@ impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
         &self.shell.0
+    }
+
+    pub fn mounts(&self) -> MountsStmt {
+        self.config
+            .as_ref()
+            .map(|c| c.mounts.clone())
+            .unwrap_or_default()
     }
 
     pub fn name(&self) -> String {
