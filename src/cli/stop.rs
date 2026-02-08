@@ -1,4 +1,4 @@
-use crate::{buildkit::BuildKitD, cli::Cli};
+use crate::{buildkit::BuildKitD, cli::Cli, scell::container_info::Status};
 
 impl Cli {
     pub async fn stop(self) -> color_eyre::Result<()> {
@@ -7,7 +7,7 @@ impl Cli {
         let containers = buildkit.list_containers().await?;
         let running: Vec<_> = containers
             .into_iter()
-            .filter(|c| c.status == "running")
+            .filter(|c| c.status == Status::Running)
             .collect();
 
         if running.is_empty() {

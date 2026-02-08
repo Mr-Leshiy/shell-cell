@@ -1,6 +1,6 @@
 use comfy_table::Table;
 
-use crate::{buildkit::BuildKitD, cli::Cli, scell::SCellContainerInfo};
+use crate::{buildkit::BuildKitD, cli::Cli, scell::container_info::SCellContainerInfo};
 
 impl Cli {
     pub async fn ls(self) -> color_eyre::Result<()> {
@@ -14,7 +14,7 @@ impl Cli {
                 c.created_at
                     .to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
                 c.container_name,
-                c.status,
+                c.status.to_string(),
             ]
         };
 
