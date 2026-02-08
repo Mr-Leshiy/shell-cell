@@ -34,6 +34,8 @@ Starts from the "bottom" target and works its way up to your entry point (`main`
     ...
 ```
 
+A valid target name must start with a lowercase letter and contain only lowercase letters, digits, hyphens, and underscores (pattern: `^[a-z][a-z0-9_-]*$`).
+
 Inside each target, during the `Shell-Cell` image building process,
 the instructions are executed in a specific, strict order:
 1. `workspace`
@@ -63,6 +65,8 @@ A location to the shell, which would be available in the build image and running
 
 Such shell would be used for a `Shell-Cell` session.
 
+Only the first `shell` statement encountered in the target graph (starting from the entry point) is used.
+
 ```yml
 shell: /bin/bash
 ```
@@ -70,6 +74,8 @@ shell: /bin/bash
 ### `hang`
 
 This instruction ensures your container stays active and doesn't exit immediately after it starts. This effectively transforms your `Shell-Cell` container into a persistent "shell server" that remains ready for you to jump in at any time.
+
+Only the first `hang` statement encountered in the target graph (starting from the entry point) is used.
 
 To work correctly, you must specify a command that keeps the container running indefinitely.
 The most recommended approach is a simple infinite loop:
@@ -109,4 +115,34 @@ Similar to the Dockerfile [`RUN`](https://docs.docker.com/reference/dockerfile/#
 build:
     - <command_1>
     - <command_2>
+```
+
+### `config` (optional)
+
+Runtime configuration for the `Shell-Cell` container.
+Unlike `build`, `copy`, and `workspace`, which affect the image building process,
+`config` defines how the container behaves when it runs.
+
+Only the first `config` statement encountered in the target graph (starting from the entry point) is used.
+
+```yml
+config:
+    mounts:
+        - <host_path>:<container_absolute_path>
+```
+
+#### `mounts`
+
+Bind-mounts host directories into the running container.
+Each mount item follows the format `<host_path>:<container_absolute_path>`.
+
+- The **host path** can be relative (resolved relative to the `scell.yml` file location) or absolute.
+  Relative host paths are canonicalized during compilation, so the referenced directory must exist.
+- The **container path** must be an absolute path.
+
+```yml
+config:
+    mounts:
+        - ./src:/app/src
+        - /data:/container/data
 ```

@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, path::Path};
+use std::path::{Path, PathBuf};
 
 use test_case::test_case;
 
@@ -6,33 +6,48 @@ use crate::{
     error::UserError,
     scell::{
         SCell,
-        compile::errors::{CircularTargets, MissingTarget},
+        compile::errors::{
+            CircularTargets, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
+        },
         parser::name::TargetName,
     },
 };
 
-// TODO add test cases for `DirNotFoundFromStmt` and `FileLoadFromStmt`
-// TODO replace `PhantomData` with returning an error object, instead of just a type
+const ERR_FIXTURES: &str = "src/scell/compile/tests/err";
+
 #[test_case(
-    "missing_target", None 
-    => PhantomData::<MissingTarget>
+    "missing_target", None
+    => MissingTarget("missing_target".parse().unwrap(), PathBuf::from(ERR_FIXTURES).join("missing_target"))
     ; "missing target"
 )]
 #[test_case(
-    "circular_targets", None 
-    => PhantomData::<CircularTargets>
+    "circular_targets", None
+    => CircularTargets("other".parse().unwrap(), std::fs::canonicalize(Path::new(ERR_FIXTURES).join("circular_targets/other")).unwrap())
     ; "circular targets"
 )]
-fn compile_err_test<E: std::error::Error + Sync + Send + 'static>(
+#[test_case(
+    "missing_entrypoint", None
+    => MissingEntrypoint(PathBuf::from(ERR_FIXTURES).join("missing_entrypoint"), "main".parse().unwrap())
+    ; "missing entrypoint"
+)]
+#[test_case(
+    "missing_shell_stmt", None
+    => MissingShellStmt
+    ; "missing shell stmt"
+)]
+#[test_case(
+    "missing_hang_stmt", None
+    => MissingHangStmt
+    ; "missing hang stmt"
+)]
+fn compile_err_test<E: std::error::Error + PartialEq + Sync + Send + 'static>(
     dir_path: &str,
     target: Option<TargetName>,
-) -> PhantomData<E> {
-    let err = SCell::compile(
-        Path::new("src/scell/compile/tests/err").join(dir_path),
-        target,
-    )
-    .expect_err("Must fail");
+) -> E {
+    let err =
+        SCell::compile(Path::new(ERR_FIXTURES).join(dir_path), target).expect_err("Must fail");
     let err = err.downcast::<UserError>().expect("Must be a UserError");
-    assert!(err.inner().is::<E>());
-    PhantomData::<E>
+    err.inner()
+        .downcast::<E>()
+        .expect("Must be correct error type")
 }
