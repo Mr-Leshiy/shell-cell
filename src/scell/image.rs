@@ -1,6 +1,5 @@
 use std::{
     fmt::Write,
-    hash::{Hash, Hasher},
     path::{Path, PathBuf},
 };
 
@@ -15,14 +14,6 @@ use super::{
 };
 
 impl SCell {
-    /// Calculates a fast, non-cryptographic 'metrohash' hash value.
-    /// Returns a hex string value.
-    pub fn hex_hash(&self) -> String {
-        let mut hasher = metrohash::MetroHash64::new();
-        self.hash(&mut hasher);
-        format!("{:x}", hasher.finish())
-    }
-
     pub fn prepare_image_tar_artifact(&self) -> color_eyre::Result<(tar::Builder<Vec<u8>>, &str)> {
         const DOCKERFILE_NAME: &str = "Dockerfile";
         // Unix file mode,

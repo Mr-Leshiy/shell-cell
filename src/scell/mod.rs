@@ -9,10 +9,11 @@ mod compile;
 mod image;
 mod parser;
 
-use std::{path::PathBuf, str::FromStr};
+use std::{hash::{Hash, Hasher}, path::PathBuf, str::FromStr};
 
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
+use hex::ToHex;
 
 use self::parser::{
     name::TargetName,
@@ -71,6 +72,14 @@ impl SCell {
 
     pub fn name(&self) -> String {
         format!("{NAME_PREFIX}{}", self.hex_hash())
+    }
+
+    /// Calculates a fast, non-cryptographic 'metrohash' hash value.
+    /// Returns a hex string value.
+    fn hex_hash(&self) -> String {
+        let mut hasher = metrohash::MetroHash64::new();
+        self.hash(&mut hasher);
+        hasher.finish().to_be_bytes().encode_hex()
     }
 }
 
