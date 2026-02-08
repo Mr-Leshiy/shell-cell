@@ -16,7 +16,7 @@ impl Report {
         };
     }
 
-    pub fn consume(self) -> color_eyre::Result<()> {
+    pub fn check(self) -> color_eyre::Result<()> {
         match self.0 {
             Some(e) => Err(e),
             None => Ok(()),

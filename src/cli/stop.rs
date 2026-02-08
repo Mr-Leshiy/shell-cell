@@ -26,6 +26,6 @@ impl Cli {
                 println!("Stopped container: {}", container.container_name);
             }
         }
-        report.consume()
+        report.check()
     }
 }
