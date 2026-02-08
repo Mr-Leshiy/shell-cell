@@ -58,14 +58,21 @@ mod tests {
         host: PathBuf::from("/data"), 
         container: PathBuf::from("/app/data") 
     } ; "simple root paths")]
+    #[test_case("relative/path:/container/path" => MountItem { 
+        host: PathBuf::from("relative/path"), 
+        container: PathBuf::from("/container/path") 
+    } ; "host path is relative")]
+    #[test_case(".:/app/data" => MountItem { 
+        host: PathBuf::from("."), 
+        container: PathBuf::from("/app/data") 
+    } ; "empty host path")]
     fn test_mount_item_parsing_success(input: &str) -> MountItem {
         MountItem::from_str(input).expect("Should parse successfully")
     }
 
     // Failure cases
-    #[test_case("relative/path:/container/path" ; "host path is relative")]
+    #[test_case("host/path:relative/path" ; "host path is relative")]
     #[test_case("/host/path" ; "missing delimiter")]
-    #[test_case(":/container/path" ; "empty host path")]
     #[test_case("/host/path:" ; "empty container path")]
     fn test_mount_item_parsing_failure(input: &str) {
         let result = MountItem::from_str(input);
