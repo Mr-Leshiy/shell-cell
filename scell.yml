@@ -5,13 +5,13 @@ rust-base:
     - apt-get update --fix-missing
     - apt-get -y install git curl wget
 
-opencode:
+claudecode:
   from: +rust-base
   build:
-    - curl -fsSL https://opencode.ai/install | bash
+    - curl -fsSL https://claude.ai/install.sh | bash
 
 main:
-  from: +opencode
+  from: +claudecode
   workspace: shell_cell
   shell: /bin/bash
   hang: while true; do sleep 3600; done
