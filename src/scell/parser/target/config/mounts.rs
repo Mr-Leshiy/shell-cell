@@ -25,10 +25,7 @@ impl FromStr for MountItem {
             let host = PathBuf::from(host);
             let container = PathBuf::from(container);
             color_eyre::eyre::ensure!(container.is_absolute(), MountItemParsingEror(s.to_string()));
-            Ok(Self {
-                host: PathBuf::from(host),
-                container: PathBuf::from(container),
-            })
+            Ok(Self { host, container })
         } else {
             color_eyre::eyre::bail!(MountItemParsingEror(s.to_string()));
         }
@@ -78,8 +75,7 @@ mod tests {
         let result = MountItem::from_str(input);
         assert!(
             result.is_err(),
-            "Input '{}' should have failed parsing",
-            input
+            "Input '{input}' should have failed parsing"
         );
     }
 }
