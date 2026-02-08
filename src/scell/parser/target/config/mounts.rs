@@ -13,7 +13,7 @@ pub struct MountItem {
 
 #[derive(Debug, thiserror::Error)]
 #[error(
-    "mount item must be in the following format '<host_absolute_path>:<container_absolute_path>', provided: {0}"
+    "mount item must be in the following format '<host_path>:<container_absolute_path>', provided: {0}"
 )]
 pub struct MountItemParsingEror(String);
 
@@ -24,7 +24,7 @@ impl FromStr for MountItem {
         if let Some((host, container)) = s.split_once(MOUNT_DELIMETER) {
             let host = PathBuf::from(host);
             let container = PathBuf::from(container);
-            color_eyre::eyre::ensure!(host.is_absolute() && container.is_absolute(), MountItemParsingEror(s.to_string()));
+            color_eyre::eyre::ensure!(container.is_absolute(), MountItemParsingEror(s.to_string()));
             Ok(Self {
                 host: PathBuf::from(host),
                 container: PathBuf::from(container),
@@ -46,6 +46,7 @@ impl<'de> serde::Deserialize<'de> for MountItem {
 #[cfg(test)]
 mod tests {
     use test_case::test_case;
+
     use super::*;
 
     // Success cases
@@ -68,6 +69,10 @@ mod tests {
     #[test_case("/host/path:" ; "empty container path")]
     fn test_mount_item_parsing_failure(input: &str) {
         let result = MountItem::from_str(input);
-        assert!(result.is_err(), "Input '{}' should have failed parsing", input);
+        assert!(
+            result.is_err(),
+            "Input '{}' should have failed parsing",
+            input
+        );
     }
 }

@@ -23,3 +23,9 @@ pub struct MissingTarget(pub TargetName, pub PathBuf);
     "A circular dependency was identified within the target graph. While processing 'from' statement for '{0}' at '{1}'"
 )]
 pub struct CircularTargets(pub TargetName, pub PathBuf);
+
+#[derive(Debug, thiserror::Error)]
+#[error(
+    "Cannot resolve a 'mount' host path location at {0} while processing 'config' statement for target '{1}' at '{2}'"
+)]
+pub struct MountHostDirNotFound(pub PathBuf, pub TargetName, pub PathBuf);

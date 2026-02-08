@@ -27,7 +27,7 @@ const NAME_PREFIX: &str = "scell-";
 const IMAGE_METADATA_NAME: &str = "scell-name";
 const IMAGE_METADATA_LOCATION: &str = "scell-location";
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct SCell {
     links: Vec<Link>,
     shell: ShellStmt,

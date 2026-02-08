@@ -12,6 +12,9 @@ opencode:
 
 main:
   from: +opencode
-  workspace: workdir
+  workspace: shell_cell
   shell: /bin/bash
   hang: while true; do sleep 3600; done
+  config:
+    mounts:
+      - ./:/shell_cell

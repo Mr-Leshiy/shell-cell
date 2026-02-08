@@ -12,8 +12,12 @@ use super::{
 };
 use crate::{
     error::{OptionUserError, UserError, WrapUserError},
-    scell::compile::errors::{
-        CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
+    scell::{
+        compile::errors::{
+            CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
+            MountHostDirNotFound,
+        },
+        parser::target::config::ConfigStmt,
     },
     scell_home_dir,
 };
@@ -62,7 +66,7 @@ impl SCell {
                 hang = walk_target.hang;
             }
             if config.is_none() {
-                config = walk_target.config;
+                config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
             }
             links.push(Link::Node {
                 name: walk_target_name.clone(),
@@ -125,6 +129,31 @@ impl SCell {
             config,
         })
     }
+}
+
+fn resolve_config(
+    location: &Path,
+    target_name: &TargetName,
+    config: Option<ConfigStmt>,
+) -> color_eyre::Result<Option<ConfigStmt>> {
+    config
+        .map(|mut c| {
+            // resolve mounts
+            c.mounts.0 = c
+                .mounts
+                .0
+                .into_iter()
+                .map(|mut m| {
+                    m.host = std::fs::canonicalize(location.join(&m.host)).user_err(
+                        MountHostDirNotFound(m.host, target_name.clone(), location.to_path_buf()),
+                    )?;
+                    color_eyre::eyre::Ok(m)
+                })
+                .collect::<Result<_, _>>()?;
+
+            color_eyre::eyre::Ok(c)
+        })
+        .transpose()
 }
 
 fn global() -> color_eyre::Result<Option<SCellFile>> {

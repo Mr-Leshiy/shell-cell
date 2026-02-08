@@ -19,12 +19,7 @@ impl SCell {
     /// Returns a hex string value.
     pub fn hex_hash(&self) -> String {
         let mut hasher = metrohash::MetroHash64::new();
-
-        for link in &self.links {
-            link.hash(&mut hasher);
-        }
-        self.shell.hash(&mut hasher);
-        self.hang.hash(&mut hasher);
+        self.hash(&mut hasher);
         format!("{:x}", hasher.finish())
     }
 
