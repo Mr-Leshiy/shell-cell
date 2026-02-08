@@ -41,9 +41,13 @@ impl SCell {
             Ok,
         )?;
 
-        let entry_point = scell_f.cells.remove(&entry_point_target).user_err(
-            MissingEntrypoint(scell_f.location.clone(), entry_point_target.clone()),
-        )?;
+        let entry_point = scell_f
+            .cells
+            .remove(&entry_point_target)
+            .user_err(MissingEntrypoint(
+                scell_f.location.clone(),
+                entry_point_target.clone(),
+            ))?;
 
         // Store processed target's name and location, to detect circular target dependencies
         let mut visited_targets = HashSet::new();
