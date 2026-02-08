@@ -6,12 +6,13 @@ use crate::{
     error::UserError,
     scell::{
         SCell,
-        compile::errors::{CircularTargets, MissingTarget},
+        compile::errors::{
+            CircularTargets, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
+        },
         parser::name::TargetName,
     },
 };
 
-// TODO add test cases for `DirNotFoundFromStmt` and `FileLoadFromStmt`
 // TODO replace `PhantomData` with returning an error object, instead of just a type
 #[test_case(
     "missing_target", None 
@@ -19,9 +20,24 @@ use crate::{
     ; "missing target"
 )]
 #[test_case(
-    "circular_targets", None 
+    "circular_targets", None
     => PhantomData::<CircularTargets>
     ; "circular targets"
+)]
+#[test_case(
+    "missing_entrypoint", None
+    => PhantomData::<MissingEntrypoint>
+    ; "missing entrypoint"
+)]
+#[test_case(
+    "missing_shell_stmt", None
+    => PhantomData::<MissingShellStmt>
+    ; "missing shell stmt"
+)]
+#[test_case(
+    "missing_hang_stmt", None
+    => PhantomData::<MissingHangStmt>
+    ; "missing hang stmt"
 )]
 fn compile_err_test<E: std::error::Error + Sync + Send + 'static>(
     dir_path: &str,
