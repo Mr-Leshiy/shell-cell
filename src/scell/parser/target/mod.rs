@@ -100,7 +100,7 @@ mod tests {
         image: "scratch".to_string(), 
         tag: None
     }) ; "docker image only")]
-    fn test_from_parsing(input: &str) -> FromStmt {
+    fn parsing_test(input: &str) -> FromStmt {
         FromStmt::from_str(input).expect("Should be a valid input")
     }
 }

@@ -67,6 +67,7 @@ pub async fn start_container(
     image_name: &str,
     tag: &str,
     container_name: &str,
+    mut config: ContainerCreateBody,
 ) -> color_eyre::Result<()> {
     let buildkit_image = format!("{image_name}:{tag}");
     let res = docker
@@ -86,6 +87,7 @@ pub async fn start_container(
         .await?;
 
     // if the container already exists, skip creating step
+    config.image = Some(buildkit_image);
     if res.is_empty() {
         docker
             .create_container(
@@ -93,14 +95,10 @@ pub async fn start_container(
                     name: Some(container_name.to_string()),
                     ..Default::default()
                 }),
-                ContainerCreateBody {
-                    image: Some(buildkit_image),
-                    ..Default::default()
-                },
+                config,
             )
             .await?;
     }
-
     docker.start_container(container_name, None).await?;
 
     Ok(())

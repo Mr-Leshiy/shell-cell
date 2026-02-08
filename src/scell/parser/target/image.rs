@@ -56,7 +56,7 @@ mod tests {
         image: "image".to_string(),
         tag: Some("tag".to_string()) 
     } ; "image name with tag")]
-    fn test_from_parsing(input: &str) -> ImageDef {
+    fn parsing_test(input: &str) -> ImageDef {
         ImageDef::from_str(input).expect("Should be a valid input")
     }
 }

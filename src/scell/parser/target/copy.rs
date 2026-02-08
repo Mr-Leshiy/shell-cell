@@ -56,7 +56,7 @@ mod tests {
         ]
     )
     ; "two entries more spaces")]
-    fn test_from_parsing(input: &str) -> CopyStmtEntry {
+    fn parsing_test(input: &str) -> CopyStmtEntry {
         input.into()
     }
 }

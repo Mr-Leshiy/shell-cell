@@ -21,7 +21,7 @@ use self::parser::{
         workspace::WorkspaceStmt,
     },
 };
-use crate::scell::parser::target::config::ConfigStmt;
+use crate::scell::parser::target::config::{ConfigStmt, mounts::MountsStmt};
 
 const NAME_PREFIX: &str = "scell-";
 const IMAGE_METADATA_NAME: &str = "scell-name";
@@ -62,8 +62,11 @@ impl SCell {
         &self.shell.0
     }
 
-    pub fn mounts(&self) -> Vec<String> {
-        self.config.as_ref().map(|c| c.mounts.clone()).unwrap_or_default()
+    pub fn mounts(&self) -> MountsStmt {
+        self.config
+            .as_ref()
+            .map(|c| c.mounts.clone())
+            .unwrap_or_default()
     }
 
     pub fn name(&self) -> String {
