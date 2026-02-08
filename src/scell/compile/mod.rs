@@ -14,8 +14,8 @@ use crate::{
     error::{OptionUserError, UserError, WrapUserError},
     scell::{
         compile::errors::{
-            CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingTarget,
-            MountHostDirNotFound,
+            CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingEntrypoint,
+            MissingHangStmt, MissingShellStmt, MissingTarget, MountHostDirNotFound,
         },
         parser::target::config::ConfigStmt,
     },
@@ -41,10 +41,9 @@ impl SCell {
             Ok,
         )?;
 
-        let entry_point = scell_f.cells.remove(&entry_point_target).user_err(format!(
-            "Shell-Cell file '{}' does not contain an entrypoint target '{entry_point_target}'",
-            scell_f.location.display()
-        ))?;
+        let entry_point = scell_f.cells.remove(&entry_point_target).user_err(
+            MissingEntrypoint(scell_f.location.clone(), entry_point_target.clone()),
+        )?;
 
         // Store processed target's name and location, to detect circular target dependencies
         let mut visited_targets = HashSet::new();
@@ -114,12 +113,11 @@ impl SCell {
         }
 
         // TODO: do not early return, return as much errors as possible
-        // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
         let Some(shell) = shell.clone() else {
-            return UserError::bail("Shell-Cell must have 'shell' statement in some target")?;
+            return UserError::bail(MissingShellStmt)?;
         };
         let Some(hang) = hang.clone() else {
-            return UserError::bail("Shell-Cell must have 'hang' statement in some target")?;
+            return UserError::bail(MissingHangStmt)?;
         };
 
         Ok(Self {
