@@ -87,6 +87,11 @@ impl BuildKitD {
         Ok(())
     }
 
+    pub async fn stop_container_by_name(&self, container_name: &str) -> color_eyre::Result<()> {
+        stop_container(&self.docker, container_name).await?;
+        Ok(())
+    }
+
     pub async fn list_containers(&self) -> color_eyre::Result<Vec<SCellContainerInfo>> {
         Ok(list_all_containers(&self.docker)
             .await?

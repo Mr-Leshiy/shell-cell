@@ -3,6 +3,7 @@
 mod ls;
 mod progress;
 mod run;
+mod stop;
 
 use std::path::PathBuf;
 
@@ -37,6 +38,8 @@ pub struct Cli {
 pub enum Commands {
     /// List all existing Shell-Cell containers
     Ls,
+    /// Stop all running Shell-Cell containers
+    Stop,
     // TODO: Implement
     // /// Clean up all orphaned containers and their corresponding images (those no longer
     // /// associated with any existing Shell-Cell source files).
@@ -72,6 +75,7 @@ impl Cli {
         match self.command {
             None => self.run().await?,
             Some(Commands::Ls) => self.ls().await?,
+            Some(Commands::Stop) => self.stop().await?,
         }
         Ok(())
     }
