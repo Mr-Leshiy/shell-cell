@@ -1,4 +1,4 @@
-use crate::{buildkit::BuildKitD, cli::Cli, scell::container_info::Status};
+use crate::{buildkit::BuildKitD, cli::Cli, error::Report, scell::container_info::Status};
 
 impl Cli {
     pub async fn stop(self) -> color_eyre::Result<()> {
@@ -15,16 +15,17 @@ impl Cli {
             return Ok(());
         }
 
-        let mut stopped = 0;
+        let mut report = Report::new();
         for container in &running {
-            buildkit
+            if let Err(err) = buildkit
                 .stop_container_by_name(&container.container_name)
-                .await?;
-            println!("Stopped container: {}", container.container_name);
-            stopped += 1;
+                .await
+            {
+                report.add_error(err);
+            } else {
+                println!("Stopped container: {}", container.container_name);
+            }
         }
-
-        println!("Stopped {stopped}/{} running container(s).", running.len());
-        Ok(())
+        report.consume()
     }
 }
