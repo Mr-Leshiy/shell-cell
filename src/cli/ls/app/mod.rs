@@ -8,7 +8,7 @@ use ratatui::{
     widgets::TableState,
 };
 
-use crate::scell::container_info::SCellContainerInfo;
+use crate::{buildkit::BuildKitD, scell::container_info::SCellContainerInfo};
 
 pub enum App {
     Loading(Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>),
@@ -17,13 +17,12 @@ pub enum App {
 }
 
 impl App {
-    pub fn loading() -> Self {
+    pub fn loading(buildkit: BuildKitD) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
         // Spawn async task to fetch containers
         tokio::spawn(async move {
             let result = async {
-                let buildkit = crate::buildkit::BuildKitD::start().await?;
                 let res = buildkit.list_containers().await;
                 tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                 res
