@@ -5,12 +5,14 @@ mod progress;
 mod run;
 mod stop;
 
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
 
 use crate::error::UserError;
+
+const UPDATE_TIMEOUT: Duration = Duration::from_millis(100);
 
 #[allow(clippy::doc_markdown)]
 /// Binary build info

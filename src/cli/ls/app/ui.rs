@@ -33,7 +33,7 @@ fn render_loading(
 ) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title("Shell-Cell Containers")
+        .title("'Shell-Cell' Containers")
         .border_style(Style::new().light_green());
 
     let inner = block.inner(area);
@@ -65,7 +65,7 @@ fn render_loading(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            "Fetching containers from Docker",
+            "Fetching 'Shell-Cell' containers info",
             Style::default().fg(Color::Gray),
         )),
     ];
@@ -123,7 +123,7 @@ impl Widget for &LsState {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Shell-Cell Containers")
+                    .title("'Shell-Cell' Containers")
                     .title_bottom("↑↓: navigate, Ctrl-C: exit")
                     .border_style(Style::new().light_green()),
             )

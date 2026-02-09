@@ -6,7 +6,7 @@ use color_eyre::eyre::ContextCompat;
 
 use super::{IMAGE_METADATA_LOCATION, IMAGE_METADATA_NAME, NAME_PREFIX, parser::name::TargetName};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
     pub name: TargetName,
     pub location: PathBuf,
@@ -15,7 +15,7 @@ pub struct SCellContainerInfo {
     pub status: Status,
 }
 
-#[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Status {
     #[default]
     Empty,

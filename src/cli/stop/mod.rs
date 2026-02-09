@@ -1,3 +1,5 @@
+mod app;
+
 use crate::{buildkit::BuildKitD, cli::Cli, error::Report, scell::container_info::Status};
 
 impl Cli {

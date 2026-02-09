@@ -16,6 +16,7 @@ use crate::{
     scell::{SCell, container_info::SCellContainerInfo},
 };
 
+#[derive(Clone)]
 pub struct BuildKitD {
     docker: Docker,
 }
