@@ -28,16 +28,21 @@ impl Widget for &App {
             let inner = block.inner(area);
             Widget::render(block, area, buf);
             let logs = logs_list(&STEPS_LOGS[..STEP]);
-            Widget::render(logs, inner, buf);
+            Widget::render(List::new(logs), inner, buf);
         }
         // STEP 2
-        if let App::BuildImage(_) = self {
+        if let App::BuildImage(state) = self {
             const STEP: usize = 2;
             let block = main_block();
             let inner = block.inner(area);
             Widget::render(block, area, buf);
-            let logs = logs_list(&STEPS_LOGS[..STEP]);
-            Widget::render(logs, inner, buf);
+            let mut logs = logs_list(&STEPS_LOGS[..STEP]);
+            let logs_style = Style::default().cyan();
+            logs.push(ListItem::new("  └─ ").style(logs_style.clone()));
+            logs.extend(state.logs.iter().map(|log| {
+                ListItem::new(format!("     {log}")).style(logs_style.clone())
+            }));
+            Widget::render(List::new(logs), inner, buf);
         }
         // STEP 3
         if let App::StartContainer(_) = self {
@@ -46,7 +51,7 @@ impl Widget for &App {
             let inner = block.inner(area);
             Widget::render(block, area, buf);
             let logs = logs_list(&STEPS_LOGS[..STEP]);
-            Widget::render(logs, inner, buf);
+            Widget::render(List::new(logs), inner, buf);
         }
         // STEP 4
         if let App::StartSession(_) = self {
@@ -55,30 +60,28 @@ impl Widget for &App {
             let inner = block.inner(area);
             Widget::render(block, area, buf);
             let logs = logs_list(&STEPS_LOGS[..STEP]);
-            Widget::render(logs, inner, buf);
+            Widget::render(List::new(logs), inner, buf);
         }
     }
 }
 
-fn logs_list<'a>(messages: &'a [&str]) -> List<'a> {
-    List::new(
-        messages
-            .iter()
-            .enumerate()
-            .map(|(i, msg)| {
-                let is_last = i == messages.len().saturating_sub(1) && i != 0;
+fn logs_list<'a>(messages: &'a [&str]) -> Vec<ListItem<'a>> {
+    messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            let is_last = i == messages.len().saturating_sub(1) && i != 0;
 
-                let style = Style::default().add_modifier(Modifier::BOLD);
+            let style = Style::default().add_modifier(Modifier::BOLD);
 
-                let line = if is_last {
-                    Line::from(vec![Span::styled(format!("{msg} ..."), style.yellow())])
-                } else {
-                    Line::from(vec![Span::styled(format!("✓ {msg}"), style.green())])
-                };
-                ListItem::new(line)
-            })
-            .collect::<Vec<ListItem>>(),
-    )
+            let line = if is_last {
+                Line::from(vec![Span::styled(format!("{msg} ..."), style.yellow())])
+            } else {
+                Line::from(vec![Span::styled(format!("✓ {msg}"), style.green())])
+            };
+            ListItem::new(line)
+        })
+        .collect::<Vec<ListItem>>()
 }
 
 fn main_block() -> Block<'static> {

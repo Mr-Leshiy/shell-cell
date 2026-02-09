@@ -9,7 +9,7 @@ impl Cli {
     pub async fn run(self) -> color_eyre::Result<()> {
         let buildkit = BuildKitD::start().await?;
         let mut terminal = ratatui::try_init()?;
-        let res = App::run(buildkit, self.scell_path, self.verbose, &mut terminal);
+        let res = App::run(buildkit, self.scell_path, &mut terminal);
         ratatui::try_restore()?;
         res
 

@@ -1,6 +1,9 @@
 mod ui;
 
-use std::{path::Path, sync::mpsc::Receiver};
+use std::{
+    path::Path,
+    sync::mpsc::{Receiver, RecvTimeoutError},
+};
 
 use ratatui::{
     Terminal,
@@ -11,7 +14,7 @@ use crate::{buildkit::BuildKitD, cli::UPDATE_TIMEOUT, pty::PtyStdStreams, scell:
 
 pub enum App {
     Compiling(Receiver<color_eyre::Result<SCell>>),
-    BuildImage(Receiver<color_eyre::Result<SCell>>),
+    BuildImage(BuildImageState),
     StartContainer(Receiver<color_eyre::Result<PtyStdStreams>>),
     StartSession(Receiver<()>),
     Finished,
@@ -22,7 +25,6 @@ impl App {
     pub fn run<B: ratatui::backend::Backend, P: AsRef<Path> + Send + 'static>(
         buildkit: BuildKitD,
         scell_path: P,
-        _verbose: bool,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         // First step
@@ -36,8 +38,9 @@ impl App {
                 app = Self::build_image(buildkit.clone(), scell);
             }
 
-            if let App::BuildImage(ref rx) = app
-                && let Ok(res) = rx.recv_timeout(UPDATE_TIMEOUT)
+            if let App::BuildImage(ref mut state) = app
+                && state.try_update()
+                && let Ok(res) = state.rx.recv_timeout(UPDATE_TIMEOUT)
             {
                 let scell = res?;
                 app = Self::start_container(buildkit.clone(), scell);
@@ -95,11 +98,22 @@ impl App {
         scell: SCell,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
+        let (logs_tx, logs_rx) = std::sync::mpsc::channel();
+
         tokio::spawn(async move {
-            let res = buildkit.build_image(&scell, |_| {}).await;
+            let res = buildkit
+                .build_image(&scell, |msg| {
+                    drop(logs_tx.send(msg));
+                })
+                .await;
             drop(tx.send(res.map(|_| scell)));
         });
-        App::BuildImage(rx)
+
+        App::BuildImage(BuildImageState {
+            rx,
+            logs_rx,
+            logs: Vec::new(),
+        })
     }
 
     fn start_container(
@@ -125,5 +139,24 @@ impl App {
             let _ = tx.send(());
         });
         App::StartSession(rx)
+    }
+}
+
+pub struct BuildImageState {
+    rx: Receiver<color_eyre::Result<SCell>>,
+    logs_rx: Receiver<String>,
+    logs: Vec<String>,
+}
+
+impl BuildImageState {
+    fn try_update(&mut self) -> bool {
+        match self.logs_rx.recv_timeout(UPDATE_TIMEOUT) {
+            Ok(log) => {
+                self.logs.push(log);
+                false
+            },
+            Err(RecvTimeoutError::Timeout) => false,
+            Err(RecvTimeoutError::Disconnected) => true,
+        }
     }
 }
