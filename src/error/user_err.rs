@@ -17,6 +17,12 @@ impl UserError {
     where D: Display + Debug + Send + Sync + 'static {
         Err(Self(color_eyre::eyre::Error::msg(msg)))
     }
+
+    #[cfg_attr(track_caller, track_caller)]
+    pub fn wrap<D>(msg: D) -> UserError
+    where D: Display + Debug + Send + Sync + 'static {
+        Self(color_eyre::eyre::Error::msg(msg))
+    }
 }
 
 pub trait WrapUserError<T, E> {

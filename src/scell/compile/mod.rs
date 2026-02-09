@@ -4,14 +4,14 @@ mod tests;
 
 use std::{collections::HashSet, path::Path};
 
-use color_eyre::eyre::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 
 use super::{
     Link, SCell,
     parser::{SCellFile, name::TargetName, target::FromStmt},
 };
 use crate::{
-    error::{OptionUserError, UserError, WrapUserError},
+    error::{OptionUserError, Report, UserError, WrapUserError},
     scell::{
         compile::errors::{
             CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingEntrypoint,
@@ -116,18 +116,19 @@ impl SCell {
             }
         }
 
-        // TODO: do not early return, return as much errors as possible
-        let Some(shell) = shell.clone() else {
-            return UserError::bail(MissingShellStmt)?;
-        };
-        let Some(hang) = hang.clone() else {
-            return UserError::bail(MissingHangStmt)?;
-        };
+        let mut report = Report::new();
+        if shell.is_none() {
+            report.add_error(UserError::wrap(MissingShellStmt));
+        }
+        if hang.is_none() {
+            report.add_error(UserError::wrap(MissingHangStmt));
+        }
+        report.check()?;
 
         Ok(Self {
             links,
-            shell,
-            hang,
+            shell: shell.context("'shell' cannot be 'None'")?,
+            hang: hang.context("'hang' cannot be 'None'")?,
             config,
         })
     }

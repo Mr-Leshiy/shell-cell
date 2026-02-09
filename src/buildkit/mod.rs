@@ -13,9 +13,10 @@ use crate::{
         container_iteractive_exec, list_all_containers, pull_image, stop_container,
     },
     pty::PtyStdStreams,
-    scell::{SCell, SCellContainerInfo},
+    scell::{SCell, container_info::SCellContainerInfo},
 };
 
+#[derive(Clone)]
 pub struct BuildKitD {
     docker: Docker,
 }
@@ -84,6 +85,14 @@ impl BuildKitD {
         scell: &SCell,
     ) -> color_eyre::Result<()> {
         stop_container(&self.docker, &scell.name()).await?;
+        Ok(())
+    }
+
+    pub async fn stop_container_by_name(
+        &self,
+        container_name: &str,
+    ) -> color_eyre::Result<()> {
+        stop_container(&self.docker, container_name).await?;
         Ok(())
     }
 
