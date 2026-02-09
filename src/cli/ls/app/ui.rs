@@ -81,7 +81,6 @@ fn render_ls(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-
     let block = main_block();
     let inner = block.inner(area);
     Widget::render(block, area, buf);

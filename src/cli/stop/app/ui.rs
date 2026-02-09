@@ -72,7 +72,7 @@ fn render_loading(
         )
         .centered();
 
-    paragraph.render(horizontal[1], buf);
+    Widget::render(paragraph, horizontal[1], buf);
 }
 
 #[allow(clippy::indexing_slicing)]
@@ -83,7 +83,7 @@ fn render_stopping(
 ) {
     let block = main_block();
     let inner = block.inner(area);
-    block.render(area, buf);
+    Widget::render(block, area, buf);
 
     // Calculate progress
     let total = state.containers.len();
@@ -131,9 +131,9 @@ fn render_stopping(
         .block(
             Block::default()
                 .borders(Borders::BOTTOM)
-                .border_style(Style::default().fg(Color::Gray)),
+                .border_style(Style::default().light_magenta()),
         );
-    progress_paragraph.render(layout[0], buf);
+    Widget::render(progress_paragraph,layout[0], buf);
 
     // Create list items for each container
     let list_items: Vec<ListItem> = state
@@ -170,9 +170,9 @@ fn render_stopping(
         })
         .collect();
 
-    let list = List::new(list_items).block(Block::default());
+    let list = List::new(list_items);
 
-    list.render(layout[1], buf);
+     Widget::render(list, layout[1], buf);
 }
 
 fn main_block() -> Block<'static> {
