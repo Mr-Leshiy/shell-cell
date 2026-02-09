@@ -36,13 +36,15 @@ impl App {
                 && state.try_update()
                 && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
-                let pty = res?;
-                app = Self::running_pty(pty);
+                let (pty, scell) = res?;
+                app = Self::running_pty(pty, scell);
             }
 
             if let App::RunningPty(ref mut state) = app
                 && state.try_update()
             {
+                // Drain any buffered terminal events before transitioning
+                drop(event::read()?);
                 app = App::Finished;
             }
 
@@ -66,23 +68,26 @@ impl App {
             if let Self::RunningPty(state) = self {
                 let mut buf = [0u8; 1024];
                 let n = std::io::stdin().read(&mut buf)?;
-                if n == 0 {
-                    *self = App::Exit;
-                } else {
-                    #[allow(clippy::indexing_slicing)]
-                    state
-                        .pty_streams
-                        .stdin
-                        .send(Bytes::copy_from_slice(&buf[..n]))?;
-                }
+
+                #[allow(clippy::indexing_slicing)]
+                state
+                    .pty_streams
+                    .stdin
+                    .send(Bytes::copy_from_slice(&buf[..n]))?;
 
             // Handles every other app state
             } else if let Event::Key(key) = event::read()?
                 && key.kind == KeyEventKind::Press
-                && let KeyCode::Char('c' | 'd') = key.code
-                && key.modifiers.contains(event::KeyModifiers::CONTROL)
             {
-                *self = App::Exit;
+                // Exit on any key if finished
+                if matches!(self, App::Finished) {
+                    *self = App::Exit;
+                // Exit on Ctrl-C or Ctrl-D for other states
+                } else if let KeyCode::Char('c' | 'd') = key.code
+                    && key.modifiers.contains(event::KeyModifiers::CONTROL)
+                {
+                    *self = App::Exit;
+                }
             }
         }
 
@@ -121,7 +126,7 @@ impl App {
                     "🚀 Starting 'Shell-Cell' session".to_string(),
                     LogType::Main,
                 )));
-                Ok(pty)
+                Ok((pty, scell))
             };
 
             let res = preparing().await;
@@ -135,16 +140,20 @@ impl App {
         })
     }
 
-    fn running_pty(pty_streams: PtyStdStreams) -> Self {
+    fn running_pty(
+        pty_streams: PtyStdStreams,
+        scell: SCell,
+    ) -> Self {
         Self::RunningPty(RunningPtyState {
             pty_streams,
+            scell_name: scell.name(),
             parser: Parser::default(),
         })
     }
 }
 
 pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<PtyStdStreams>>,
+    rx: Receiver<color_eyre::Result<(PtyStdStreams, SCell)>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
 }
@@ -169,6 +178,7 @@ impl PreparingState {
 
 pub struct RunningPtyState {
     pty_streams: PtyStdStreams,
+    scell_name: String,
     parser: Parser,
 }
 
@@ -192,6 +202,6 @@ impl RunningPtyState {
             Err(RecvTimeoutError::Disconnected) => true,
         };
 
-        stdout_res && stderr_res
+        stdout_res | stderr_res
     }
 }

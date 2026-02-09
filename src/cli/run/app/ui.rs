@@ -1,7 +1,8 @@
 use ratatui::{
+    layout::{Alignment, Constraint, Layout},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Widget},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
 use super::App;
@@ -15,8 +16,14 @@ impl Widget for &App {
     ) where
         Self: Sized,
     {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::new().light_magenta());
+
         if let App::Preparing(state) = self {
-            let block = main_block();
+            let block = block
+                .title("'Shell-Cell'")
+                .title_bottom("Ctrl-C or Ctrl-D: exit");
             let inner = block.inner(area);
             Widget::render(block, area, buf);
 
@@ -48,10 +55,10 @@ impl Widget for &App {
                 .skip(skip_amount);
 
             Widget::render(List::new(logs), inner, buf);
-        }
-
-        if let App::RunningPty(state) = self {
-            let block = main_block();
+        } else if let App::RunningPty(state) = self {
+            let block = block
+                .title(format!("'Shell-Cell' {}", state.scell_name))
+                .title_bottom("Ctrl-D: exit");
             let inner = block.inner(area);
             Widget::render(block, area, buf);
 
@@ -60,6 +67,33 @@ impl Widget for &App {
                 inner,
                 buf,
             );
+        } else if let App::Finished = self {
+            let block = block.title("'Shell-Cell'");
+            let inner = block.inner(area);
+            Widget::render(block, area, buf);
+
+            // Create a centered area using Layout
+            let vertical_layout = Layout::vertical([
+                Constraint::Percentage(50),
+                Constraint::Length(2),
+                Constraint::Percentage(50),
+            ])
+            .split(inner);
+
+            let text = vec![
+                Line::from(Span::styled(
+                    "Finished 'Shell-Cell' session",
+                    Style::default().add_modifier(Modifier::BOLD).green(),
+                )),
+                Line::from(Span::styled(
+                    "<Press any key to exit>",
+                    Style::default().cyan(),
+                )),
+            ];
+
+            let paragraph = Paragraph::new(text).alignment(Alignment::Center);
+            #[allow(clippy::indexing_slicing)]
+            Widget::render(paragraph, vertical_layout[1], buf);
         }
     }
 }
@@ -77,12 +111,4 @@ fn logs_list_iter<'a>(messages: &'a [&str]) -> impl Iterator<Item = ListItem<'a>
         };
         ListItem::new(line)
     })
-}
-
-fn main_block() -> Block<'static> {
-    Block::default()
-        .borders(Borders::ALL)
-        .title("'Shell-Cell'")
-        .title_bottom("Ctrl-C or Ctrl-D: exit")
-        .border_style(Style::new().light_magenta())
 }
