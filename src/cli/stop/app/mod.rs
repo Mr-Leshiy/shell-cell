@@ -104,7 +104,7 @@ impl App {
         if event::poll(UPDATE_TIMEOUT)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
-            && let KeyCode::Char('c') = key.code
+            && let KeyCode::Char('c' | 'd') = key.code
             && key.modifiers.contains(event::KeyModifiers::CONTROL)
         {
             *self = App::Exit;
