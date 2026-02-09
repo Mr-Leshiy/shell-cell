@@ -1,19 +1,23 @@
 mod ui;
 
 use std::{
+    io::Read,
     path::Path,
     sync::mpsc::{Receiver, RecvTimeoutError},
 };
 
+use bytes::Bytes;
 use ratatui::{
     Terminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
 };
+use tui_term::vt100::Parser;
 
-use crate::{buildkit::BuildKitD, cli::UPDATE_TIMEOUT, scell::SCell};
+use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::PtyStdStreams, scell::SCell};
 
 pub enum App {
     Preparing(PreparingState),
+    RunningPty(RunningPtyState),
     Finished,
     Exit,
 }
@@ -30,9 +34,16 @@ impl App {
         loop {
             if let App::Preparing(ref mut state) = app
                 && state.try_update()
-                && let Ok(res) = state.rx.recv_timeout(UPDATE_TIMEOUT)
+                && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
-                res?;
+                let pty = res?;
+                app = Self::running_pty(pty);
+            }
+
+            if let App::RunningPty(ref mut state) = app
+                && state.try_update()
+            {
+                app = App::Finished;
             }
 
             if matches!(app, App::Exit) {
@@ -50,13 +61,29 @@ impl App {
     }
 
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
-        if event::poll(UPDATE_TIMEOUT)?
-            && let Event::Key(key) = event::read()?
-            && key.kind == KeyEventKind::Press
-            && let KeyCode::Char('c' | 'd') = key.code
-            && key.modifiers.contains(event::KeyModifiers::CONTROL)
-        {
-            *self = App::Exit;
+        if event::poll(MIN_FPS)? {
+            // For `RunningPty`
+            if let Self::RunningPty(state) = self {
+                let mut buf = [0u8; 1024];
+                let n = std::io::stdin().read(&mut buf)?;
+                if n == 0 {
+                    *self = App::Exit;
+                } else {
+                    #[allow(clippy::indexing_slicing)]
+                    state
+                        .pty_streams
+                        .stdin
+                        .send(Bytes::copy_from_slice(&buf[..n]))?;
+                }
+
+            // Handles every other app state
+            } else if let Event::Key(key) = event::read()?
+                && key.kind == KeyEventKind::Press
+                && let KeyCode::Char('c' | 'd') = key.code
+                && key.modifiers.contains(event::KeyModifiers::CONTROL)
+            {
+                *self = App::Exit;
+            }
         }
 
         Ok(())
@@ -88,14 +115,13 @@ impl App {
                     LogType::Main,
                 )));
                 buildkit.start_container(&scell).await?;
-                let _pty = buildkit.attach_to_shell(&scell).await?;
+                let pty = buildkit.attach_to_shell(&scell).await?;
 
                 drop(logs_tx.send((
                     "🚀 Starting 'Shell-Cell' session".to_string(),
                     LogType::Main,
                 )));
-
-                Ok(())
+                Ok(pty)
             };
 
             let res = preparing().await;
@@ -108,10 +134,17 @@ impl App {
             logs: Vec::new(),
         })
     }
+
+    fn running_pty(pty_streams: PtyStdStreams) -> Self {
+        Self::RunningPty(RunningPtyState {
+            pty_streams,
+            parser: Parser::default(),
+        })
+    }
 }
 
 pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<()>>,
+    rx: Receiver<color_eyre::Result<PtyStdStreams>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
 }
@@ -123,7 +156,7 @@ enum LogType {
 
 impl PreparingState {
     fn try_update(&mut self) -> bool {
-        match self.logs_rx.recv_timeout(UPDATE_TIMEOUT) {
+        match self.logs_rx.recv_timeout(MIN_FPS) {
             Ok(log) => {
                 self.logs.push(log);
                 false
@@ -131,5 +164,34 @@ impl PreparingState {
             Err(RecvTimeoutError::Timeout) => false,
             Err(RecvTimeoutError::Disconnected) => true,
         }
+    }
+}
+
+pub struct RunningPtyState {
+    pty_streams: PtyStdStreams,
+    parser: Parser,
+}
+
+impl RunningPtyState {
+    pub fn try_update(&mut self) -> bool {
+        let stdout_res = match self.pty_streams.stdout.recv_timeout(MIN_FPS) {
+            Ok(bytes) => {
+                self.parser.process(&bytes);
+                false
+            },
+            Err(RecvTimeoutError::Timeout) => false,
+            Err(RecvTimeoutError::Disconnected) => true,
+        };
+
+        let stderr_res = match self.pty_streams.stderr.recv_timeout(MIN_FPS) {
+            Ok(bytes) => {
+                self.parser.process(&bytes);
+                false
+            },
+            Err(RecvTimeoutError::Timeout) => false,
+            Err(RecvTimeoutError::Disconnected) => true,
+        };
+
+        stdout_res && stderr_res
     }
 }

@@ -12,7 +12,8 @@ use color_eyre::Section;
 
 use crate::error::UserError;
 
-const UPDATE_TIMEOUT: Duration = Duration::from_millis(100);
+// 60 frames per second
+const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
 
 #[allow(clippy::doc_markdown)]
 /// Binary build info

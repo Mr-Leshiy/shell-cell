@@ -7,13 +7,6 @@ use ratatui::{
 use super::App;
 use crate::cli::run::app::LogType;
 
-const STEPS_LOGS: [&str; 4] = [
-    "📝 Compiling Shell-Cell blueprint file",
-    "⚙️ Building 'Shell-Cell' image",
-    "📦 Starting 'Shell-Cell' container",
-    "🚀 Starting 'Shell-Cell' session",
-];
-
 impl Widget for &App {
     fn render(
         self,
@@ -55,6 +48,18 @@ impl Widget for &App {
                 .skip(skip_amount);
 
             Widget::render(List::new(logs), inner, buf);
+        }
+
+        if let App::RunningPty(state) = self {
+            let block = main_block();
+            let inner = block.inner(area);
+            Widget::render(block, area, buf);
+
+            Widget::render(
+                tui_term::widget::PseudoTerminal::new(state.parser.screen()),
+                inner,
+                buf,
+            );
         }
     }
 }
