@@ -4,7 +4,7 @@ mod tests;
 
 use std::{collections::HashSet, path::Path};
 
-use color_eyre::eyre::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 
 use super::{
     Link, SCell,
@@ -127,8 +127,8 @@ impl SCell {
 
         Ok(Self {
             links,
-            shell: shell.unwrap(),
-            hang: hang.unwrap(),
+            shell: shell.context("'shell' cannot be 'None'")?,
+            hang: hang.context("'hang' cannot be 'None'")?,
             config,
         })
     }

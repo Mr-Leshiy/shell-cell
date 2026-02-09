@@ -40,11 +40,11 @@ impl App {
     ) -> color_eyre::Result<()> {
         loop {
             // Check for state transitions
-            if let App::Loading(ref rx) = self {
-                if let Ok(result) = rx.try_recv() {
-                    let containers = result?;
-                    self = App::Ls(LsState::new(containers));
-                }
+            if let App::Loading(ref rx) = self
+                && let Ok(result) = rx.try_recv()
+            {
+                let containers = result?;
+                self = App::Ls(LsState::new(containers));
             }
 
             if matches!(self, App::Exit) {
@@ -62,28 +62,25 @@ impl App {
     }
 
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
-        if event::poll(std::time::Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('c')
-                            if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                        {
-                            *self = App::Exit;
-                        },
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            if let App::Ls(ls_state) = self {
-                                ls_state.next();
-                            }
-                        },
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            if let App::Ls(ls_state) = self {
-                                ls_state.previous();
-                            }
-                        },
-                        _ => {},
+        if event::poll(std::time::Duration::from_millis(100))?
+            && let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+        {
+            match key.code {
+                KeyCode::Char('c') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                    *self = App::Exit;
+                },
+                KeyCode::Down | KeyCode::Char('j') => {
+                    if let App::Ls(ls_state) = self {
+                        ls_state.next();
                     }
-                }
+                },
+                KeyCode::Up | KeyCode::Char('k') => {
+                    if let App::Ls(ls_state) = self {
+                        ls_state.previous();
+                    }
+                },
+                _ => {},
             }
         }
         Ok(())

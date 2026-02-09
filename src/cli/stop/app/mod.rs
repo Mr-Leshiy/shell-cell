@@ -1,6 +1,9 @@
 mod ui;
 
-use std::{collections::HashMap, sync::mpsc::Receiver};
+use std::{
+    collections::HashMap,
+    sync::mpsc::{Receiver, RecvTimeoutError},
+};
 
 use ratatui::{
     Terminal,
@@ -45,11 +48,20 @@ impl App {
     ) -> color_eyre::Result<()> {
         loop {
             // Check for state transitions
-            if let App::Loading { rx, buildkit } = self {
-                if let Ok(result) = rx.recv_timeout(UPDATE_TIMEOUT) {
-                    let containers = result?;
-                    self = Self::stopping(containers, buildkit);
-                }
+            if let App::Loading {
+                ref rx,
+                ref buildkit,
+            } = self
+                && let Ok(result) = rx.recv_timeout(UPDATE_TIMEOUT)
+            {
+                let containers = result?;
+                self = Self::stopping(containers, buildkit.clone());
+            }
+
+            if let App::Stopping(ref mut state) = self
+                && state.try_update()
+            {
+                self = App::Exit;
             }
 
             if matches!(self, App::Exit) {
@@ -87,20 +99,15 @@ impl App {
     }
 
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
-        if event::poll(UPDATE_TIMEOUT)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('c')
-                            if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                        {
-                            *self = App::Exit;
-                        },
-                        _ => {},
-                    }
-                }
-            }
+        if event::poll(UPDATE_TIMEOUT)?
+            && let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+            && let KeyCode::Char('c') = key.code
+            && key.modifiers.contains(event::KeyModifiers::CONTROL)
+        {
+            *self = App::Exit;
         }
+
         Ok(())
     }
 }
@@ -121,10 +128,15 @@ impl StoppingState {
         }
     }
 
-    fn try_update(&mut self) -> color_eyre::Result<()> {
-        if let Ok(update) = self.rx.recv_timeout(UPDATE_TIMEOUT) {
-            self.containers.insert(update.0, Some(update.1));
+    /// Returns boolean flag, if the udelrying channel was closed or not
+    fn try_update(&mut self) -> bool {
+        match self.rx.recv_timeout(UPDATE_TIMEOUT) {
+            Ok(update) => {
+                self.containers.insert(update.0, Some(update.1));
+                false
+            },
+            Err(RecvTimeoutError::Timeout) => false,
+            Err(RecvTimeoutError::Disconnected) => true,
         }
-        Ok(())
     }
 }
