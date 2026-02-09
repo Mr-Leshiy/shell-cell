@@ -114,7 +114,7 @@ impl LsState {
         }
         let i = match self.table_state.selected() {
             // if not the bottom item
-            Some(i) if i != self.containers.len() => i.saturating_add(1),
+            Some(i) if i != self.containers.len().saturating_sub(1) => i.saturating_add(1),
             _ => 0,
         };
         self.table_state.select(Some(i));
@@ -127,7 +127,7 @@ impl LsState {
         let i = match self.table_state.selected() {
             // if not top item
             Some(i) if i != 0 => i.saturating_sub(1),
-            _ => 0,
+            _ => self.containers.len().saturating_sub(1),
         };
         self.table_state.select(Some(i));
     }
