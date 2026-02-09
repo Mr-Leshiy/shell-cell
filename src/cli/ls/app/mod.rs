@@ -1,25 +1,53 @@
 mod ui;
 
+use std::sync::mpsc::Receiver;
+
 use ratatui::{
     Terminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     widgets::TableState,
 };
 
-use crate::{scell::container_info::SCellContainerInfo};
+use crate::scell::container_info::SCellContainerInfo;
 
 pub enum App {
-    Loading,
+    Loading(Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>),
     Ls(LsState),
     Exit,
 }
 
 impl App {
+    pub fn loading() -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        // Spawn async task to fetch containers
+        tokio::spawn(async move {
+            let result = async {
+                let buildkit = crate::buildkit::BuildKitD::start().await?;
+                let res = buildkit.list_containers().await;
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                res
+            }
+            .await;
+            drop(tx.send(result));
+        });
+
+        App::Loading(rx)
+    }
+
     pub fn run<B: ratatui::backend::Backend>(
         mut self,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         loop {
+            // Check for state transitions
+            if let App::Loading(ref rx) = self {
+                if let Ok(result) = rx.try_recv() {
+                    let containers = result?;
+                    self = App::Ls(LsState::new(containers));
+                }
+            }
+
             if matches!(self, App::Exit) {
                 return Ok(());
             }
@@ -85,14 +113,9 @@ impl LsState {
             return;
         }
         let i = match self.table_state.selected() {
-            Some(i) => {
-                if i >= self.containers.len().saturating_sub(1) {
-                    0
-                } else {
-                    i.saturating_add(1)
-                }
-            },
-            None => 0,
+            // if not the bottom item
+            Some(i) if i != self.containers.len() => i.saturating_add(1),
+            _ => 0,
         };
         self.table_state.select(Some(i));
     }
@@ -102,14 +125,9 @@ impl LsState {
             return;
         }
         let i = match self.table_state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.containers.len().saturating_sub(1)
-                } else {
-                    i.saturating_sub(1)
-                }
-            },
-            None => 0,
+            // if not top item
+            Some(i) if i != 0 => i.saturating_sub(1),
+            _ => 0,
         };
         self.table_state.select(Some(i));
     }
