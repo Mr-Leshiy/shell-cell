@@ -10,13 +10,10 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
 };
 
-use crate::{buildkit::BuildKitD, cli::UPDATE_TIMEOUT, pty::PtyStdStreams, scell::SCell};
+use crate::{buildkit::BuildKitD, cli::UPDATE_TIMEOUT, scell::SCell};
 
 pub enum App {
-    Compiling(Receiver<color_eyre::Result<SCell>>),
-    BuildImage(BuildImageState),
-    StartContainer(Receiver<color_eyre::Result<PtyStdStreams>>),
-    StartSession(Receiver<()>),
+    Preparing(PreparingState),
     Finished,
     Exit,
 }
@@ -28,34 +25,15 @@ impl App {
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::compiling(scell_path);
+        let mut app = Self::preparing(buildkit, scell_path);
 
         loop {
-            if let App::Compiling(ref rx) = app
-                && let Ok(res) = rx.recv_timeout(UPDATE_TIMEOUT)
-            {
-                let scell = res?;
-                app = Self::build_image(buildkit.clone(), scell);
-            }
-
-            if let App::BuildImage(ref mut state) = app
+            if let App::Preparing(ref mut state) = app
                 && state.try_update()
                 && let Ok(res) = state.rx.recv_timeout(UPDATE_TIMEOUT)
             {
-                let scell = res?;
-                app = Self::start_container(buildkit.clone(), scell);
-            }
-
-            if let App::StartContainer(ref rx) = app
-                && let Ok(res) = rx.recv_timeout(UPDATE_TIMEOUT)
-            {
                 res?;
-                app = Self::start_session();
             }
-
-            if let App::StartSession(ref rx) = app
-                && let Ok(_) = rx.recv_timeout(UPDATE_TIMEOUT)
-            {}
 
             if matches!(app, App::Exit) {
                 return Ok(());
@@ -84,71 +62,66 @@ impl App {
         Ok(())
     }
 
-    fn compiling<P: AsRef<Path> + Send + 'static>(scell_path: P) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-        tokio::spawn(async move {
-            let res = SCell::compile(scell_path, None);
-            drop(tx.send(res));
-        });
-        App::Compiling(rx)
-    }
-
-    fn build_image(
+    fn preparing<P: AsRef<Path> + Send + 'static>(
         buildkit: BuildKitD,
-        scell: SCell,
+        scell_path: P,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
         let (logs_tx, logs_rx) = std::sync::mpsc::channel();
-
         tokio::spawn(async move {
-            let res = buildkit
-                .build_image(&scell, |msg| {
-                    drop(logs_tx.send(msg));
-                })
-                .await;
-            drop(tx.send(res.map(|_| scell)));
-        });
+            let preparing = async || {
+                drop(logs_tx.send((
+                    "📝 Compiling Shell-Cell blueprint file".to_string(),
+                    LogType::Main,
+                )));
+                let scell = SCell::compile(scell_path, None)?;
 
-        App::BuildImage(BuildImageState {
+                drop(logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)));
+                buildkit
+                    .build_image(&scell, |msg| {
+                        drop(logs_tx.send((msg, LogType::SubLog)));
+                    })
+                    .await?;
+
+                drop(logs_tx.send((
+                    "📦 Starting 'Shell-Cell' container".to_string(),
+                    LogType::Main,
+                )));
+                buildkit.start_container(&scell).await?;
+                let _pty = buildkit.attach_to_shell(&scell).await?;
+
+                drop(logs_tx.send((
+                    "🚀 Starting 'Shell-Cell' session".to_string(),
+                    LogType::Main,
+                )));
+
+                Ok(())
+            };
+
+            let res = preparing().await;
+
+            drop(tx.send(res));
+        });
+        App::Preparing(PreparingState {
             rx,
             logs_rx,
             logs: Vec::new(),
         })
     }
-
-    fn start_container(
-        buildkit: BuildKitD,
-        scell: SCell,
-    ) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-        tokio::spawn(async move {
-            let start = async || {
-                buildkit.start_container(&scell).await?;
-                buildkit.attach_to_shell(&scell).await
-            };
-            let res = start().await;
-            drop(tx.send(res));
-        });
-        App::StartContainer(rx)
-    }
-
-    fn start_session() -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-        tokio::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            let _ = tx.send(());
-        });
-        App::StartSession(rx)
-    }
 }
 
-pub struct BuildImageState {
-    rx: Receiver<color_eyre::Result<SCell>>,
-    logs_rx: Receiver<String>,
-    logs: Vec<String>,
+pub struct PreparingState {
+    rx: Receiver<color_eyre::Result<()>>,
+    logs_rx: Receiver<(String, LogType)>,
+    logs: Vec<(String, LogType)>,
 }
 
-impl BuildImageState {
+enum LogType {
+    Main,
+    SubLog,
+}
+
+impl PreparingState {
     fn try_update(&mut self) -> bool {
         match self.logs_rx.recv_timeout(UPDATE_TIMEOUT) {
             Ok(log) => {

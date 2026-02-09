@@ -5,6 +5,7 @@ use ratatui::{
 };
 
 use super::App;
+use crate::cli::run::app::LogType;
 
 const STEPS_LOGS: [&str; 4] = [
     "📝 Compiling Shell-Cell blueprint file",
@@ -21,60 +22,37 @@ impl Widget for &App {
     ) where
         Self: Sized,
     {
-        if matches!(
-            self,
-            App::Compiling(_) | App::BuildImage(_) | App::StartContainer(_) | App::StartSession(_)
-        ) {
+        if let App::Preparing(state) = self {
             let block = main_block();
             let inner = block.inner(area);
             Widget::render(block, area, buf);
 
             // Calculate how many log items can fit in the available height
             let available_height = inner.height as usize;
+            let skip_amount = state.logs.len().saturating_sub(available_height);
 
-            let mut logs = Vec::new();
-            // STEP 1
-            if let App::Compiling(_) = self {
-                const STEP: usize = 1;
-                let skip_amount = STEP.saturating_sub(available_height);
-                logs = logs_list_iter(&STEPS_LOGS[..STEP])
-                    .skip(skip_amount)
-                    .collect();
-            }
-            // STEP 2
-            if let App::BuildImage(state) = self {
-                const STEP: usize = 2;
-                let logs_style = Style::default().cyan();
-                let skip_amount = state
-                    .logs
-                    .len()
-                    .saturating_add(STEP)
-                    .saturating_sub(available_height);
-                logs =
-                    logs_list_iter(&STEPS_LOGS[..STEP])
-                        .chain([ListItem::new("  └─ ").style(logs_style.clone())])
-                        .chain(state.logs.iter().map(|log| {
-                            ListItem::new(format!("     {log}")).style(logs_style.clone())
-                        }))
-                        .skip(skip_amount)
-                        .collect();
-            }
-            // STEP 3
-            if let App::StartContainer(_) = self {
-                const STEP: usize = 3;
-                let skip_amount = STEP.saturating_sub(available_height);
-                logs = logs_list_iter(&STEPS_LOGS[..STEP])
-                    .skip(skip_amount)
-                    .collect();
-            }
-            // STEP 4
-            if let App::StartSession(_) = self {
-                const STEP: usize = 4;
-                let skip_amount = STEP.saturating_sub(available_height);
-                logs = logs_list_iter(&STEPS_LOGS[..STEP])
-                    .skip(skip_amount)
-                    .collect();
-            }
+            let logs = state
+                .logs
+                .iter()
+                .enumerate()
+                .map(|(i, (log, log_type))| {
+                    let is_last = i == state.logs.len().saturating_sub(1) && i != 0;
+
+                    let main_style = Style::default().add_modifier(Modifier::BOLD);
+
+                    match log_type {
+                        LogType::Main if is_last => {
+                            ListItem::new(format!("{log} ...")).style(main_style.yellow())
+                        },
+                        LogType::Main => {
+                            ListItem::new(format!("✓ {log}")).style(main_style.green())
+                        },
+                        LogType::SubLog => {
+                            ListItem::new(format!("     {log}")).style(Style::default().cyan())
+                        },
+                    }
+                })
+                .skip(skip_amount);
 
             Widget::render(List::new(logs), inner, buf);
         }
