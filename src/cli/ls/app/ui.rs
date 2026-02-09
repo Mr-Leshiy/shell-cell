@@ -108,11 +108,11 @@ fn render_ls(
     });
 
     let widths = [
-        Constraint::Length(15),
-        Constraint::Min(30),
-        Constraint::Length(20),
-        Constraint::Length(20),
-        Constraint::Length(10),
+        Constraint::Percentage(10),
+        Constraint::Percentage(30),
+        Constraint::Percentage(20),
+        Constraint::Percentage(20),
+        Constraint::Percentage(20),
     ];
 
     let table = Table::new(rows, widths)
