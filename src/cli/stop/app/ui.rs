@@ -180,5 +180,5 @@ fn main_block() -> Block<'static> {
         .borders(Borders::ALL)
         .title("Stopping Shell-Cell Containers")
         .title_bottom("Ctrl-C or Ctrl-D: exit")
-        .border_style(Style::new().light_green())
+        .border_style(Style::new().light_magenta())
 }
