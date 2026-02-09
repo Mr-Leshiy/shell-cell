@@ -15,18 +15,16 @@ impl Widget for &App {
     ) where
         Self: Sized,
     {
-        match self {
-            App::Loading(_) => {
-                render_loading(area, buf);
-            },
-            App::Ls(ls_state) => {
-                Widget::render(ls_state, area, buf);
-            },
-            App::Exit => {},
+        if let App::Loading(_) = self {
+            render_loading(area, buf);
+        }
+        if let App::Ls(ls_state) = self {
+            render_ls(ls_state, area, buf);
         }
     }
 }
 
+#[allow(clippy::indexing_slicing)]
 fn render_loading(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
@@ -37,7 +35,7 @@ fn render_loading(
         .border_style(Style::new().light_green());
 
     let inner = block.inner(area);
-    block.render(area, buf);
+    Widget::render(block, area, buf);
 
     let vertical = Layout::vertical([
         Constraint::Percentage(40),
@@ -81,59 +79,56 @@ fn render_loading(
     paragraph.render(horizontal[1], buf);
 }
 
-impl Widget for &LsState {
-    fn render(
-        self,
-        area: ratatui::prelude::Rect,
-        buf: &mut ratatui::prelude::Buffer,
-    ) where
-        Self: Sized,
-    {
-        let header_cells = ["Name", "Blueprint Location", "Created At", "ID", "Status"]
-            .iter()
-            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
-        let header = Row::new(header_cells)
-            .style(Style::default().add_modifier(Modifier::BOLD))
-            .height(1);
+#[allow(clippy::indexing_slicing)]
+fn render_ls(
+    state: &LsState,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let header_cells = ["Name", "Blueprint Location", "Created At", "ID", "Status"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+    let header = Row::new(header_cells)
+        .style(Style::default().add_modifier(Modifier::BOLD))
+        .height(1);
 
-        let rows = self.containers.iter().map(|c| {
-            let cells = vec![
-                Cell::from(c.name.to_string()),
-                Cell::from(format!("{}", c.location.display())),
-                Cell::from(
-                    c.created_at
-                        .to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
-                ),
-                Cell::from(c.container_name.clone()),
-                Cell::from(c.status.to_string()),
-            ];
-            Row::new(cells).height(1)
-        });
-
-        let widths = [
-            Constraint::Length(15),
-            Constraint::Min(30),
-            Constraint::Length(20),
-            Constraint::Length(20),
-            Constraint::Length(10),
+    let rows = state.containers.iter().map(|c| {
+        let cells = vec![
+            Cell::from(c.name.to_string()),
+            Cell::from(format!("{}", c.location.display())),
+            Cell::from(
+                c.created_at
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
+            ),
+            Cell::from(c.container_name.clone()),
+            Cell::from(c.status.to_string()),
         ];
+        Row::new(cells).height(1)
+    });
 
-        let table = Table::new(rows, widths)
-            .header(header)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("'Shell-Cell' Containers")
-                    .title_bottom("↑↓: navigate, Ctrl-C: exit")
-                    .border_style(Style::new().light_green()),
-            )
-            .row_highlight_style(
-                Style::default()
-                    .bg(Color::DarkGray)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol(">> ");
+    let widths = [
+        Constraint::Length(15),
+        Constraint::Min(30),
+        Constraint::Length(20),
+        Constraint::Length(20),
+        Constraint::Length(10),
+    ];
 
-        StatefulWidget::render(table, area, buf, &mut self.table_state.clone());
-    }
+    let table = Table::new(rows, widths)
+        .header(header)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("'Shell-Cell' Containers")
+                .title_bottom("↑↓: navigate, Ctrl-C: exit")
+                .border_style(Style::new().light_green()),
+        )
+        .row_highlight_style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol(">> ");
+
+    StatefulWidget::render(table, area, buf, &mut state.table_state.clone());
 }

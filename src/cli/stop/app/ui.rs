@@ -15,29 +15,23 @@ impl Widget for &App {
     ) where
         Self: Sized,
     {
-        match self {
-            App::Loading { .. } => {
-                render_loading(area, buf);
-            },
-            App::Stopping(state) => {
-                render_stopping(state, area, buf);
-            },
-            App::Exit => {},
+        if let App::Loading { .. } = self {
+            render_loading(area, buf);
+        }
+        if let App::Stopping(state) = self {
+            render_stopping(state, area, buf);
         }
     }
 }
 
+#[allow(clippy::indexing_slicing)]
 fn render_loading(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title("Shell-Cell Containers")
-        .border_style(Style::new().light_green());
-
+    let block = main_block();
     let inner = block.inner(area);
-    block.render(area, buf);
+    Widget::render(block, area, buf);
 
     let vertical = Layout::vertical([
         Constraint::Percentage(40),
@@ -81,16 +75,13 @@ fn render_loading(
     paragraph.render(horizontal[1], buf);
 }
 
+#[allow(clippy::indexing_slicing)]
 fn render_stopping(
     state: &StoppingState,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title("Stopping Shell-Cell Containers")
-        .border_style(Style::new().light_yellow());
-
+    let block = main_block();
     let inner = block.inner(area);
     block.render(area, buf);
 
@@ -109,7 +100,7 @@ fn render_stopping(
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                format!("All {} containers stopped", total),
+                "All containers stopped",
                 Style::default()
                     .fg(Color::Green)
                     .add_modifier(Modifier::BOLD),
@@ -124,7 +115,7 @@ fn render_stopping(
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                format!("Stopping containers... [{}/{}]", completed, total),
+                format!("Stopping containers... [{completed}/{total}]"),
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
@@ -145,10 +136,8 @@ fn render_stopping(
     progress_paragraph.render(layout[0], buf);
 
     // Create list items for each container
-    let mut items: Vec<_> = state.containers.iter().collect();
-    items.sort_by_key(|(info, _)| &info.container_name);
-
-    let list_items: Vec<ListItem> = items
+    let list_items: Vec<ListItem> = state
+        .containers
         .iter()
         .map(|(info, status)| {
             let (icon, style) = match status {
@@ -157,18 +146,14 @@ fn render_stopping(
                 Some(Err(_)) => ("✗", Style::default().fg(Color::Red)),
             };
 
-            let name = info.name.to_string();
-            let location = info
-                .location
-                .file_name()
-                .and_then(std::ffi::OsStr::to_str)
-                .unwrap_or("");
-
             let mut lines = vec![Line::from(vec![
-                Span::styled(format!("{} ", icon), style.add_modifier(Modifier::BOLD)),
-                Span::styled(name, style.add_modifier(Modifier::BOLD)),
+                Span::styled(icon, style.add_modifier(Modifier::BOLD)),
                 Span::styled(
-                    format!(" ({})", location),
+                    info.container_name.as_str(),
+                    style.add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    format!(" ({}+{})", info.location.display(), info.name),
                     Style::default().fg(Color::DarkGray),
                 ),
             ])];
@@ -177,7 +162,7 @@ fn render_stopping(
             if let Some(Err(err)) = status {
                 lines.push(Line::from(vec![
                     Span::styled("  └─ ", Style::default().fg(Color::Red)),
-                    Span::styled(format!("Error: {}", err), Style::default().fg(Color::Red)),
+                    Span::styled(format!("Error: {err}"), Style::default().fg(Color::Red)),
                 ]));
             }
 
@@ -188,4 +173,11 @@ fn render_stopping(
     let list = List::new(list_items).block(Block::default());
 
     list.render(layout[1], buf);
+}
+
+fn main_block() -> Block<'static> {
+    Block::default()
+        .borders(Borders::ALL)
+        .title("Stopping Shell-Cell Containers")
+        .border_style(Style::new().light_green())
 }
