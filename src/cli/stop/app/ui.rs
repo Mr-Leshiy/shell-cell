@@ -133,7 +133,7 @@ fn render_stopping(
                 .borders(Borders::BOTTOM)
                 .border_style(Style::default().light_magenta()),
         );
-    Widget::render(progress_paragraph,layout[0], buf);
+    Widget::render(progress_paragraph, layout[0], buf);
 
     // Create list items for each container
     let list_items: Vec<ListItem> = state
@@ -172,7 +172,7 @@ fn render_stopping(
 
     let list = List::new(list_items);
 
-     Widget::render(list, layout[1], buf);
+    Widget::render(list, layout[1], buf);
 }
 
 fn main_block() -> Block<'static> {
