@@ -114,21 +114,24 @@ impl App {
                 match crate::version_check::check_for_newer_version().await {
                     Ok(Some(newer_version)) => {
                         drop(logs_tx.send((
-                            format!("🆕 A newer version '{newer_version}' of 'Shell-Cell' is available"),
+                            format!(
+                                "🆕 A newer version '{newer_version}' of 'Shell-Cell' is available"
+                            ),
                             LogType::MainInfo,
                         )));
-                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        tokio::time::sleep(Duration::from_secs(1)).await;
                     },
                     Ok(None) => {
-                        drop(
-                            logs_tx.send(("🎉 'Shell-Cell' is up to date".to_string(), LogType::MainInfo)),
-                        );
+                        drop(logs_tx.send((
+                            "🎉 'Shell-Cell' is up to date".to_string(),
+                            LogType::MainInfo,
+                        )));
                     },
                     Err(_) => {
-                        drop(logs_tx.send((
-                            "Cannot check for updates".to_string(),
-                            LogType::MainError,
-                        )));
+                        drop(
+                            logs_tx
+                                .send(("Cannot check for updates".to_string(), LogType::MainError)),
+                        );
                     },
                 }
 

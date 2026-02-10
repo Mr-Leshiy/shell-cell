@@ -22,9 +22,10 @@ struct CrateInfo {
 
 /// Checks if a newer version of the crate is available on crates.io
 ///
-/// Compares the current crate version against the latest stable version published on crates.io.
-/// Returns `Some(version)` if a newer stable version is available,
-/// or `None` if the current version is up to date or if no stable version has been published yet.
+/// Compares the current crate version against the latest stable version published on
+/// crates.io. Returns `Some(version)` if a newer stable version is available,
+/// or `None` if the current version is up to date or if no stable version has been
+/// published yet.
 ///
 /// # Errors
 ///
