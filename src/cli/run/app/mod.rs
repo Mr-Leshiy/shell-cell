@@ -15,9 +15,7 @@ use terminput::Encoding;
 use terminput_crossterm::to_terminput;
 use tui_term::vt100::Parser;
 
-use crate::{
-    buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtySession, scell::SCell,
-};
+use crate::{buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtySession, scell::SCell};
 
 pub enum App {
     Preparing(PreparingState),
