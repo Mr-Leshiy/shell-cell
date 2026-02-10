@@ -62,21 +62,24 @@ bytes = "1.11.0"
 chrono = "0.4.43"
 clap = { version = "4.5.56", features = ["derive"] }
 color-eyre = "0.6.5"
-crossterm = "0.29.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 hex = "0.4.3"
 indicatif = "0.18.3"
 itertools = "0.14.0"
 metrohash = "1.0.7"
-ratatui = "0.30.0"
 regex = "1.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
 tar = "0.4.44"
 test-case = "3.3.1"
 thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
+tui-term = "0.3.1"
 yaml_serde = "0.10.3"
+
+terminput = "0.5.12"
+terminput-crossterm = "0.4.8"
+ratatui = "0.30.0"
 
 [dev-dependencies]
 test-case = "3.3.1"

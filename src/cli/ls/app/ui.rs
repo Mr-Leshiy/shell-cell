@@ -29,11 +29,7 @@ fn render_loading(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title("'Shell-Cell' Containers")
-        .border_style(Style::new().light_green());
-
+    let block = main_block();
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
@@ -85,6 +81,10 @@ fn render_ls(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
+    let block = main_block();
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
     let header_cells = ["Name", "Blueprint Location", "Created At", "ID", "Status"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
@@ -107,22 +107,15 @@ fn render_ls(
     });
 
     let widths = [
-        Constraint::Length(15),
-        Constraint::Min(30),
-        Constraint::Length(20),
-        Constraint::Length(20),
-        Constraint::Length(10),
+        Constraint::Percentage(10),
+        Constraint::Percentage(30),
+        Constraint::Percentage(20),
+        Constraint::Percentage(20),
+        Constraint::Percentage(20),
     ];
 
     let table = Table::new(rows, widths)
         .header(header)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("'Shell-Cell' Containers")
-                .title_bottom("↑↓: navigate, Ctrl-C: exit")
-                .border_style(Style::new().light_green()),
-        )
         .row_highlight_style(
             Style::default()
                 .bg(Color::DarkGray)
@@ -130,5 +123,13 @@ fn render_ls(
         )
         .highlight_symbol(">> ");
 
-    StatefulWidget::render(table, area, buf, &mut state.table_state.clone());
+    StatefulWidget::render(table, inner, buf, &mut state.table_state.clone());
+}
+
+fn main_block() -> Block<'static> {
+    Block::default()
+        .borders(Borders::ALL)
+        .title("'Shell-Cell' Containers")
+        .title_bottom("↑↓: navigate, Ctrl-C or Ctrl-D: exit")
+        .border_style(Style::new().light_magenta())
 }

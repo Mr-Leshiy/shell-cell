@@ -67,7 +67,9 @@ impl App {
             && key.kind == KeyEventKind::Press
         {
             match key.code {
-                KeyCode::Char('c') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                KeyCode::Char('c' | 'd')
+                    if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
                     *self = App::Exit;
                 },
                 KeyCode::Down | KeyCode::Char('j') => {

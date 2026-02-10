@@ -10,7 +10,7 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
 };
 
-use crate::{buildkit::BuildKitD, cli::UPDATE_TIMEOUT, scell::container_info::SCellContainerInfo};
+use crate::{buildkit::BuildKitD, cli::MIN_FPS, scell::container_info::SCellContainerInfo};
 
 pub enum App {
     Loading {
@@ -52,7 +52,7 @@ impl App {
                 ref rx,
                 ref buildkit,
             } = self
-                && let Ok(result) = rx.recv_timeout(UPDATE_TIMEOUT)
+                && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
                 let containers = result?;
                 self = Self::stopping(containers, buildkit.clone());
@@ -101,10 +101,10 @@ impl App {
     }
 
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
-        if event::poll(UPDATE_TIMEOUT)?
+        if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
-            && let KeyCode::Char('c') = key.code
+            && let KeyCode::Char('c' | 'd') = key.code
             && key.modifiers.contains(event::KeyModifiers::CONTROL)
         {
             *self = App::Exit;
@@ -132,7 +132,7 @@ impl StoppingState {
 
     /// Returns boolean flag, if the udelrying channel was closed or not
     fn try_update(&mut self) -> bool {
-        match self.rx.recv_timeout(UPDATE_TIMEOUT) {
+        match self.rx.recv_timeout(MIN_FPS) {
             Ok(update) => {
                 self.containers.insert(update.0, Some(update.1));
                 false
