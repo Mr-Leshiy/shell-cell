@@ -57,7 +57,7 @@ jobs:
 
         # Verify release title matches crate version
         if [ "$RELEASE_TITLE" != "$CRATE_VERSION" ]; then
-          echo "Error: Release title ($RELEASE_TITLE) does not match crate version ($CRATE_VERSION)"
+          echo "Error: Release title (v$RELEASE_TITLE) does not match crate version (v$CRATE_VERSION)"
           exit 1
         fi
 
