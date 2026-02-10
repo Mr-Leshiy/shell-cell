@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use test_case::test_case;
 
@@ -17,7 +17,7 @@ const ERR_FIXTURES: &str = "src/scell/compile/tests/err";
 
 #[test_case(
     "missing_target", None
-    => MissingTarget("missing_target".parse().unwrap(), PathBuf::from(ERR_FIXTURES).join("missing_target"))
+    => MissingTarget("missing_target".parse().unwrap(), std::fs::canonicalize(Path::new(ERR_FIXTURES).join("missing_target")).unwrap())
     ; "missing target"
 )]
 #[test_case(
@@ -27,7 +27,7 @@ const ERR_FIXTURES: &str = "src/scell/compile/tests/err";
 )]
 #[test_case(
     "missing_entrypoint", None
-    => MissingEntrypoint(PathBuf::from(ERR_FIXTURES).join("missing_entrypoint"), "main".parse().unwrap())
+    => MissingEntrypoint(std::fs::canonicalize(Path::new(ERR_FIXTURES).join("missing_entrypoint")).unwrap(), "main".parse().unwrap())
     ; "missing entrypoint"
 )]
 #[test_case(
