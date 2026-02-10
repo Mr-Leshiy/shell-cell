@@ -10,8 +10,7 @@ use std::{path::PathBuf, time::Duration};
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
 
-use crate::crate_info;
-use crate::error::UserError;
+use crate::{crate_info, error::UserError};
 
 // 60 frames per second
 const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
