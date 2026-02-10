@@ -3,6 +3,7 @@ mod ui;
 use std::{
     path::Path,
     sync::mpsc::{Receiver, RecvTimeoutError},
+    time::Duration,
 };
 
 use bytes::Bytes;
@@ -106,6 +107,32 @@ impl App {
         tokio::spawn(async move {
             let preparing = async || {
                 drop(logs_tx.send((
+                    "🧐 Checking for newer 'Shell-Cell' version".to_string(),
+                    LogType::Main,
+                )));
+
+                match crate::version_check::check_for_newer_version().await {
+                    Ok(Some(newer_version)) => {
+                        drop(logs_tx.send((
+                            format!("🆕 A newer version '{newer_version}' of 'Shell-Cell' is available"),
+                            LogType::MainInfo,
+                        )));
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                    },
+                    Ok(None) => {
+                        drop(
+                            logs_tx.send(("🎉 'Shell-Cell' is up to date".to_string(), LogType::MainInfo)),
+                        );
+                    },
+                    Err(_) => {
+                        drop(logs_tx.send((
+                            "Cannot check for updates".to_string(),
+                            LogType::MainError,
+                        )));
+                    },
+                }
+
+                drop(logs_tx.send((
                     "📝 Compiling Shell-Cell blueprint file".to_string(),
                     LogType::Main,
                 )));
@@ -163,6 +190,8 @@ pub struct PreparingState {
 
 enum LogType {
     Main,
+    MainError,
+    MainInfo,
     SubLog,
 }
 

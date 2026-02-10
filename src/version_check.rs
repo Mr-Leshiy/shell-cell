@@ -20,38 +20,36 @@ struct CrateInfo {
     max_stable_version: Option<semver::Version>,
 }
 
-/// Fetches the latest published version from crates.io
+/// Checks if a newer version of the crate is available on crates.io
 ///
-/// Returns `Some(version)` with the latest stable version published on crates.io,
-/// or `None` if no stable version has been published yet.
+/// Compares the current crate version against the latest stable version published on crates.io.
+/// Returns `Some(version)` if a newer stable version is available,
+/// or `None` if the current version is up to date or if no stable version has been published yet.
 ///
 /// # Errors
 ///
 /// Returns an error if:
 /// - Network request fails or times out
 /// - The crates.io API response cannot be parsed
+/// - The current version string cannot be parsed
 ///
 /// # Example
 /// ```no_run
-/// # use shell_cell::version_check::latest_published_version;
-/// # use shell_cell::crate_info;
+/// # use shell_cell::version_check::check_for_newer_version;
 /// #
 /// # async fn example() -> color_eyre::Result<()> {
-/// if let Some(latest) = latest_published_version().await? {
-///     let current = semver::Version::parse(crate_info::version())?;
-///     if latest > current {
-///         println!(
-///             "A new version {} is available! (current: {})",
-///             latest, current
-///         );
-///     }
+/// if let Some(newer_version) = check_for_newer_version().await? {
+///     println!("A new version {} is available!", newer_version);
 /// }
 /// # Ok(())
 /// # }
 /// ```
-pub async fn latest_published_version() -> color_eyre::Result<Option<semver::Version>> {
+pub async fn check_for_newer_version() -> color_eyre::Result<Option<semver::Version>> {
     const CRATES_IO_API: &str = "https://crates.io/api/v1/crates";
     const REQUEST_TIMEOUT_SECS: Duration = Duration::from_secs(5);
+
+    // Parse current version
+    let current = semver::Version::parse(crate_info::version())?;
 
     // Construct API URL
     let url = format!("{CRATES_IO_API}/{}", crate_info::name());
@@ -68,8 +66,11 @@ pub async fn latest_published_version() -> color_eyre::Result<Option<semver::Ver
     // Parse JSON response
     let crates_info: CratesIoResponse = response.json().await?;
 
-    // Return the published version
-    Ok(crates_info.crate_info.max_stable_version)
+    // Return the published version only if it's newer than current
+    Ok(crates_info
+        .crate_info
+        .max_stable_version
+        .filter(|latest| latest > &current))
 }
 
 #[cfg(test)]
@@ -77,9 +78,9 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_latest_published_version() {
+    async fn test_check_for_newer_version() {
         // This test verifies the function executes without panicking
         // The result may be Ok(Some(version)), Ok(None), or Err depending on network availability
-        let _result = latest_published_version().await;
+        let _result = check_for_newer_version().await;
     }
 }
