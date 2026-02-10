@@ -47,6 +47,8 @@ impl Widget for &App {
                         LogType::Main => {
                             ListItem::new(format!("✓ {log}")).style(main_style.green())
                         },
+                        LogType::MainError => ListItem::new(log.as_str()).style(main_style.red()),
+                        LogType::MainInfo => ListItem::new(log.as_str()).style(main_style.blue()),
                         LogType::SubLog => {
                             ListItem::new(format!("     {log}")).style(Style::default().cyan())
                         },

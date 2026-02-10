@@ -69,6 +69,8 @@ indicatif = "0.18.3"
 itertools = "0.14.0"
 metrohash = "1.0.7"
 regex = "1.12.2"
+reqwest = { version = "0.12.13", features = ["json"] }
+semver = { version = "1.0.24", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
 tar = "0.4.44"
 test-case = "3.3.1"

@@ -29,6 +29,7 @@ allow = [
     "Unicode-3.0",
     "MPL-2.0",
     "Zlib",
+    "BSD-3-Clause",
 ]
 exceptions = []
 
