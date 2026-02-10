@@ -16,7 +16,7 @@ use terminput_crossterm::to_terminput;
 use tui_term::vt100::Parser;
 
 use crate::{
-    buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtyStdStreams, scell::SCell,
+    buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtyStdSession, scell::SCell,
 };
 
 pub enum App {
@@ -80,7 +80,7 @@ impl App {
                     && let Some(bytes) = buf.get(..written)
                 {
                     state
-                        .pty_streams
+                        .pty
                         .stdin
                         .send(Bytes::copy_from_slice(bytes))
                         .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
@@ -180,11 +180,11 @@ impl App {
     }
 
     fn running_pty(
-        pty_streams: PtyStdStreams,
+        pty: PtyStdSession,
         scell: &SCell,
     ) -> Self {
         Self::RunningPty(Box::new(RunningPtyState {
-            pty_streams,
+            pty,
             scell_name: scell.name(),
             parser: Parser::default(),
         }))
@@ -192,7 +192,7 @@ impl App {
 }
 
 pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<(PtyStdStreams, SCell)>>,
+    rx: Receiver<color_eyre::Result<(PtyStdSession, SCell)>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
 }
@@ -218,14 +218,14 @@ impl PreparingState {
 }
 
 pub struct RunningPtyState {
-    pty_streams: PtyStdStreams,
+    pty: PtyStdSession,
     scell_name: String,
     parser: Parser,
 }
 
 impl RunningPtyState {
     pub fn try_update(&mut self) -> bool {
-        let stdout_res = match self.pty_streams.stdout.recv_timeout(MIN_FPS) {
+        let stdout_res = match self.pty.stdout.recv_timeout(MIN_FPS) {
             Ok(bytes) => {
                 self.parser.process(&bytes);
                 false
@@ -234,7 +234,7 @@ impl RunningPtyState {
             Err(RecvTimeoutError::Disconnected) => true,
         };
 
-        let stderr_res = match self.pty_streams.stderr.recv_timeout(MIN_FPS) {
+        let stderr_res = match self.pty.stderr.recv_timeout(MIN_FPS) {
             Ok(bytes) => {
                 self.parser.process(&bytes);
                 false
