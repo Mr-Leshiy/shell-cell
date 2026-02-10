@@ -3,9 +3,11 @@
 
 mod buildkit;
 mod cli;
+mod crate_info;
 mod error;
 mod pty;
 mod scell;
+mod version_check;
 
 use std::path::PathBuf;
 

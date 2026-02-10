@@ -10,20 +10,15 @@ use std::{path::PathBuf, time::Duration};
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
 
+use crate::crate_info;
 use crate::error::UserError;
 
 // 60 frames per second
 const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
 
-#[allow(clippy::doc_markdown)]
-/// Binary build info
-mod built_info {
-    include!(concat!(env!("OUT_DIR"), "/built.rs"));
-}
-
 #[derive(Parser)]
-#[clap(version = built_info::PKG_VERSION)]
-#[clap(about = built_info::PKG_DESCRIPTION)]
+#[clap(version = crate_info::version())]
+#[clap(about = crate_info::description())]
 pub struct Cli {
     /// Path to the directory with 'scell.yml' file (Optional),
     #[clap(value_name = "FILE", default_value = ".")]
@@ -60,7 +55,7 @@ impl Cli {
                         e.note(
                             format!(
                                 "Internal bug, please report it `{}/issues/new`",
-                                built_info::PKG_REPOSITORY
+                                crate_info::repository()
                             )
                         )
                         .suggestion("If you've got a second, please toss a full backtrace into your ticket—it helps us squash the bug way faster! You can grab it by running the app with `RUST_BACKTRACE=1`.")
