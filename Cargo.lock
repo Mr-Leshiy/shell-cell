@@ -1992,6 +1992,8 @@ dependencies = [
  "regex",
  "serde",
  "tar",
+ "terminput",
+ "terminput-crossterm",
  "test-case",
  "thiserror 2.0.18",
  "tokio",
@@ -2157,6 +2159,25 @@ dependencies = [
  "nom",
  "phf",
  "phf_codegen",
+]
+
+[[package]]
+name = "terminput"
+version = "0.5.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb2e8e835e040588586eb480bd465b41e1164d507190cce0c7153bb56b27614d"
+dependencies = [
+ "bitflags 2.10.0",
+]
+
+[[package]]
+name = "terminput-crossterm"
+version = "0.4.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7be7413ae59d7422b735668188a5ebc252ac29765e609fed1cd23b6039d40ef"
+dependencies = [
+ "crossterm",
+ "terminput",
 ]
 
 [[package]]

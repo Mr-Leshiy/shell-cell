@@ -1,7 +1,6 @@
 mod ui;
 
 use std::{
-    io::Read,
     path::Path,
     sync::mpsc::{Receiver, RecvTimeoutError},
 };
@@ -11,6 +10,8 @@ use ratatui::{
     Terminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
 };
+use terminput::Encoding;
+use terminput_crossterm::to_terminput;
 use tui_term::vt100::Parser;
 
 use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::PtyStdStreams, scell::SCell};
@@ -62,23 +63,34 @@ impl App {
     }
 
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
-        if event::poll(MIN_FPS)? {
-            // For `RunningPty`
-            if let Self::RunningPty(_state) = self {
-
-            // Handles every other app state
-            } else if let Event::Key(key) = event::read()?
-                && key.kind == KeyEventKind::Press
+        if event::poll(MIN_FPS)?
+            && let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+        {
+            // For `RunningPty` - forward all key events to PTY stdin
+            if let Self::RunningPty(state) = self
+                && let Ok(event) = to_terminput(Event::Key(key))
             {
-                // Exit on any key if finished
-                if matches!(self, App::Finished) {
-                    *self = App::Exit;
-                // Exit on Ctrl-C or Ctrl-D for other states
-                } else if let KeyCode::Char('c' | 'd') = key.code
-                    && key.modifiers.contains(event::KeyModifiers::CONTROL)
+                // Convert crossterm event to terminput and encode as stdin bytes
+                let mut buf = [0u8; 32];
+                if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
+                    && let Some(bytes) = buf.get(..written)
                 {
-                    *self = App::Exit;
+                    state
+                        .pty_streams
+                        .stdin
+                        .send(Bytes::copy_from_slice(bytes))
+                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
                 }
+                // Handles every other app state
+            } else if matches!(self, App::Finished) {
+                // Exit on any key if finished
+                *self = App::Exit;
+            } else if let KeyCode::Char('c' | 'd') = key.code
+                && key.modifiers.contains(event::KeyModifiers::CONTROL)
+            {
+                // Exit on Ctrl-C or Ctrl-D for other states
+                *self = App::Exit;
             }
         }
 
@@ -135,24 +147,6 @@ impl App {
         pty_streams: PtyStdStreams,
         scell: SCell,
     ) -> Self {
-        // To not interfere with the `crossbeam::event` run a blocking `stdin` reader in the
-        // separate thread.
-        std::thread::spawn({
-            let stdin = pty_streams.stdin.clone();
-            move || {
-                loop {
-                    let mut buf = [0u8; 1024];
-                    let n = std::io::stdin().read(&mut buf)?;
-                    if n == 0 {
-                        break;
-                    }
-                    #[allow(clippy::indexing_slicing)]
-                    stdin.send(Bytes::copy_from_slice(&buf[..n]))?;
-                }
-                color_eyre::eyre::Ok(())
-            }
-        });
-
         Self::RunningPty(RunningPtyState {
             pty_streams,
             scell_name: scell.name(),
