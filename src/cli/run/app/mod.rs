@@ -15,7 +15,9 @@ use terminput::Encoding;
 use terminput_crossterm::to_terminput;
 use tui_term::vt100::Parser;
 
-use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::PtyStdStreams, scell::SCell};
+use crate::{
+    buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtyStdStreams, scell::SCell,
+};
 
 pub enum App {
     Preparing(PreparingState),
@@ -159,12 +161,16 @@ impl App {
                     "🚀 Starting 'Shell-Cell' session".to_string(),
                     LogType::Main,
                 )));
-                Ok((pty, scell))
+                color_eyre::eyre::Ok((pty, scell))
             };
 
-            let res = preparing().await;
-
-            drop(tx.send(res));
+            match preparing().await {
+                Ok(res) => drop(tx.send(Ok(res))),
+                Err(e) if e.is::<UserError>() => {
+                    drop(logs_tx.send((format!("{e}"), LogType::MainError)));
+                },
+                Err(e) => drop(tx.send(Err(e))),
+            }
         });
         App::Preparing(PreparingState {
             rx,

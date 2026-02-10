@@ -35,9 +35,9 @@ pub struct MountHostDirNotFound(pub PathBuf, pub TargetName, pub PathBuf);
 pub struct MissingEntrypoint(pub PathBuf, pub TargetName);
 
 #[derive(Debug, PartialEq, thiserror::Error)]
-#[error("Shell-Cell must have 'shell' statement in some target")]
+#[error("Shell-Cell must have at least one 'shell' statement in the target graph")]
 pub struct MissingShellStmt;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
-#[error("Shell-Cell must have 'hang' statement in some target")]
+#[error("Shell-Cell must have at least one 'hang' statement in the target graph")]
 pub struct MissingHangStmt;
