@@ -15,7 +15,7 @@ use terminput::Encoding;
 use terminput_crossterm::to_terminput;
 use tui_term::vt100::Parser;
 
-use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::PtyStdStreams, scell::SCell};
+use crate::{buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtySession, scell::SCell};
 
 pub enum App {
     Preparing(PreparingState),
@@ -25,14 +25,20 @@ pub enum App {
 }
 
 impl App {
-    pub fn run<B: ratatui::backend::Backend, P: AsRef<Path> + Send + 'static>(
-        buildkit: BuildKitD,
+    pub fn run<B, P>(
+        buildkit: &BuildKitD,
         scell_path: P,
         terminal: &mut Terminal<B>,
-    ) -> color_eyre::Result<()> {
+    ) -> color_eyre::Result<()>
+    where
+        B: ratatui::backend::Backend,
+        B::Error: Send + Sync + 'static,
+        P: AsRef<Path> + Send + 'static,
+    {
         // First step
-        let mut app = Self::preparing(buildkit, scell_path);
+        let mut app = Self::preparing(buildkit.clone(), scell_path);
 
+        let (mut prev_height, mut prev_width) = (0, 0);
         loop {
             if let App::Preparing(ref mut state) = app
                 && state.try_update()
@@ -42,11 +48,28 @@ impl App {
                 app = Self::running_pty(pty, &scell);
             }
 
-            if let App::RunningPty(ref mut state) = app
-                && state.try_update()
-            {
-                // Drain any buffered terminal events before transitioning
-                app = App::Finished;
+            if let App::RunningPty(ref mut state) = app {
+                // Notify container's session about screen resize
+                let (curr_height, curr_width) = state.parser.screen().size();
+                if curr_height != prev_height || curr_width != prev_width {
+                    tokio::spawn({
+                        let buildkit = buildkit.clone();
+                        let session_id = state.pty.session_id().to_owned();
+                        async move {
+                            buildkit
+                                .resize_shell(&session_id, curr_height, curr_width)
+                                .await?;
+                            color_eyre::eyre::Ok(())
+                        }
+                    });
+
+                    prev_height = curr_height;
+                    prev_width = curr_width;
+                }
+
+                if state.try_update() {
+                    app = App::Finished;
+                }
             }
 
             if matches!(app, App::Exit) {
@@ -55,7 +78,7 @@ impl App {
 
             terminal
                 .draw(|f| {
-                    f.render_widget(&app, f.area());
+                    f.render_widget(&mut app, f.area());
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 
@@ -78,7 +101,7 @@ impl App {
                     && let Some(bytes) = buf.get(..written)
                 {
                     state
-                        .pty_streams
+                        .pty
                         .stdin
                         .send(Bytes::copy_from_slice(bytes))
                         .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
@@ -159,12 +182,16 @@ impl App {
                     "🚀 Starting 'Shell-Cell' session".to_string(),
                     LogType::Main,
                 )));
-                Ok((pty, scell))
+                color_eyre::eyre::Ok((pty, scell))
             };
 
-            let res = preparing().await;
-
-            drop(tx.send(res));
+            match preparing().await {
+                Ok(res) => drop(tx.send(Ok(res))),
+                Err(e) if e.is::<UserError>() => {
+                    drop(logs_tx.send((format!("{e}"), LogType::MainError)));
+                },
+                Err(e) => drop(tx.send(Err(e))),
+            }
         });
         App::Preparing(PreparingState {
             rx,
@@ -174,11 +201,11 @@ impl App {
     }
 
     fn running_pty(
-        pty_streams: PtyStdStreams,
+        pty: PtySession,
         scell: &SCell,
     ) -> Self {
         Self::RunningPty(Box::new(RunningPtyState {
-            pty_streams,
+            pty,
             scell_name: scell.name(),
             parser: Parser::default(),
         }))
@@ -186,7 +213,7 @@ impl App {
 }
 
 pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<(PtyStdStreams, SCell)>>,
+    rx: Receiver<color_eyre::Result<(PtySession, SCell)>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
 }
@@ -212,14 +239,14 @@ impl PreparingState {
 }
 
 pub struct RunningPtyState {
-    pty_streams: PtyStdStreams,
+    pty: PtySession,
     scell_name: String,
     parser: Parser,
 }
 
 impl RunningPtyState {
     pub fn try_update(&mut self) -> bool {
-        let stdout_res = match self.pty_streams.stdout.recv_timeout(MIN_FPS) {
+        let stdout_res = match self.pty.stdout.recv_timeout(MIN_FPS) {
             Ok(bytes) => {
                 self.parser.process(&bytes);
                 false
@@ -228,7 +255,7 @@ impl RunningPtyState {
             Err(RecvTimeoutError::Disconnected) => true,
         };
 
-        let stderr_res = match self.pty_streams.stderr.recv_timeout(MIN_FPS) {
+        let stderr_res = match self.pty.stderr.recv_timeout(MIN_FPS) {
             Ok(bytes) => {
                 self.parser.process(&bytes);
                 false

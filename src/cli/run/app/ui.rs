@@ -8,7 +8,7 @@ use ratatui::{
 use super::App;
 use crate::cli::run::app::LogType;
 
-impl Widget for &App {
+impl Widget for &mut App {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -47,7 +47,9 @@ impl Widget for &App {
                         LogType::Main => {
                             ListItem::new(format!("✓ {log}")).style(main_style.green())
                         },
-                        LogType::MainError => ListItem::new(log.as_str()).style(main_style.red()),
+                        LogType::MainError => {
+                            ListItem::new(format!("   {log}")).style(main_style.red())
+                        },
                         LogType::MainInfo => ListItem::new(log.as_str()).style(main_style.blue()),
                         LogType::SubLog => {
                             ListItem::new(format!("     {log}")).style(Style::default().cyan())
@@ -63,6 +65,11 @@ impl Widget for &App {
                 .title_bottom("Ctrl-D: exit");
             let inner = block.inner(area);
             Widget::render(block, area, buf);
+            // set the proper size for the terminal screen
+            state
+                .parser
+                .screen_mut()
+                .set_size(inner.height, inner.width);
 
             Widget::render(
                 tui_term::widget::PseudoTerminal::new(state.parser.screen()),

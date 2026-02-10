@@ -13,14 +13,20 @@ use tokio::io::{AsyncWrite, AsyncWriteExt};
 type Output = Pin<Box<dyn Stream<Item = Result<LogOutput, bollard::errors::Error>> + Send>>;
 type Input = Pin<Box<dyn AsyncWrite + Send>>;
 
-pub struct PtyStdStreams {
+pub struct PtySession {
     pub stdin: Sender<Bytes>,
     pub stdout: Receiver<Bytes>,
     pub stderr: Receiver<Bytes>,
+    session_id: String,
 }
 
-impl PtyStdStreams {
+impl PtySession {
+    pub fn session_id(&self) -> &str {
+        &self.session_id
+    }
+
     pub fn new(
+        session_id: String,
         mut output: Output,
         mut input: Input,
     ) -> Self {
@@ -55,6 +61,7 @@ impl PtyStdStreams {
             stdin,
             stdout,
             stderr,
+            session_id,
         }
     }
 }

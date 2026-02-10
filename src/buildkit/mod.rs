@@ -10,9 +10,10 @@ use bollard::{
 use self::docker::{build_image, start_container};
 use crate::{
     buildkit::docker::{
-        container_iteractive_exec, list_all_containers, pull_image, stop_container,
+        container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
+        stop_container,
     },
-    pty::PtyStdStreams,
+    pty::PtySession,
     scell::{SCell, container_info::SCellContainerInfo},
 };
 
@@ -107,12 +108,22 @@ impl BuildKitD {
     pub async fn attach_to_shell(
         &self,
         scell: &SCell,
-    ) -> color_eyre::Result<PtyStdStreams> {
-        let (output, input) = container_iteractive_exec(&self.docker, &scell.name(), true, vec![
-            scell.shell().to_string(),
-        ])
-        .await?;
-        Ok(PtyStdStreams::new(output, input))
+    ) -> color_eyre::Result<PtySession> {
+        let (session_id, output, input) =
+            container_iteractive_exec(&self.docker, &scell.name(), true, vec![
+                scell.shell().to_string(),
+            ])
+            .await?;
+        Ok(PtySession::new(session_id, output, input))
+    }
+
+    pub async fn resize_shell(
+        &self,
+        session_id: &str,
+        height: u16,
+        width: u16,
+    ) -> color_eyre::Result<()> {
+        container_resize_exec(&self.docker, session_id, height, width).await
     }
 }
 

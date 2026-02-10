@@ -3,7 +3,7 @@ use std::pin::Pin;
 use bollard::{
     Docker, body_full,
     container::LogOutput,
-    exec::{StartExecOptions, StartExecResults},
+    exec::{ResizeExecOptions, StartExecOptions, StartExecResults},
     query_parameters::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder,
@@ -121,13 +121,14 @@ pub async fn list_all_containers(docker: &Docker) -> color_eyre::Result<Vec<Cont
 
 type Output = Pin<Box<dyn Stream<Item = Result<LogOutput, bollard::errors::Error>> + Send>>;
 type Input = Pin<Box<dyn AsyncWrite + Send>>;
+type PtySessionId = String;
 
 pub async fn container_iteractive_exec(
     docker: &Docker,
     container_name: &str,
     priveleged: bool,
     cmd: Vec<String>,
-) -> color_eyre::Result<(Output, Input)> {
+) -> color_eyre::Result<(PtySessionId, Output, Input)> {
     let config = ExecConfig {
         cmd: Some(cmd),
         attach_stdin: Some(true),
@@ -153,5 +154,17 @@ pub async fn container_iteractive_exec(
         );
     };
 
-    Ok((output, input))
+    Ok((exec_id, output, input))
+}
+
+pub async fn container_resize_exec(
+    docker: &Docker,
+    exec_id: &str,
+    height: u16,
+    width: u16,
+) -> color_eyre::Result<()> {
+    docker
+        .resize_exec(exec_id, ResizeExecOptions { height, width })
+        .await?;
+    Ok(())
 }
