@@ -26,7 +26,7 @@ pub enum App {
 
 impl App {
     pub fn run<B, P>(
-        buildkit: BuildKitD,
+        buildkit: &BuildKitD,
         scell_path: P,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()>

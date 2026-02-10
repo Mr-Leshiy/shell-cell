@@ -154,7 +154,7 @@ pub async fn container_iteractive_exec(
         );
     };
 
-    Ok((exec_id.to_string(), output, input))
+    Ok((exec_id, output, input))
 }
 
 pub async fn container_resize_exec(
