@@ -27,10 +27,10 @@ use self::parser::{
 use crate::scell::parser::target::config::{ConfigStmt, mounts::MountsStmt};
 
 const NAME_PREFIX: &str = "scell-";
-const IMAGE_METADATA_NAME: &str = "scell-name";
-const IMAGE_METADATA_LOCATION: &str = "scell-location";
+const METADATA_TARGET_KEY: &str = "scell-name";
+const METADATA_LOCATION_KEY: &str = "scell-location";
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCell {
     links: Vec<Link>,
     shell: ShellStmt,
@@ -38,7 +38,7 @@ pub struct SCell {
     config: Option<ConfigStmt>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Link {
     Root(ImageDef),
     Node {
@@ -49,6 +49,10 @@ pub enum Link {
         build: BuildStmt,
     },
 }
+
+/// A 'Shell-Cell' name, which is hex encoded hash of the corresponding 'Shell-Cell'
+/// object.
+pub struct SCellName(String);
 
 impl SCell {
     /// Returns an underlying shell's binary path

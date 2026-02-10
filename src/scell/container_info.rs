@@ -4,11 +4,14 @@ use bollard::secret::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use super::{IMAGE_METADATA_LOCATION, IMAGE_METADATA_NAME, NAME_PREFIX, parser::name::TargetName};
+use super::{
+    METADATA_LOCATION_KEY, METADATA_TARGET_KEY, NAME_PREFIX, SCell, parser::name::TargetName,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
-    pub name: TargetName,
+    pub target: TargetName,
+    pub orphan: bool,
     pub location: PathBuf,
     pub container_name: String,
     pub created_at: DateTime<Utc>,
@@ -63,7 +66,7 @@ impl From<&ContainerSummaryStateEnum> for Status {
 
 impl SCellContainerInfo {
     pub fn new(
-        name: &str,
+        target: TargetName,
         location: PathBuf,
         container_name: String,
         created_at: DateTime<Utc>,
@@ -74,8 +77,17 @@ impl SCellContainerInfo {
             "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
         );
 
+        // Determine if the container is orphaned by comparing the container name
+        // with the expected SCell name
+        let scell = SCell::compile(&location, Some(target.clone()))?;
+        let _name = scell.name();
+        let orphan = SCell::compile(&location, Some(target.clone()))
+            .map(|scell| scell.name() != container_name)
+            .unwrap_or(true); // If compilation fails, consider it orphaned
+
         Ok(Self {
-            name: name.parse()?,
+            target,
+            orphan,
             location,
             container_name,
             created_at,
@@ -95,10 +107,6 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             color_eyre::eyre::bail!("'Shell-Cell' container must have only one name");
         };
 
-        color_eyre::eyre::ensure!(
-            container_name.contains(NAME_PREFIX),
-            "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
-        );
         // For historic reasons, names are prefixed with a forward-slash (`/`).
         let container_name = container_name
             .strip_prefix("/")
@@ -121,31 +129,25 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
 
         let status = value.state.as_ref().map(Into::into).unwrap_or_default();
 
-        let name = value
+        let target = value
             .labels
             .as_ref()
             .and_then(|v| {
-                v.get(IMAGE_METADATA_NAME)
+                v.get(METADATA_TARGET_KEY)
                     .map(|s| TargetName::from_str(s.as_str()))
             })
             .context(format!(
-                "'Shell-Cell' container must have a metadata {IMAGE_METADATA_NAME} item"
+                "'Shell-Cell' container must have a metadata {METADATA_TARGET_KEY} item"
             ))??;
 
         let location = value
             .labels
             .as_ref()
-            .and_then(|v| v.get(IMAGE_METADATA_LOCATION).map(PathBuf::from))
+            .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from))
             .context(format!(
-                "'Shell-Cell' container must have a metadata {IMAGE_METADATA_LOCATION} item"
+                "'Shell-Cell' container must have a metadata {METADATA_LOCATION_KEY} item"
             ))?;
 
-        Ok(Self {
-            name,
-            location,
-            container_name,
-            created_at,
-            status,
-        })
+        Self::new(target, location, container_name, created_at, status)
     }
 }

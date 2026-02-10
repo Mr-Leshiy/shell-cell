@@ -153,7 +153,7 @@ fn render_stopping(
                     style.add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
-                    format!(" ({}+{})", info.location.display(), info.name),
+                    format!(" ({}+{})", info.location.display(), info.target),
                     Style::default().fg(Color::DarkGray),
                 ),
             ])];
