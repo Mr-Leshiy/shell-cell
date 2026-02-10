@@ -18,7 +18,7 @@ use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::PtyStdStreams, scell::SCell}
 
 pub enum App {
     Preparing(PreparingState),
-    RunningPty(RunningPtyState),
+    RunningPty(Box<RunningPtyState>),
     Finished,
     Exit,
 }
@@ -38,7 +38,7 @@ impl App {
                 && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
                 let (pty, scell) = res?;
-                app = Self::running_pty(pty, scell);
+                app = Self::running_pty(pty, &scell);
             }
 
             if let App::RunningPty(ref mut state) = app
@@ -145,13 +145,13 @@ impl App {
 
     fn running_pty(
         pty_streams: PtyStdStreams,
-        scell: SCell,
+        scell: &SCell,
     ) -> Self {
-        Self::RunningPty(RunningPtyState {
+        Self::RunningPty(Box::new(RunningPtyState {
             pty_streams,
             scell_name: scell.name(),
             parser: Parser::default(),
-        })
+        }))
     }
 }
 
