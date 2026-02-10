@@ -3,9 +3,9 @@
 `Shell-Cell` requires a running instance of either [Docker] or [Podman] daemon.
 So firstly prepare and install [Docker] or [Podman] daemons.
 
-To install `Shell-Cell` use cargo
+To install `Shell-Cell` using cargo
 ```shell
-cargo install --git https://github.com/Mr-Leshiy/shell-cell.git --locked
+cargo install shell-cell --locked
 ```
 
 `Shell-Cell` requires a running instance of either [Docker] or [Podman] daemon.
