@@ -16,7 +16,7 @@ use terminput_crossterm::to_terminput;
 use tui_term::vt100::Parser;
 
 use crate::{
-    buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtyStdSession, scell::SCell,
+    buildkit::BuildKitD, cli::MIN_FPS, error::UserError, pty::PtySession, scell::SCell,
 };
 
 pub enum App {
@@ -203,7 +203,7 @@ impl App {
     }
 
     fn running_pty(
-        pty: PtyStdSession,
+        pty: PtySession,
         scell: &SCell,
     ) -> Self {
         Self::RunningPty(Box::new(RunningPtyState {
@@ -215,7 +215,7 @@ impl App {
 }
 
 pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<(PtyStdSession, SCell)>>,
+    rx: Receiver<color_eyre::Result<(PtySession, SCell)>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
 }
@@ -241,7 +241,7 @@ impl PreparingState {
 }
 
 pub struct RunningPtyState {
-    pty: PtyStdSession,
+    pty: PtySession,
     scell_name: String,
     parser: Parser,
 }
