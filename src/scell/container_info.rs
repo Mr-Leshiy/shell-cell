@@ -4,16 +4,15 @@ use bollard::secret::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use super::{
-    METADATA_LOCATION_KEY, METADATA_TARGET_KEY, NAME_PREFIX, SCell, parser::name::TargetName,
-};
+use super::{METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, parser::name::TargetName};
+use crate::scell::name::SCellName;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
+    pub name: SCellName,
     pub target: TargetName,
     pub orphan: bool,
     pub location: PathBuf,
-    pub container_name: String,
     pub created_at: DateTime<Utc>,
     pub status: Status,
 }
@@ -66,33 +65,26 @@ impl From<&ContainerSummaryStateEnum> for Status {
 
 impl SCellContainerInfo {
     pub fn new(
+        name: SCellName,
         target: TargetName,
         location: PathBuf,
-        container_name: String,
         created_at: DateTime<Utc>,
         status: Status,
-    ) -> color_eyre::Result<Self> {
-        color_eyre::eyre::ensure!(
-            container_name.contains(NAME_PREFIX),
-            "'Shell-Cell' container must have a prefix {NAME_PREFIX}"
-        );
-
+    ) -> Self {
         // Determine if the container is orphaned by comparing the container name
         // with the expected SCell name
-        let scell = SCell::compile(&location, Some(target.clone()))?;
-        let _name = scell.name();
         let orphan = SCell::compile(&location, Some(target.clone()))
-            .map(|scell| scell.name() != container_name)
+            .map(|scell| scell.name() != name)
             .unwrap_or(true); // If compilation fails, consider it orphaned
 
-        Ok(Self {
+        Self {
+            name,
             target,
             orphan,
             location,
-            container_name,
             created_at,
             status,
-        })
+        }
     }
 }
 
@@ -148,6 +140,8 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
                 "'Shell-Cell' container must have a metadata {METADATA_LOCATION_KEY} item"
             ))?;
 
-        Self::new(target, location, container_name, created_at, status)
+        let name = container_name.parse()?;
+
+        Ok(Self::new(name, target, location, created_at, status))
     }
 }

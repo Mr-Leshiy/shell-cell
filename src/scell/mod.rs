@@ -8,6 +8,7 @@
 mod compile;
 pub mod container_info;
 mod image;
+mod name;
 mod parser;
 
 use std::{
@@ -24,7 +25,10 @@ use self::parser::{
         workspace::WorkspaceStmt,
     },
 };
-use crate::scell::parser::target::config::{ConfigStmt, mounts::MountsStmt};
+use crate::scell::{
+    name::SCellName,
+    parser::target::config::{ConfigStmt, mounts::MountsStmt},
+};
 
 const NAME_PREFIX: &str = "scell-";
 const METADATA_TARGET_KEY: &str = "scell-name";
@@ -50,10 +54,6 @@ pub enum Link {
     },
 }
 
-/// A 'Shell-Cell' name, which is hex encoded hash of the corresponding 'Shell-Cell'
-/// object.
-pub struct SCellName(String);
-
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
@@ -67,8 +67,8 @@ impl SCell {
             .unwrap_or_default()
     }
 
-    pub fn name(&self) -> String {
-        format!("{NAME_PREFIX}{}", self.hex_hash())
+    pub fn name(&self) -> SCellName {
+        SCellName::new(self)
     }
 
     /// Calculates a fast, non-cryptographic 'metrohash' hash value.

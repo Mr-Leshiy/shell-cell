@@ -206,7 +206,7 @@ impl App {
     ) -> Self {
         Self::RunningPty(Box::new(RunningPtyState {
             pty,
-            scell_name: scell.name(),
+            scell_name: scell.name().to_string(),
             parser: Parser::default(),
         }))
     }

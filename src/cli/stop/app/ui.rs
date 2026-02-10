@@ -148,10 +148,7 @@ fn render_stopping(
 
             let mut lines = vec![Line::from(vec![
                 Span::styled(icon, style.add_modifier(Modifier::BOLD)),
-                Span::styled(
-                    info.container_name.as_str(),
-                    style.add_modifier(Modifier::BOLD),
-                ),
+                Span::styled(info.name.to_string(), style.add_modifier(Modifier::BOLD)),
                 Span::styled(
                     format!(" ({}+{})", info.location.display(), info.target),
                     Style::default().fg(Color::DarkGray),
