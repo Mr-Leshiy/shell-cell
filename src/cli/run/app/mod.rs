@@ -27,14 +27,20 @@ pub enum App {
 }
 
 impl App {
-    pub fn run<B: ratatui::backend::Backend, P: AsRef<Path> + Send + 'static>(
+    pub fn run<B, P>(
         buildkit: BuildKitD,
         scell_path: P,
         terminal: &mut Terminal<B>,
-    ) -> color_eyre::Result<()> {
+    ) -> color_eyre::Result<()>
+    where
+        B: ratatui::backend::Backend,
+        B::Error: Send + Sync + 'static,
+        P: AsRef<Path> + Send + 'static,
+    {
         // First step
-        let mut app = Self::preparing(buildkit, scell_path);
+        let mut app = Self::preparing(buildkit.clone(), scell_path);
 
+        let (mut prev_height, mut prev_width) = (0, 0);
         loop {
             if let App::Preparing(ref mut state) = app
                 && state.try_update()
@@ -44,11 +50,28 @@ impl App {
                 app = Self::running_pty(pty, &scell);
             }
 
-            if let App::RunningPty(ref mut state) = app
-                && state.try_update()
-            {
-                // Drain any buffered terminal events before transitioning
-                app = App::Finished;
+            if let App::RunningPty(ref mut state) = app {
+                // Notify container's session about screen resize
+                let (curr_height, curr_width) = state.parser.screen().size();
+                if curr_height != prev_height || curr_width != prev_width {
+                    tokio::spawn({
+                        let buildkit = buildkit.clone();
+                        let session_id = state.pty.session_id().to_owned();
+                        async move {
+                            buildkit
+                                .resize_shell(&session_id, curr_height, curr_width)
+                                .await?;
+                            color_eyre::eyre::Ok(())
+                        }
+                    });
+
+                    prev_height = curr_height;
+                    prev_width = curr_width;
+                }
+
+                if state.try_update() {
+                    app = App::Finished;
+                }
             }
 
             if matches!(app, App::Exit) {
@@ -57,7 +80,7 @@ impl App {
 
             terminal
                 .draw(|f| {
-                    f.render_widget(&app, f.area());
+                    f.render_widget(&mut app, f.area());
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 

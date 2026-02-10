@@ -119,11 +119,11 @@ impl BuildKitD {
 
     pub async fn resize_shell(
         &self,
-        session: &PtyStdSession,
+        session_id: &str,
         height: u16,
         width: u16,
     ) -> color_eyre::Result<()> {
-        container_resize_exec(&self.docker, session.session_id(), height, width).await
+        container_resize_exec(&self.docker, session_id, height, width).await
     }
 }
 
