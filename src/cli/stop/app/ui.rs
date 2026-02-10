@@ -1,6 +1,6 @@
 use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Styled},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
@@ -92,35 +92,17 @@ fn render_stopping(
 
     // Create header with progress
     let progress_text = if is_done {
-        Line::from(vec![
-            Span::styled(
-                "✓ ",
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                "All containers stopped",
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ])
+        Line::from("✓ All containers stopped").style(
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )
     } else {
-        Line::from(vec![
-            Span::styled(
-                "⟳ ",
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                format!("Stopping containers... [{completed}/{total}]"),
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ])
+        Line::from(format!("⟳ Stopping containers... [{completed}/{total}]")).style(
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
     };
 
     let layout = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(inner);
@@ -147,8 +129,10 @@ fn render_stopping(
             };
 
             let mut lines = vec![Line::from(vec![
-                Span::styled(icon, style.add_modifier(Modifier::BOLD)),
-                Span::styled(info.name.to_string(), style.add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    format!("{icon} {}", info.name),
+                    style.add_modifier(Modifier::BOLD),
+                ),
                 Span::styled(
                     format!(" ({}+{})", info.location.display(), info.target),
                     Style::default().fg(Color::DarkGray),
@@ -157,10 +141,10 @@ fn render_stopping(
 
             // Add error message if there's an error
             if let Some(Err(err)) = status {
-                lines.push(Line::from(vec![
-                    Span::styled("  └─ ", Style::default().fg(Color::Red)),
-                    Span::styled(format!("Error: {err}"), Style::default().fg(Color::Red)),
-                ]));
+                lines.push(
+                    Line::from(format!("  └─ Error: {err}"))
+                        .set_style(Style::default().fg(Color::Red)),
+                );
             }
 
             ListItem::new(lines)
