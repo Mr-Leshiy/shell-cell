@@ -118,7 +118,7 @@ Each item follows the list format `<KEY>=<VALUE>`:
 env:
     - DB_HOST=localhost
     - DB_PORT=5432
-    - DB_NAME=mydb
+    - DB_NAME=db
     - DB_DESCRIPTION="My Database"
 ```
 
