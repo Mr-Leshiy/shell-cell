@@ -10,11 +10,11 @@ use crate::scell::name::SCellName;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
     pub name: SCellName,
-    pub target: TargetName,
     pub orphan: bool,
-    pub location: PathBuf,
-    pub created_at: DateTime<Utc>,
     pub status: Status,
+    pub location: Option<PathBuf>,
+    pub target: Option<TargetName>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -66,24 +66,32 @@ impl From<&ContainerSummaryStateEnum> for Status {
 impl SCellContainerInfo {
     pub fn new(
         name: SCellName,
-        target: TargetName,
-        location: PathBuf,
-        created_at: DateTime<Utc>,
         status: Status,
+        target: Option<TargetName>,
+        location: Option<PathBuf>,
+        created_at: Option<DateTime<Utc>>,
     ) -> Self {
-        // Determine if the container is orphaned by comparing the container name
-        // with the expected SCell name
-        let orphan = SCell::compile(&location, Some(target.clone()))
-            .and_then(|scell| Ok(scell.name()? != name))
-            .unwrap_or(true); // If compilation fails, consider it orphaned
+        let orphan = if let Some(ref location) = location
+            && let Some(ref target) = target
+            && created_at.is_some()
+        {
+            // Determine if the container is orphaned by comparing the container name
+            // with the expected SCell name
+            SCell::compile(location, Some(target.clone()))
+                .and_then(|scell| Ok(scell.name()? != name))
+                // If compilation fails, consider it orphaned
+                .unwrap_or(true)
+        } else {
+            false
+        };
 
         Self {
             name,
-            target,
             orphan,
-            location,
-            created_at,
             status,
+            location,
+            target,
+            created_at,
         }
     }
 }
@@ -112,12 +120,13 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             "'Shell-Cell' container must have an image name equals to the container's name {container_name}"
         );
 
-        let Some(created_at) = value.created else {
-            color_eyre::eyre::bail!("'Shell-Cell' container must have creation timestamp");
-        };
-
-        let created_at = DateTime::from_timestamp_secs(created_at)
-            .context("'Shell-Cell' container must have a valid 'created_at' timestamp")?;
+        let created_at = value
+            .created
+            .map(|v| {
+                DateTime::from_timestamp_secs(v)
+                    .context("'Shell-Cell' container must have a valid 'created_at' timestamp")
+            })
+            .transpose()?;
 
         let status = value.state.as_ref().map(Into::into).unwrap_or_default();
 
@@ -128,20 +137,15 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
                 v.get(METADATA_TARGET_KEY)
                     .map(|s| TargetName::from_str(s.as_str()))
             })
-            .context(format!(
-                "'Shell-Cell' container must have a metadata {METADATA_TARGET_KEY} item"
-            ))??;
+            .transpose()?;
 
         let location = value
             .labels
             .as_ref()
-            .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from))
-            .context(format!(
-                "'Shell-Cell' container must have a metadata {METADATA_LOCATION_KEY} item"
-            ))?;
+            .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from));
 
         let name = container_name.parse()?;
 
-        Ok(Self::new(name, target, location, created_at, status))
+        Ok(Self::new(name, status, target, location, created_at))
     }
 }

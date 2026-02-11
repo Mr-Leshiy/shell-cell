@@ -31,7 +31,7 @@ use crate::scell::{
 };
 
 const NAME_PREFIX: &str = "scell-";
-const METADATA_TARGET_KEY: &str = "scell-name";
+const METADATA_TARGET_KEY: &str = "scell-target";
 const METADATA_LOCATION_KEY: &str = "scell-location";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
