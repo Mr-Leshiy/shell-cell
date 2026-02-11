@@ -1,6 +1,6 @@
 # `Shell-Cell`
 
-Lightweight CLI app designed to spin up instant, isolated, and reproducible development shell sessions.
+Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
 
 > ⚠️ Prototype, under heavy development
 
@@ -8,13 +8,45 @@ Lightweight CLI app designed to spin up instant, isolated, and reproducible deve
   <img src="./logo.png" alt="logo" />
 </div>
 
-## 🚀 Getting Started
+## 💡 How It Works
 
-We want to get you up and running as smoothly as possible.
-Whether you’re looking to install, configure, or learn how it works,
-our documentation has your back:
+Shell-Cell reads a `scell.yml` blueprint file, compiles it into a Docker image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
 
-👉 [Explore the Docs](./docs/readme.md)
+Unlike standard containers that run a task and exit, Shell-Cell containers stay alive in the background, so you can jump in and out instantly.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+A running [Docker](https://www.docker.com/) (or [Podman](https://podman.io/)) daemon is required.
+
+### Install
+
+```shell
+cargo install shell-cell --locked
+```
+
+For socket configuration and other setup details, see the [Install and Configure](./docs/install.md) guide.
+
+### Create a Blueprint
+
+Place a `scell.yml` file in your project directory (see the full [Blueprint File Reference](./docs/blueprint.md) for all available instructions):
+
+```yml
+main:
+  from: debian:bookworm
+  workspace: /app
+  shell: /bin/bash
+  hang: while true; do sleep 3600; done
+```
+
+### Launch a Session
+
+```shell
+scell
+```
+
+That's it! Shell-Cell will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](./docs/cli.md).
 
 ## ➡️ Whats next?
 
