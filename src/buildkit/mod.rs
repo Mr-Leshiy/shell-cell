@@ -39,10 +39,10 @@ impl BuildKitD {
         scell: &SCell,
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<()> {
-        let (tar, dockerfile_path) = scell.prepare_image_tar_artifact()?;
+        let (tar, dockerfile_path) = scell.prepare_image_tar_artifact_bytes()?;
         build_image(
             &self.docker,
-            &scell.name().to_string(),
+            &scell.name()?.to_string(),
             "latest",
             dockerfile_path,
             tar,
@@ -77,7 +77,7 @@ impl BuildKitD {
             }),
             ..Default::default()
         };
-        let scell_name = scell.name().to_string();
+        let scell_name = scell.name()?.to_string();
         start_container(&self.docker, &scell_name, "latest", &scell_name, config).await?;
         Ok(())
     }
@@ -86,7 +86,7 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
-        stop_container(&self.docker, &scell.name().to_string()).await?;
+        stop_container(&self.docker, &scell.name()?.to_string()).await?;
         Ok(())
     }
 
@@ -120,7 +120,7 @@ impl BuildKitD {
         scell: &SCell,
     ) -> color_eyre::Result<PtySession> {
         let (session_id, output, input) =
-            container_iteractive_exec(&self.docker, &scell.name().to_string(), true, vec![
+            container_iteractive_exec(&self.docker, &scell.name()?.to_string(), true, vec![
                 scell.shell().to_string(),
             ])
             .await?;

@@ -31,11 +31,14 @@ use crate::scell::{
 };
 
 const NAME_PREFIX: &str = "scell-";
-const METADATA_TARGET_KEY: &str = "scell-name";
+const METADATA_TARGET_KEY: &str = "scell-target";
 const METADATA_LOCATION_KEY: &str = "scell-location";
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SCell(SCellInner);
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SCell {
+struct SCellInner {
     links: Vec<Link>,
     shell: ShellStmt,
     hang: String,
@@ -57,25 +60,28 @@ pub enum Link {
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
-        &self.shell.0
+        &self.0.shell.0
     }
 
     pub fn mounts(&self) -> MountsStmt {
-        self.config
+        self.0
+            .config
             .as_ref()
             .map(|c| c.mounts.clone())
             .unwrap_or_default()
     }
 
-    pub fn name(&self) -> SCellName {
+    /// Heavy operation, calculates name based on the `hex_hash` value
+    pub fn name(&self) -> color_eyre::Result<SCellName> {
         SCellName::new(self)
     }
 
     /// Calculates a fast, non-cryptographic 'metrohash' hash value.
     /// Returns a hex string value.
-    fn hex_hash(&self) -> String {
+    fn hex_hash(&self) -> color_eyre::Result<String> {
         let mut hasher = metrohash::MetroHash64::new();
-        self.hash(&mut hasher);
-        hasher.finish().to_be_bytes().encode_hex()
+        self.0.hash(&mut hasher);
+        self.prepare_image_tar_artifact_bytes()?.hash(&mut hasher);
+        Ok(hasher.finish().to_be_bytes().encode_hex())
     }
 }

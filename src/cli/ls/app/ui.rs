@@ -105,12 +105,20 @@ fn render_ls(
             } else {
                 c.name.to_string()
             }),
-            Cell::from(c.target.to_string()),
-            Cell::from(format!("{}", c.location.display())),
             Cell::from(
-                c.created_at
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
+                c.target
+                    .as_ref()
+                    .map_or_else(|| "<empty>".to_string(), ToString::to_string),
             ),
+            Cell::from(
+                c.location
+                    .as_ref()
+                    .map_or_else(|| "<empty>".to_string(), |l| l.display().to_string()),
+            ),
+            Cell::from(c.created_at.map_or_else(
+                || "<empty>".to_string(),
+                |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
+            )),
             Cell::from(c.status.to_string()),
         ];
         Row::new(cells).height(1)

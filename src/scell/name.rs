@@ -10,8 +10,8 @@ const NAME_PREFIX: &str = "scell-";
 pub struct SCellName(String);
 
 impl SCellName {
-    pub fn new(scell: &SCell) -> Self {
-        Self(format!("{NAME_PREFIX}{}", scell.hex_hash()))
+    pub fn new(scell: &SCell) -> color_eyre::Result<Self> {
+        Ok(Self(format!("{NAME_PREFIX}{}", scell.hex_hash()?)))
     }
 }
 

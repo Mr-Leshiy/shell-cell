@@ -134,7 +134,15 @@ fn render_stopping(
                     style.add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
-                    format!(" ({}+{})", info.location.display(), info.target),
+                    format!(
+                        " ({}+{})",
+                        info.location
+                            .as_ref()
+                            .map_or_else(|| "<empty>".to_string(), |l| l.display().to_string()),
+                        info.target
+                            .as_ref()
+                            .map_or_else(|| "<empty>".to_string(), ToString::to_string)
+                    ),
                     Style::default().fg(Color::DarkGray),
                 ),
             ])];
