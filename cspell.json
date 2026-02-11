@@ -5,6 +5,7 @@
     "language": "en,en-US",
     "useGitignore": true,
     "dictionaries": ["html", "css"],
+    "ignorePaths": ["CLAUDE.md"],
     "files": [
         "docs/**",
         "**.md"
