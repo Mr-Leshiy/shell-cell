@@ -82,7 +82,7 @@ impl SCellContainerInfo {
                 // If compilation fails, consider it orphaned
                 .unwrap_or(true)
         } else {
-            false
+            true
         };
 
         Self {
