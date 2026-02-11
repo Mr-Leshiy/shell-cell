@@ -1,5 +1,6 @@
 //! Command Line Interface implementation
 
+mod cleanup;
 mod ls;
 mod progress;
 mod run;
@@ -33,10 +34,9 @@ pub enum Commands {
     Ls,
     /// Stop all running Shell-Cell containers
     Stop,
-    // TODO: Implement
-    // /// Clean up all orphaned containers and their corresponding images (those no longer
-    // /// associated with any existing Shell-Cell source files).
-    // Cleanup,
+    /// Clean up all orphaned containers and their corresponding images (those no longer
+    /// associated with any existing Shell-Cell source files).
+    Cleanup,
 }
 
 impl Cli {
@@ -59,6 +59,7 @@ impl Cli {
             None => self.run().await?,
             Some(Commands::Ls) => self.ls().await?,
             Some(Commands::Stop) => self.stop().await?,
+            Some(Commands::Cleanup) => self.cleanup().await?,
         }
         Ok(())
     }

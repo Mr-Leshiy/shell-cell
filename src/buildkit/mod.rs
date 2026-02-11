@@ -11,7 +11,7 @@ use self::docker::{build_image, start_container};
 use crate::{
     buildkit::docker::{
         container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
-        stop_container,
+        remove_container, remove_image, stop_container,
     },
     pty::PtySession,
     scell::{SCell, container_info::SCellContainerInfo},
@@ -95,6 +95,15 @@ impl BuildKitD {
         container_name: &str,
     ) -> color_eyre::Result<()> {
         stop_container(&self.docker, container_name).await?;
+        Ok(())
+    }
+
+    pub async fn cleanup_container_by_name(
+        &self,
+        name: &str,
+    ) -> color_eyre::Result<()> {
+        remove_container(&self.docker, name).await?;
+        remove_image(&self.docker, &format!("{name}:latest")).await?;
         Ok(())
     }
 
