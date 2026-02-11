@@ -6,7 +6,7 @@ use bollard::{
     exec::{ResizeExecOptions, StartExecOptions, StartExecResults},
     query_parameters::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
-        ListContainersOptionsBuilder, RemoveImageOptions,
+        ListContainersOptionsBuilder, RemoveContainerOptionsBuilder, RemoveImageOptionsBuilder,
     },
     secret::{BuildInfo, ContainerCreateBody, ContainerSummary, ExecConfig},
 };
@@ -116,7 +116,10 @@ pub async fn remove_container(
     docker: &Docker,
     container_name: &str,
 ) -> color_eyre::Result<()> {
-    docker.remove_container(container_name, None).await?;
+    let config = RemoveContainerOptionsBuilder::default().force(true).build();
+    docker
+        .remove_container(container_name, Some(config))
+        .await?;
     Ok(())
 }
 
@@ -124,9 +127,8 @@ pub async fn remove_image(
     docker: &Docker,
     image_name: &str,
 ) -> color_eyre::Result<()> {
-    docker
-        .remove_image(image_name, None::<RemoveImageOptions>, None)
-        .await?;
+    let conifg = RemoveImageOptionsBuilder::default().build();
+    docker.remove_image(image_name, Some(conifg), None).await?;
     Ok(())
 }
 
