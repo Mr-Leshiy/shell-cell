@@ -27,7 +27,10 @@ use self::parser::{
 };
 use crate::scell::{
     name::SCellName,
-    parser::target::config::{ConfigStmt, mounts::MountsStmt},
+    parser::target::{
+        config::{ConfigStmt, mounts::MountsStmt},
+        env::EnvStmt,
+    },
 };
 
 const NAME_PREFIX: &str = "scell-";
@@ -52,6 +55,7 @@ pub enum Link {
         name: TargetName,
         location: PathBuf,
         workspace: WorkspaceStmt,
+        env: EnvStmt,
         copy: CopyStmt,
         build: BuildStmt,
     },

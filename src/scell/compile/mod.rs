@@ -78,6 +78,7 @@ impl SCell {
                 workspace: walk_target.workspace.clone(),
                 copy: walk_target.copy.clone(),
                 build: walk_target.build.clone(),
+                env: walk_target.env.clone(),
             });
 
             match walk_target.from {

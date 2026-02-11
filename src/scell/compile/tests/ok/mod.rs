@@ -6,7 +6,10 @@ use crate::scell::{
     Link, SCell, SCellInner,
     parser::{
         name::TargetName,
-        target::{build::BuildStmt, copy::CopyStmt, shell::ShellStmt, workspace::WorkspaceStmt},
+        target::{
+            build::BuildStmt, copy::CopyStmt, env::EnvStmt, shell::ShellStmt,
+            workspace::WorkspaceStmt,
+        },
     },
 };
 
@@ -20,6 +23,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Root("from".parse().unwrap())
         ],
@@ -39,6 +43,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Root("from".parse().unwrap())
         ],
@@ -58,6 +63,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Node {
                 name: "other".parse().unwrap(),
@@ -65,6 +71,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Root("from".parse().unwrap())
         ],
@@ -84,6 +91,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Node {
                 name: "other".parse().unwrap(),
@@ -91,6 +99,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Node {
                 name: "other".parse().unwrap(),
@@ -98,6 +107,7 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt::default(),
                 build: BuildStmt::default(),
+                env: EnvStmt::default(),
             },
             Link::Root("from".parse().unwrap())
         ],

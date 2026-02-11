@@ -12,9 +12,7 @@ pub struct EnvStmtItem {
 }
 
 #[derive(Debug, thiserror::Error)]
-#[error(
-    "env item must be in the following format '<KEY>=<VALUE>', provided: {0}"
-)]
+#[error("env item must be in the following format '<KEY>=<VALUE>', provided: {0}")]
 pub struct EnvStmtItemParsingError(String);
 
 impl FromStr for EnvStmtItem {
@@ -22,10 +20,7 @@ impl FromStr for EnvStmtItem {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if let Some((key, value)) = s.split_once(ENV_DELIMETER) {
-            color_eyre::eyre::ensure!(
-                !key.is_empty(),
-                EnvStmtItemParsingError(s.to_string())
-            );
+            color_eyre::eyre::ensure!(!key.is_empty(), EnvStmtItemParsingError(s.to_string()));
             Ok(Self {
                 key: key.to_string(),
                 value: value.to_string(),
@@ -37,7 +32,10 @@ impl FromStr for EnvStmtItem {
 }
 
 impl Display for EnvStmtItem {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(f, "{}={}", self.key, self.value)
     }
 }
