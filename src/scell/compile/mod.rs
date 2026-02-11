@@ -125,12 +125,12 @@ impl SCell {
         }
         report.check()?;
 
-        Ok(Self {
+        Ok(Self(super::SCellInner {
             links,
             shell: shell.context("'shell' cannot be 'None'")?,
             hang: hang.context("'hang' cannot be 'None'")?,
             config,
-        })
+        }))
     }
 }
 

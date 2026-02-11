@@ -24,7 +24,7 @@ impl SCell {
         let mut tar = tar::Builder::new(Vec::new());
         let mut dockerfile = String::new();
 
-        let mut links_iter = self.links.iter().rev().peekable();
+        let mut links_iter = self.0.links.iter().rev().peekable();
 
         while let Some(link) = links_iter.next() {
             match link {
@@ -50,7 +50,7 @@ impl SCell {
             }
         }
         // TODO: find better solution how to hang the container
-        prepare_hang_stmt(&mut dockerfile, &self.hang);
+        prepare_hang_stmt(&mut dockerfile, &self.0.hang);
 
         // Attach generated dockerfile string to tar
         let mut header = tar::Header::new_gnu();

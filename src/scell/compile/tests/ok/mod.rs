@@ -3,7 +3,7 @@ use std::path::Path;
 use test_case::test_case;
 
 use crate::scell::{
-    Link, SCell,
+    Link, SCell, SCellInner,
     parser::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, shell::ShellStmt, workspace::WorkspaceStmt},
@@ -12,7 +12,7 @@ use crate::scell::{
 
 #[test_case(
     "default_target", None
-    => SCell {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -26,12 +26,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }
+    })
     ; "default target"
 )]
 #[test_case(
     "other_target", Some("other".parse().unwrap())
-    => SCell {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "other".parse().unwrap(),
@@ -45,12 +45,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }
+    })
     ; "other target"
 )]
 #[test_case(
     "few_targets", None
-    => SCell {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -71,12 +71,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }
+    })
     ; "few targets"
 )]
 #[test_case(
     "ref_other_files", None
-    => SCell {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -104,7 +104,7 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }
+    })
     ; "ref other files"
 )]
 fn compile_ok_test(
