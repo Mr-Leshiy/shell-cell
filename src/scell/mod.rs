@@ -67,15 +67,17 @@ impl SCell {
             .unwrap_or_default()
     }
 
-    pub fn name(&self) -> SCellName {
+    /// Heavy operation, calculates name based on the `hex_hash` value
+    pub fn name(&self) -> color_eyre::Result<SCellName> {
         SCellName::new(self)
     }
 
     /// Calculates a fast, non-cryptographic 'metrohash' hash value.
     /// Returns a hex string value.
-    fn hex_hash(&self) -> String {
+    fn hex_hash(&self) -> color_eyre::Result<String> {
         let mut hasher = metrohash::MetroHash64::new();
         self.hash(&mut hasher);
-        hasher.finish().to_be_bytes().encode_hex()
+        self.prepare_image_tar_artifact_bytes()?.hash(&mut hasher);
+        Ok(hasher.finish().to_be_bytes().encode_hex())
     }
 }

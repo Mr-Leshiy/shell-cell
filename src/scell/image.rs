@@ -3,10 +3,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bytes::Bytes;
 use color_eyre::eyre::{Context, ContextCompat};
 
 use super::{
-    Link, SCell,
+    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
     parser::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
@@ -14,7 +15,7 @@ use super::{
 };
 
 impl SCell {
-    pub fn prepare_image_tar_artifact(&self) -> color_eyre::Result<(tar::Builder<Vec<u8>>, &str)> {
+    pub fn prepare_image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
         const DOCKERFILE_NAME: &str = "Dockerfile";
         // Unix file mode,
         // 6 (Owner): Read (4) + Write (2) = Read & Write.
@@ -59,7 +60,7 @@ impl SCell {
         header.set_cksum();
         tar.append(&header, dockerfile.as_bytes())?;
 
-        Ok((tar, DOCKERFILE_NAME))
+        Ok((tar.into_inner()?.into(), DOCKERFILE_NAME))
     }
 }
 
@@ -123,10 +124,10 @@ fn prepare_metadata_stmt(
     name: &TargetName,
     location: &Path,
 ) -> color_eyre::Result<()> {
-    let _ = writeln!(dockerfile, "LABEL scell-name=\"{name}\"");
+    let _ = writeln!(dockerfile, "LABEL {METADATA_TARGET_KEY}=\"{name}\"");
     let _ = writeln!(
         dockerfile,
-        "LABEL scell-location=\"{}\"",
+        "LABEL {METADATA_LOCATION_KEY}=\"{}\"",
         std::fs::canonicalize(location)?.display()
     );
     Ok(())

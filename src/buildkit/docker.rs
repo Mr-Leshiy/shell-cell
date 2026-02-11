@@ -10,6 +10,7 @@ use bollard::{
     },
     secret::{BuildInfo, ContainerCreateBody, ContainerSummary, ExecConfig},
 };
+use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use tokio::io::AsyncWrite;
 
@@ -18,11 +19,9 @@ pub async fn build_image(
     image_name: &str,
     tag: &str,
     dockerfile_path: &str,
-    tar: tar::Builder<Vec<u8>>,
+    tar_bytes: Bytes,
     log_fn: impl Fn(BuildInfo),
 ) -> color_eyre::Result<()> {
-    let tar = body_full(tar.into_inner()?.into());
-
     let options = BuildImageOptionsBuilder::new()
         .dockerfile(dockerfile_path)
         .t(&format!("{image_name}:{tag}"))
@@ -30,7 +29,7 @@ pub async fn build_image(
         .forcerm(true)
         .build();
 
-    let mut stream = docker.build_image(options, None, Some(tar));
+    let mut stream = docker.build_image(options, None, Some(body_full(tar_bytes)));
 
     while let Some(build_info) = stream.next().await {
         log_fn(build_info?);

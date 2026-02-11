@@ -45,7 +45,7 @@ impl App {
                 && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
                 let (pty, scell) = res?;
-                app = Self::running_pty(pty, &scell);
+                app = Self::running_pty(pty, &scell)?;
             }
 
             if let App::RunningPty(ref mut state) = app {
@@ -203,12 +203,12 @@ impl App {
     fn running_pty(
         pty: PtySession,
         scell: &SCell,
-    ) -> Self {
-        Self::RunningPty(Box::new(RunningPtyState {
+    ) -> color_eyre::Result<Self> {
+        Ok(Self::RunningPty(Box::new(RunningPtyState {
             pty,
-            scell_name: scell.name().to_string(),
+            scell_name: scell.name()?.to_string(),
             parser: Parser::default(),
-        }))
+        })))
     }
 }
 

@@ -74,7 +74,7 @@ impl SCellContainerInfo {
         // Determine if the container is orphaned by comparing the container name
         // with the expected SCell name
         let orphan = SCell::compile(&location, Some(target.clone()))
-            .map(|scell| scell.name() != name)
+            .and_then(|scell| Ok(scell.name()? != name))
             .unwrap_or(true); // If compilation fails, consider it orphaned
 
         Self {
