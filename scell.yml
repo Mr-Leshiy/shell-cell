@@ -9,6 +9,9 @@ claudecode:
   from: +rust-base
   build:
     - curl -fsSL https://claude.ai/install.sh | bash
+  env:
+    # claude code instalation path 
+    - PATH="/root/.local/bin:$PATH"
 
 main:
   from: +claudecode
