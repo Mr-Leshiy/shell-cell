@@ -88,7 +88,8 @@ Executed in strict order during image building:
 1. `workspace` - Sets working directory (like `WORKDIR`)
 2. `from` - Base image or target reference (like `FROM`)
 3. `copy` - Copies files into image (like `COPY`)
-4. `build` - Runs commands during build (like `RUN`)
+4. `env` - Sets environment variables (like `ENV`), format: `KEY=VALUE`
+5. `build` - Runs commands during build (like `RUN`)
 
 Special instructions (only first encountered is used):
 - `shell` - Defines shell binary for interactive sessions

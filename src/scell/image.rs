@@ -13,6 +13,7 @@ use super::{
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
+use crate::scell::parser::target::env::EnvStmt;
 
 impl SCell {
     pub fn prepare_image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
@@ -36,9 +37,11 @@ impl SCell {
                     copy,
                     location: path,
                     workspace,
+                    env,
                     name,
                 } => {
                     prepare_workspace_stmt(&mut dockerfile, workspace);
+                    prepare_env_stmt(&mut dockerfile, env);
                     prepare_copy_stmt(&mut dockerfile, &mut tar, copy, path)?;
                     prepare_build_stmt(&mut dockerfile, build);
                     // The last item
@@ -148,6 +151,15 @@ fn prepare_workspace_stmt(
 ) {
     if let Some(workspace) = &workspace_stmt.0 {
         let _ = writeln!(dockerfile, "WORKDIR {workspace}");
+    }
+}
+
+fn prepare_env_stmt(
+    dockerfile: &mut String,
+    evn_stmt: &EnvStmt,
+) {
+    for e in &evn_stmt.0 {
+        let _ = writeln!(dockerfile, "ENV {}={}", e.key, e.value);
     }
 }
 

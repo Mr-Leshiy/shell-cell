@@ -6,18 +6,19 @@ use std::{collections::HashSet, path::Path};
 
 use color_eyre::eyre::{Context, ContextCompat};
 
-use super::{
-    Link, SCell,
-    parser::{SCellFile, name::TargetName, target::FromStmt},
-};
 use crate::{
     error::{OptionUserError, Report, UserError, WrapUserError},
     scell::{
+        Link, SCell,
         compile::errors::{
             CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingEntrypoint,
             MissingHangStmt, MissingShellStmt, MissingTarget, MountHostDirNotFound,
         },
-        parser::target::config::ConfigStmt,
+        parser::{
+            SCellFile,
+            name::TargetName,
+            target::{config::ConfigStmt, from::FromStmt},
+        },
     },
     scell_home_dir,
 };
@@ -77,6 +78,7 @@ impl SCell {
                 workspace: walk_target.workspace.clone(),
                 copy: walk_target.copy.clone(),
                 build: walk_target.build.clone(),
+                env: walk_target.env.clone(),
             });
 
             match walk_target.from {

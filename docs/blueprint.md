@@ -40,7 +40,9 @@ Inside each target, during the `Shell-Cell` image building process,
 the instructions are executed in a specific, strict order:
 1. `workspace`
 2. `from`
-3. `build`
+3. `env`
+4. `copy`
+5. `build`
 
 ### `from`
 
@@ -103,6 +105,21 @@ copy:
     - file1 .
     - file2 .
     - file3 file4 .
+```
+
+### `env` (optional)
+
+Sets environment variables in the `Shell-Cell` image.
+Similar to the Dockerfile [`ENV`](https://docs.docker.com/reference/dockerfile/#env) instruction.
+
+Each item follows the list format `<KEY>=<VALUE>`:
+
+```yml
+env:
+    - DB_HOST=localhost
+    - DB_PORT=5432
+    - DB_NAME=db
+    - DB_DESCRIPTION="My Database"
 ```
 
 ### `build` (optional)
