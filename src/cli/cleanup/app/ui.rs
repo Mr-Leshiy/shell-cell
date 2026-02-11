@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
-use super::{App, StoppingState};
+use super::{App, CleaningState};
 
 impl Widget for &App {
     fn render(
@@ -18,8 +18,8 @@ impl Widget for &App {
         if let App::Loading { .. } = self {
             render_loading(area, buf);
         }
-        if let App::Stopping(state) = self {
-            render_stopping(state, area, buf);
+        if let App::Cleaning(state) = self {
+            render_cleaning(state, area, buf);
         }
     }
 }
@@ -59,7 +59,7 @@ fn render_loading(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            "Fetching ALL 'Shell-Cell' containers for stopping",
+            "Fetching 'Shell-Cell' containers for cleaning",
             Style::default().fg(Color::Gray),
         )),
     ];
@@ -76,8 +76,8 @@ fn render_loading(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_stopping(
-    state: &StoppingState,
+fn render_cleaning(
+    state: &CleaningState,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -92,13 +92,16 @@ fn render_stopping(
 
     // Create header with progress
     let progress_text = if is_done {
-        Line::from("✓ All containers stopped").style(
+        Line::from("✓ All cleaned").style(
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        Line::from(format!("⟳ Stopping containers... [{completed}/{total}]")).style(
+        Line::from(format!(
+            "⟳ Cleaning 'Shell-Cell' containers and images... [{completed}/{total}]"
+        ))
+        .style(
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -159,7 +162,7 @@ fn render_stopping(
 fn main_block() -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
-        .title("Stopping Shell-Cell Containers")
+        .title("Cleaning 'Shell-Cell' Containers and Images")
         .title_bottom("Ctrl-C or Ctrl-D: exit")
         .border_style(Style::new().light_magenta())
 }

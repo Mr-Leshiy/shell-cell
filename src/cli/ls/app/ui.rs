@@ -85,33 +85,43 @@ fn render_ls(
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
-    let header_cells = ["Name", "Blueprint Location", "Created At", "ID", "Status"]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+    let header_cells = [
+        "Name",
+        "Target",
+        "Blueprint Location",
+        "Created At",
+        "Status",
+    ]
+    .iter()
+    .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
     let header = Row::new(header_cells)
         .style(Style::default().add_modifier(Modifier::BOLD))
         .height(1);
 
     let rows = state.containers.iter().map(|c| {
         let cells = vec![
-            Cell::from(c.name.to_string()),
+            Cell::from(if c.orphan {
+                format!("{} (orphan)", c.name)
+            } else {
+                c.name.to_string()
+            }),
+            Cell::from(c.target.to_string()),
             Cell::from(format!("{}", c.location.display())),
             Cell::from(
                 c.created_at
                     .to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
             ),
-            Cell::from(c.container_name.clone()),
             Cell::from(c.status.to_string()),
         ];
         Row::new(cells).height(1)
     });
 
     let widths = [
+        Constraint::Percentage(25),
+        Constraint::Percentage(5),
+        Constraint::Percentage(40),
+        Constraint::Percentage(20),
         Constraint::Percentage(10),
-        Constraint::Percentage(30),
-        Constraint::Percentage(20),
-        Constraint::Percentage(20),
-        Constraint::Percentage(20),
     ];
 
     let table = Table::new(rows, widths)

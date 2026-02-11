@@ -1,5 +1,6 @@
 //! Implements a parsing and processing of Shell-Cell '.yaml' files
 
+pub mod errors;
 pub mod name;
 pub mod target;
 
@@ -8,7 +9,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use self::{name::TargetName, target::TargetStmt};
+use self::{
+    errors::{FileOpenFailed, FilePathNotResolved},
+    name::TargetName,
+    target::TargetStmt,
+};
 use crate::error::WrapUserError;
 
 const SCELL_FILE_NAME: &str = "scell.yml";
@@ -21,16 +26,15 @@ pub struct SCellFile {
 
 impl SCellFile {
     pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
-        let file_path = path.as_ref().join(SCELL_FILE_NAME);
-        // TODO: add proper error types as its done with `MissingTarget`, `FileLoadFromStmt` etc.
-        let file: std::fs::File = std::fs::File::open(&file_path)
-            .wrap_user_err(format!("Cannot open file '{}'", file_path.display()))?;
+        let location = std::fs::canonicalize(&path)
+            .wrap_user_err(FilePathNotResolved(path.as_ref().to_path_buf()))?;
+        let file_path = location.join(SCELL_FILE_NAME);
+
+        let file: std::fs::File =
+            std::fs::File::open(&file_path).wrap_user_err(FileOpenFailed(file_path.clone()))?;
         let cells: HashMap<TargetName, TargetStmt> =
             yaml_serde::from_reader(&file).mark_as_user_err()?;
 
-        Ok(Self {
-            cells,
-            location: path.as_ref().to_path_buf(),
-        })
+        Ok(Self { cells, location })
     }
 }

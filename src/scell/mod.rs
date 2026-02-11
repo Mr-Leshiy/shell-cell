@@ -8,6 +8,7 @@
 mod compile;
 pub mod container_info;
 mod image;
+mod name;
 mod parser;
 
 use std::{
@@ -24,13 +25,16 @@ use self::parser::{
         workspace::WorkspaceStmt,
     },
 };
-use crate::scell::parser::target::config::{ConfigStmt, mounts::MountsStmt};
+use crate::scell::{
+    name::SCellName,
+    parser::target::config::{ConfigStmt, mounts::MountsStmt},
+};
 
 const NAME_PREFIX: &str = "scell-";
-const IMAGE_METADATA_NAME: &str = "scell-name";
-const IMAGE_METADATA_LOCATION: &str = "scell-location";
+const METADATA_TARGET_KEY: &str = "scell-name";
+const METADATA_LOCATION_KEY: &str = "scell-location";
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCell {
     links: Vec<Link>,
     shell: ShellStmt,
@@ -38,7 +42,7 @@ pub struct SCell {
     config: Option<ConfigStmt>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Link {
     Root(ImageDef),
     Node {
@@ -63,8 +67,8 @@ impl SCell {
             .unwrap_or_default()
     }
 
-    pub fn name(&self) -> String {
-        format!("{NAME_PREFIX}{}", self.hex_hash())
+    pub fn name(&self) -> SCellName {
+        SCellName::new(self)
     }
 
     /// Calculates a fast, non-cryptographic 'metrohash' hash value.

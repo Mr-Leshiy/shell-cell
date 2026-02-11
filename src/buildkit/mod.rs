@@ -11,7 +11,7 @@ use self::docker::{build_image, start_container};
 use crate::{
     buildkit::docker::{
         container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
-        stop_container,
+        remove_container, remove_image, stop_container,
     },
     pty::PtySession,
     scell::{SCell, container_info::SCellContainerInfo},
@@ -42,7 +42,7 @@ impl BuildKitD {
         let (tar, dockerfile_path) = scell.prepare_image_tar_artifact()?;
         build_image(
             &self.docker,
-            &scell.name(),
+            &scell.name().to_string(),
             "latest",
             dockerfile_path,
             tar,
@@ -77,7 +77,8 @@ impl BuildKitD {
             }),
             ..Default::default()
         };
-        start_container(&self.docker, &scell.name(), "latest", &scell.name(), config).await?;
+        let scell_name = scell.name().to_string();
+        start_container(&self.docker, &scell_name, "latest", &scell_name, config).await?;
         Ok(())
     }
 
@@ -85,7 +86,7 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
-        stop_container(&self.docker, &scell.name()).await?;
+        stop_container(&self.docker, &scell.name().to_string()).await?;
         Ok(())
     }
 
@@ -94,6 +95,15 @@ impl BuildKitD {
         container_name: &str,
     ) -> color_eyre::Result<()> {
         stop_container(&self.docker, container_name).await?;
+        Ok(())
+    }
+
+    pub async fn cleanup_container_by_name(
+        &self,
+        name: &str,
+    ) -> color_eyre::Result<()> {
+        remove_container(&self.docker, name).await?;
+        remove_image(&self.docker, &format!("{name}:latest")).await?;
         Ok(())
     }
 
@@ -110,7 +120,7 @@ impl BuildKitD {
         scell: &SCell,
     ) -> color_eyre::Result<PtySession> {
         let (session_id, output, input) =
-            container_iteractive_exec(&self.docker, &scell.name(), true, vec![
+            container_iteractive_exec(&self.docker, &scell.name().to_string(), true, vec![
                 scell.shell().to_string(),
             ])
             .await?;

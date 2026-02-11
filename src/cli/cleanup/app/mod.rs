@@ -17,31 +17,11 @@ pub enum App {
         rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
         buildkit: BuildKitD,
     },
-    Stopping(StoppingState),
+    Cleaning(CleaningState),
     Exit,
 }
 
 impl App {
-    pub fn loading(buildkit: BuildKitD) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        // Spawn async task to fetch containers for stop
-        tokio::spawn({
-            let buildkit = buildkit.clone();
-            async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    res
-                }
-                .await;
-                drop(tx.send(result));
-            }
-        });
-
-        App::Loading { rx, buildkit }
-    }
-
     pub fn run<B: ratatui::backend::Backend>(
         mut self,
         terminal: &mut Terminal<B>,
@@ -55,10 +35,10 @@ impl App {
                 && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
                 let containers = result?;
-                self = Self::stopping(containers, buildkit.clone());
+                self = Self::cleaning(containers, buildkit.clone());
             }
 
-            if let App::Stopping(ref mut state) = self
+            if let App::Cleaning(ref mut state) = self
                 && state.try_update()
             {
                 self = App::Exit;
@@ -78,18 +58,41 @@ impl App {
         }
     }
 
-    fn stopping(
+    pub fn loading(buildkit: BuildKitD) -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        // Spawn async task to fetch containers for stop
+        tokio::spawn({
+            let buildkit = buildkit.clone();
+            async move {
+                let result = async {
+                    let res = buildkit.list_containers().await;
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    // consider only orphan Shell-Cell containers
+                    res.map(|v| v.into_iter().filter(|c| c.orphan).collect::<Vec<_>>())
+                }
+                .await;
+                drop(tx.send(result));
+            }
+        });
+
+        App::Loading { rx, buildkit }
+    }
+
+    fn cleaning(
         containers: Vec<SCellContainerInfo>,
         buildkit: BuildKitD,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
-        // Spawn async task to stop containers
+        // Spawn async task to cleanup orphan containers and images
         tokio::spawn({
             let containers = containers.clone();
             async move {
                 for c in containers {
-                    let res = buildkit.stop_container_by_name(&c.name.to_string()).await;
+                    let res = buildkit
+                        .cleanup_container_by_name(&c.name.to_string())
+                        .await;
                     tokio::time::sleep(std::time::Duration::from_millis(300)).await;
                     drop(tx.send((c, res)));
                 }
@@ -97,7 +100,7 @@ impl App {
             }
         });
 
-        App::Stopping(StoppingState::new(containers, rx))
+        App::Cleaning(CleaningState::new(containers, rx))
     }
 
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
@@ -114,12 +117,12 @@ impl App {
     }
 }
 
-pub struct StoppingState {
+pub struct CleaningState {
     containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
     rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
 }
 
-impl StoppingState {
+impl CleaningState {
     pub fn new(
         containers: Vec<SCellContainerInfo>,
         rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
