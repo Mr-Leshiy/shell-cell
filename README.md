@@ -24,16 +24,14 @@ A running [Docker](https://www.docker.com/) (or [Podman](https://podman.io/)) da
 
 ### Install (Unix)
 
-#### Unix
-
+- Build for Unix 
 <!-- cspell: disable -->
 ```shell
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
 ```
 <!-- cspell: enable -->
 
-#### From source (any platform):
-
+- Build from source (any platform)
 ```shell
 cargo install shell-cell --locked
 ```
