@@ -1,6 +1,6 @@
 [package]
 name = "shell-cell"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 description = "Shell-Cell. CLI app to spawn and manage containerized shell environments"
 repository = "https://github.com/Mr-Leshiy/shell-cell"
@@ -8,6 +8,16 @@ authors = [
     "Alex Pozhylenkov <leshiy12345678@gmail.com>"
 ]
 license = "MIT OR Apache-2.0"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
 
 # Example of customizing binaries in Cargo.toml.
 [[bin]]
