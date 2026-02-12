@@ -1,9 +1,3 @@
-# `Shell-Cell` Documentation
-
-- [Install and Configure](./install.md)
-- [CLI Reference](./cli.md)
-- [Blueprint File Reference](./blueprint_file.md)
-
 ## 💡 The Core Idea
 
 `Shell-Cell` is a lightweight container orchestrator that turns simple [YAML](https://yaml.org) blueprints into instant, isolated development environments.

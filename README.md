@@ -28,11 +28,11 @@ A running [Docker](https://www.docker.com/) (or [Podman](https://podman.io/)) da
 cargo install shell-cell --locked
 ```
 
-For socket configuration and other setup details, see the [Install and Configure](./docs/install.md) guide.
+For socket configuration and other setup details, see the [Install and Configure](https://mr-leshiy.github.io/shell-cell/install) guide.
 
 ### Create a Blueprint
 
-Place a `scell.yml` file in your project directory (see the full [Blueprint File Reference](./docs/blueprint.md) for all available instructions):
+Place a `scell.yml` file in your project directory (see the full [Blueprint File Reference](https://mr-leshiy.github.io/shell-cell/blueprint) for all available instructions):
 
 ```yml
 main:
@@ -48,7 +48,7 @@ main:
 scell
 ```
 
-That's it! `Shell-Cell` will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](./docs/cli.md).
+That's it! `Shell-Cell` will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](https://mr-leshiy.github.io/shell-cell/cli).
 
 ## 👨🏻‍👩🏻‍👦🏻‍👦🏻 Community
 
@@ -58,7 +58,7 @@ Our Discord server <https://discord.gg/URTBEuU5>
 
 Follow the detailed documentation about how `Shell-Cell` works and how to use it:
 
-👉 [Docs](./docs/readme.md)
+👉 [Docs](https://mr-leshiy.github.io/shell-cell/)
 
 
 ## ➡️ Whats next?
