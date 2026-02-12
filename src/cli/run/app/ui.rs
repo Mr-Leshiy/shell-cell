@@ -29,7 +29,8 @@ impl Widget for &mut App {
 
             // Calculate how many log items can fit in the available height
             let available_height = inner.height as usize;
-            let skip_amount = state.logs.len().saturating_sub(available_height);
+            let logs_lines: usize = state.logs.iter().map(|l| l.0.lines().count()).sum();
+            let skip_amount = logs_lines.saturating_sub(available_height);
 
             let logs = state
                 .logs
@@ -37,9 +38,7 @@ impl Widget for &mut App {
                 .enumerate()
                 .map(|(i, (log, log_type))| {
                     let is_last = i == state.logs.len().saturating_sub(1) && i != 0;
-
                     let main_style = Style::default().add_modifier(Modifier::BOLD);
-
                     match log_type {
                         LogType::Main if is_last => {
                             ListItem::new(format!("{log} ...")).style(main_style.yellow())
