@@ -17,6 +17,6 @@
 
 - [ ] Use BuildKit cache feature, to cache each Cell individually.
 - [ ] Allow Github for the `from` statement `Shell-Cell` file location.
-- [ ] Dockerfile support
-- [ ] Earthfile support (???)
-- [ ] Dager support (???)
+- [ ] `Dockerfile` support
+- [ ] `Earthfile` support (???)
+- [ ] Dager files support (???)

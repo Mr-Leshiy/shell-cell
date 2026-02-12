@@ -50,7 +50,7 @@ That's it! `Shell-Cell` will find the `scell.yml` in your current directory, bui
 
 ## 🎓 Want to know more ?
 
-Follow the detailed documenation about how `Shell-Cell` works and how to use it:
+Follow the detailed documentation about how `Shell-Cell` works and how to use it:
 
 👉 [Docs](./docs/readme.md)
 
