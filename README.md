@@ -52,7 +52,7 @@ That's it! `Shell-Cell` will find the `scell.yml` in your current directory, bui
 
 ## 👨🏻‍👩🏻‍👦🏻‍👦🏻 Community
 
-Our Discord server https://discord.gg/URTBEuU5
+Our Discord server <https://discord.gg/URTBEuU5>
 
 ## 🎓 Want to know more ?
 
