@@ -16,6 +16,8 @@
         "leshiy",
         "scell",
         "dager",
-        "Earthfile"
+        "Earthfile",
+        "mdbook",
+        "mdBook"
     ]
 }
