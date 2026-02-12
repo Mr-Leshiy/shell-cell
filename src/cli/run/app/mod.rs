@@ -225,6 +225,7 @@ pub struct PreparingState {
     logs: Vec<(String, LogType)>,
 }
 
+#[derive(Debug, Clone, Copy)]
 enum LogType {
     Main,
     MainError,

@@ -27,19 +27,24 @@ impl Widget for &mut App {
             let inner = block.inner(area);
             Widget::render(block, area, buf);
 
-            // Calculate how many log items can fit in the available height
-            let available_height = inner.height as usize;
-            let logs_lines: usize = state.logs.iter().map(|l| l.0.lines().count()).sum();
-            let skip_amount = logs_lines.saturating_sub(available_height);
-
             let logs = state
                 .logs
                 .iter()
+                .flat_map(|log| log.0.lines().map(|line| (line.to_string(), log.1)))
+                .collect::<Vec<_>>();
+            let logs_len = logs.len();
+            // Calculate how many log items can fit in the available height
+            let available_height = inner.height as usize;
+            let skip_amount = logs_len.saturating_sub(available_height);
+
+            let logs = logs
+                .iter()
                 .enumerate()
                 .map(|(i, (log, log_type))| {
-                    let is_last = i == state.logs.len().saturating_sub(1) && i != 0;
+                    let is_last = i == logs_len.saturating_sub(1) && i != 0;
                     let main_style = Style::default().add_modifier(Modifier::BOLD);
                     match log_type {
+                        // the main line is always must be a one liner
                         LogType::Main if is_last => {
                             ListItem::new(format!("{log} ...")).style(main_style.yellow())
                         },
