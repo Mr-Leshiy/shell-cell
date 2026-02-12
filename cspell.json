@@ -15,5 +15,7 @@
         "clippy",
         "leshiy",
         "scell",
+        "dager",
+        "Earthfile"
     ]
 }
