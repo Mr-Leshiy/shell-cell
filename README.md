@@ -1,11 +1,13 @@
+<div align="center">
+
+<img src="./logo.png" alt="logo" />
+
 # `Shell-Cell`
 
 Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
 
 > ⚠️ Prototype, under heavy development
 
-<div align="center">
-  <img src="./logo.png" alt="logo" />
 </div>
 
 ## 💡 How It Works
@@ -47,6 +49,10 @@ scell
 ```
 
 That's it! `Shell-Cell` will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](./docs/cli.md).
+
+## 👨🏻‍👩🏻‍👦🏻‍👦🏻 Community
+
+Our Discord server https://discord.gg/URTBEuU5
 
 ## 🎓 Want to know more ?
 
