@@ -8,7 +8,7 @@ So firstly prepare and install [Docker] or [Podman] daemons.
 - Build for Unix 
 <!-- cspell: disable -->
 ```shell
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
+curl -fsSL https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
 ```
 <!-- cspell: enable -->
 
