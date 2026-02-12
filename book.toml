@@ -1,0 +1,8 @@
+[book]
+title = "Shell-Cell Documentation"
+authors = ["Shell-Cell Contributors"]
+language = "en"
+src = "docs"
+
+[build]
+build-dir = "book"
