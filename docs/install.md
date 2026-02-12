@@ -5,16 +5,14 @@ So firstly prepare and install [Docker] or [Podman] daemons.
 
 ### Install
 
-#### Unix
-
+- Build for Unix 
 <!-- cspell: disable -->
 ```shell
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
 ```
 <!-- cspell: enable -->
 
-#### Build from source (any platform)
-
+- Build from source (any platform)
 ```shell
 cargo install shell-cell --locked
 ```
@@ -37,3 +35,7 @@ docker context inspect
 - for [Podman]
 ```shell
 TODO
+
+
+[Podman]: https://podman.io
+[Docker]: https://www.docker.com
