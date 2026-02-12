@@ -1,3 +1,12 @@
+[bans]
+multiple-versions = "warn"
+wildcards = 'deny'
+deny = [
+    { crate = "openssl", use-instead = "rustls" },
+    { crate = "openssl-sys", use-instead = "rustls" },
+    { crate = "git2", use-instead = "gix" },
+]
+
 [graph]
 # cargo-deny is really only ever intended to run on the "normal" tier-1 targets
 targets = [
@@ -30,6 +39,8 @@ allow = [
     "MPL-2.0",
     "Zlib",
     "BSD-3-Clause",
+    "ISC",
+    "OpenSSL",
 ]
 exceptions = []
 
