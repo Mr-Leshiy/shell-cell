@@ -22,12 +22,12 @@ Unlike standard containers that run a task and exit, `Shell-Cell` containers sta
 
 A running [Docker](https://www.docker.com/) (or [Podman](https://podman.io/)) daemon is required.
 
-### Install (Unix)
+### Install
 
 - Build for Unix 
 <!-- cspell: disable -->
 ```shell
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
+curl -fsSL https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
 ```
 <!-- cspell: enable -->
 
