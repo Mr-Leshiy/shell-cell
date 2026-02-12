@@ -7,11 +7,11 @@ So firstly prepare and install [Docker] or [Podman] daemons.
 
 #### Unix
 
-<!-- scell: disable -->
+<!-- cspell: disable -->
 ```shell
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shell-cell-installer.sh | sh
 ```
-<!-- scell: enable -->
+<!-- cspell: enable -->
 
 #### Build from source (any platform)
 
