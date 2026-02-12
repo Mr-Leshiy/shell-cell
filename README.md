@@ -48,9 +48,16 @@ scell
 
 That's it! `Shell-Cell` will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](./docs/cli.md).
 
+## 🎓 Want to know more ?
+
+Follow the detailed documenation about how `Shell-Cell` works and how to use it:
+
+👉 [Docs](./docs/readme.md)
+
+
 ## ➡️ Whats next?
 
-Want to see what we’re working on or suggest a new idea? Check out our journey here:
+Want to see what we’re working on? Check out our journey here:
 
 👉 [Roadmap](./roadmap.md)
 
