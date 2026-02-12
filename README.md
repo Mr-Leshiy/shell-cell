@@ -22,7 +22,7 @@ Unlike standard containers that run a task and exit, `Shell-Cell` containers sta
 
 A running [Docker](https://www.docker.com/) (or [Podman](https://podman.io/)) daemon is required.
 
-### Install (Unix)
+### Install
 
 - Build for Unix 
 <!-- cspell: disable -->
