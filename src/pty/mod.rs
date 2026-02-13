@@ -3,6 +3,8 @@
 //! The full reference to the ghostty terminal API documentation <https://ghostty.org/docs/vt>.
 
 mod callbacks;
+#[cfg(test)]
+mod tests;
 
 use std::{
     pin::Pin,

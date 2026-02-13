@@ -42,7 +42,6 @@ impl App {
         // First step
         let mut app = Self::preparing(buildkit.clone(), scell_path);
 
-        let (mut prev_height, mut prev_width) = (0, 0);
         loop {
             if let App::Preparing(ref mut state) = app
                 && state.try_update()
@@ -53,24 +52,7 @@ impl App {
             }
 
             if let App::RunningPty(ref mut state) = app {
-                // Notify container's session about screen resize
-                let (curr_height, curr_width) = state.pty.size();
-                if curr_height != prev_height || curr_width != prev_width {
-                    tokio::spawn({
-                        let buildkit = buildkit.clone();
-                        let session_id = state.pty.container_session_id().to_owned();
-                        async move {
-                            buildkit
-                                .resize_shell(&session_id, curr_height, curr_width)
-                                .await?;
-                            color_eyre::eyre::Ok(())
-                        }
-                    });
-
-                    prev_height = curr_height;
-                    prev_width = curr_width;
-                }
-
+                state.notify_screen_resize(buildkit.clone());
                 if state.try_update() {
                     app = App::Finished;
                 }
@@ -208,6 +190,8 @@ impl App {
         Ok(Self::RunningPty(Box::new(RunningPtyState {
             pty,
             scell_name: scell.name()?.to_string(),
+            prev_height: 0,
+            prev_width: 0,
         })))
     }
 }
@@ -242,10 +226,34 @@ impl PreparingState {
 pub struct RunningPtyState {
     pty: Pty,
     scell_name: String,
+    prev_height: u16,
+    prev_width: u16,
 }
 
 impl RunningPtyState {
     fn try_update(&mut self) -> bool {
         self.pty.process_stdout_and_stderr(MIN_FPS)
+    }
+
+    fn notify_screen_resize(
+        &mut self,
+        buildkit: BuildKitD,
+    ) {
+        // Notify container's session about screen resize
+        let (curr_height, curr_width) = self.pty.size();
+        if curr_height != self.prev_height || curr_width != self.prev_width {
+            tokio::spawn({
+                let session_id = self.pty.container_session_id().to_owned();
+                async move {
+                    buildkit
+                        .resize_shell(&session_id, curr_height, curr_width)
+                        .await?;
+                    color_eyre::eyre::Ok(())
+                }
+            });
+
+            self.prev_height = curr_height;
+            self.prev_width = curr_width;
+        }
     }
 }
