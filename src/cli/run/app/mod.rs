@@ -1,4 +1,5 @@
 mod ui;
+mod vt;
 
 use std::{
     path::Path,
@@ -13,11 +14,10 @@ use ratatui::{
 };
 use terminput::Encoding;
 use terminput_crossterm::to_terminput;
-use tui_term::vt100::Parser;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::MIN_FPS,
+    cli::{MIN_FPS, run::app::vt::TerminalEmulator},
     error::{UserError, WrapUserError},
     pty::PtySession,
     scell::SCell,
@@ -56,7 +56,7 @@ impl App {
 
             if let App::RunningPty(ref mut state) = app {
                 // Notify container's session about screen resize
-                let (curr_height, curr_width) = state.parser.screen().size();
+                let (curr_height, curr_width) = state.term.size();
                 if curr_height != prev_height || curr_width != prev_width {
                     tokio::spawn({
                         let buildkit = buildkit.clone();
@@ -211,10 +211,12 @@ impl App {
         pty: PtySession,
         scell: &SCell,
     ) -> color_eyre::Result<Self> {
+        let term = TerminalEmulator::new(pty.stdin.clone());
+
         Ok(Self::RunningPty(Box::new(RunningPtyState {
             pty,
             scell_name: scell.name()?.to_string(),
-            parser: Parser::default(),
+            term,
         })))
     }
 }
@@ -249,14 +251,14 @@ impl PreparingState {
 pub struct RunningPtyState {
     pty: PtySession,
     scell_name: String,
-    parser: Parser,
+    term: TerminalEmulator,
 }
 
 impl RunningPtyState {
     pub fn try_update(&mut self) -> bool {
         let stdout_res = match self.pty.stdout.recv_timeout(MIN_FPS) {
             Ok(bytes) => {
-                self.parser.process(&bytes);
+                self.term.process(&bytes);
                 false
             },
             Err(RecvTimeoutError::Timeout) => false,
@@ -265,7 +267,7 @@ impl RunningPtyState {
 
         let stderr_res = match self.pty.stderr.recv_timeout(MIN_FPS) {
             Ok(bytes) => {
-                self.parser.process(&bytes);
+                self.term.process(&bytes);
                 false
             },
             Err(RecvTimeoutError::Timeout) => false,
