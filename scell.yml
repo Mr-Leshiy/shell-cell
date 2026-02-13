@@ -2,6 +2,8 @@
 rust-base:
   from: rust:1.93-trixie
   build:
+    - rustup component add clippy
+    - rustup component add rustfmt
     - apt-get update --fix-missing
     - apt-get -y install git curl wget
 

@@ -69,20 +69,20 @@ impl Callbacks for TerminalCallback {
         params: &[&[u16]],
         c: char,
     ) {
-        match c {
-            // Device Status Report <https://ghostty.org/docs/vt/csi/dsr>
-            'n' => {
-                // The operating status is requested
-                if let &[&[5]] = params {
-                    self.send(b"\x1b[0n".as_slice());
-                }
-                // The cursor position is requested
-                if let &[&[6]] = params {
-                    let (row, col) = screen.cursor_position();
-                    self.send(format!("\x1b[{};{}R", row + 1, col + 1).into_bytes());
-                }
-            },
-            _ => {},
+        // Device Status Report <https://ghostty.org/docs/vt/csi/dsr>
+        if c == 'n' {
+            // The operating status is requested
+            if let &[&[5]] = params {
+                self.send(b"\x1b[0n".as_slice());
+            }
+            // The cursor position is requested
+            if let &[&[6]] = params {
+                let (row, col) = screen.cursor_position();
+                self.send(
+                    format!("\x1b[{};{}R", row.saturating_add(1), col.saturating_add(1))
+                        .into_bytes(),
+                );
+            }
         }
     }
 }
