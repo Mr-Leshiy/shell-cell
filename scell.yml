@@ -5,18 +5,25 @@ rust-base:
     - apt-get update --fix-missing
     - apt-get -y install git curl wget
 
-claudecode:
+main:
   from: +rust-base
-  build:
-    - curl -fsSL https://claude.ai/install.sh | bash
   env:
     # claude code instalation path 
     - PATH="/root/.local/bin:$PATH"
-
-main:
-  from: +claudecode
+  build:
+    # claude code
+    - curl -fsSL https://claude.ai/install.sh | bash
+    # zsh
+    - apt install -y zsh
+    # nushell
+    - wget -qO- https://apt.fury.io/nushell/gpg.key | gpg --dearmor -o /etc/apt/keyrings/fury-nushell.gpg
+    - echo "deb [signed-by=/etc/apt/keyrings/fury-nushell.gpg] https://apt.fury.io/nushell/ /" | tee /etc/apt/sources.list.d/fury-nushell.list
+    - apt update
+    - apt install -y nushell
+    # neovim
+    - apt-get install -y neovim
   workspace: shell_cell
-  shell: /bin/bash
+  shell: /bin/zsh
   hang: while true; do sleep 3600; done
   config:
     mounts:
