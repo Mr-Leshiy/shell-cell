@@ -1,5 +1,4 @@
 mod ui;
-mod vt;
 
 use std::{
     path::Path,
@@ -7,7 +6,6 @@ use std::{
     time::Duration,
 };
 
-use bytes::Bytes;
 use ratatui::{
     Terminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -17,9 +15,9 @@ use terminput_crossterm::to_terminput;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::{MIN_FPS, run::app::vt::TerminalEmulator},
+    cli::MIN_FPS,
     error::{UserError, WrapUserError},
-    pty::PtySession,
+    pty::Pty,
     scell::SCell,
 };
 
@@ -56,11 +54,11 @@ impl App {
 
             if let App::RunningPty(ref mut state) = app {
                 // Notify container's session about screen resize
-                let (curr_height, curr_width) = state.term.size();
+                let (curr_height, curr_width) = state.pty.size();
                 if curr_height != prev_height || curr_width != prev_width {
                     tokio::spawn({
                         let buildkit = buildkit.clone();
-                        let session_id = state.pty.session_id().to_owned();
+                        let session_id = state.pty.container_session_id().to_owned();
                         async move {
                             buildkit
                                 .resize_shell(&session_id, curr_height, curr_width)
@@ -106,11 +104,7 @@ impl App {
                 if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
                     && let Some(bytes) = buf.get(..written)
                 {
-                    state
-                        .pty
-                        .stdin
-                        .send(Bytes::copy_from_slice(bytes))
-                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+                    state.pty.process_stdin(bytes);
                 }
                 // Handles every other app state
             } else if matches!(self, App::Finished) {
@@ -208,21 +202,18 @@ impl App {
     }
 
     fn running_pty(
-        pty: PtySession,
+        pty: Pty,
         scell: &SCell,
     ) -> color_eyre::Result<Self> {
-        let term = TerminalEmulator::new(pty.stdin.clone());
-
         Ok(Self::RunningPty(Box::new(RunningPtyState {
             pty,
             scell_name: scell.name()?.to_string(),
-            term,
         })))
     }
 }
 
 pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<(PtySession, SCell)>>,
+    rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
 }
@@ -249,31 +240,12 @@ impl PreparingState {
 }
 
 pub struct RunningPtyState {
-    pty: PtySession,
+    pty: Pty,
     scell_name: String,
-    term: TerminalEmulator,
 }
 
 impl RunningPtyState {
-    pub fn try_update(&mut self) -> bool {
-        let stdout_res = match self.pty.stdout.recv_timeout(MIN_FPS) {
-            Ok(bytes) => {
-                self.term.process(&bytes);
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        };
-
-        let stderr_res = match self.pty.stderr.recv_timeout(MIN_FPS) {
-            Ok(bytes) => {
-                self.term.process(&bytes);
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        };
-
-        stdout_res && stderr_res
+    fn try_update(&mut self) -> bool {
+        self.pty.process_stdout_and_stderr(MIN_FPS)
     }
 }
