@@ -14,8 +14,6 @@ Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, a
 
 `Shell-Cell` reads a `scell.yml` blueprint file, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
 
-Unlike standard containers that run a task and exit, `Shell-Cell` containers stay alive in the background, so you can jump in and out instantly.
-
 ## 🚀 Quick Start
 
 ### Prerequisites

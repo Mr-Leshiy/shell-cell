@@ -6,7 +6,7 @@ use ratatui::{
 };
 
 use super::App;
-use crate::cli::run::app::LogType;
+use crate::cli::run::app::{LogType, vt::TerminalEmulator};
 
 impl Widget for &mut App {
     fn render(
@@ -69,17 +69,7 @@ impl Widget for &mut App {
                 .title_bottom("Ctrl-D: exit");
             let inner = block.inner(area);
             Widget::render(block, area, buf);
-            // set the proper size for the terminal screen
-            state
-                .parser
-                .screen_mut()
-                .set_size(inner.height, inner.width);
-
-            Widget::render(
-                tui_term::widget::PseudoTerminal::new(state.parser.screen()),
-                inner,
-                buf,
-            );
+            Widget::render(&mut state.term, inner, buf);
         } else if let App::Finished = self {
             let block = block.title("'Shell-Cell'");
             let inner = block.inner(area);
@@ -108,6 +98,24 @@ impl Widget for &mut App {
             #[allow(clippy::indexing_slicing)]
             Widget::render(paragraph, vertical_layout[1], buf);
         }
+    }
+}
+
+impl Widget for &mut TerminalEmulator {
+    fn render(
+        self,
+        area: ratatui::prelude::Rect,
+        buf: &mut ratatui::prelude::Buffer,
+    ) where
+        Self: Sized,
+    {
+        // set the proper size for the terminal screen
+        self.set_size(area.height, area.width);
+        Widget::render(
+            tui_term::widget::PseudoTerminal::new(self.screen()),
+            area,
+            buf,
+        );
     }
 }
 
