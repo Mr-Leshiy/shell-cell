@@ -141,7 +141,7 @@ impl App {
                 }
 
                 drop(logs_tx.send((
-                    "📝 Compiling Shell-Cell blueprint file".to_string(),
+                    "📝 Compiling Shell-Cell blueprint".to_string(),
                     LogType::Main,
                 )));
                 let scell = SCell::compile(scell_path, None)?;
