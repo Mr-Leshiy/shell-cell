@@ -31,19 +31,18 @@ impl Callbacks for TerminalCallback {
     fn unhandled_csi(
         &mut self,
         screen: &mut tui_term::vt100::Screen,
-        _i1: Option<u8>,
-        _i2: Option<u8>,
+        i1: Option<u8>,
+        i2: Option<u8>,
         params: &[&[u16]],
         c: char,
     ) {
-        // Device Status Report <https://ghostty.org/docs/vt/csi/dsr>
-        if c == 'n' {
-            // The operating status is requested
-            if let &[&[5]] = params {
+        match (i1, i2, params, c) {
+            // Device Status Report (The operating status is requested) <https://ghostty.org/docs/vt/csi/dsr>
+            (None, None, &[&[5]], 'n') => {
                 drop(self.0.send(b"\x1b[0n".as_slice().into()));
-            }
-            // The cursor position is requested
-            if let &[&[6]] = params {
+            },
+            // Device Status Report (The cursor position is requested) <https://ghostty.org/docs/vt/csi/dsr>
+            (None, None, &[&[6]], 'n') => {
                 let (row, col) = screen.cursor_position();
                 drop(
                     self.0.send(
@@ -52,7 +51,8 @@ impl Callbacks for TerminalCallback {
                             .into(),
                     ),
                 );
-            }
+            },
+            _ => {},
         }
     }
 }

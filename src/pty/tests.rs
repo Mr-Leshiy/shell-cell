@@ -90,6 +90,7 @@ const SCREEN_SIZE: u16 = 10;
 // -----
 // CSI test cases
 // -----
+// TODO: implement
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     const TIMEOUT: Duration = Duration::from_secs(1);
@@ -107,4 +108,49 @@ async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
         assert!(!pty.process_stdout_and_stderr(TIMEOUT));
     }
     (pty.screen().contents(), pty.screen().cursor_position())
+}
+
+#[test_case(
+    &[
+        b"\x1B[5n",
+    ]
+    =>
+    b"\x1b[0n".to_vec()
+    ;
+    "DSR V-1: Operating Status" // <https://ghostty.org/docs/vt/csi/dsr#dsr-v-1:-operating-status>
+)]
+#[test_case(
+    &[
+        b"\x1B[2;4H",
+        b"\x1B[6n",
+    ]
+    =>
+    b"\x1b[2;4R".to_vec()
+    ;
+    "DSR V-2: Cursor Position" // <https://ghostty.org/docs/vt/csi/dsr#dsr-v-2:-cursor-position>
+)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn pty_with_response_test(stdout: &'static [&[u8]]) -> Vec<u8> {
+    const TIMEOUT: Duration = Duration::from_secs(1);
+
+    let (input_writer, mut input_reader) = tokio::io::duplex(1024);
+    let input = Box::pin(input_writer);
+    let output = Box::pin(futures::stream::iter(stdout.iter().map(|s| {
+        Ok(LogOutput::StdOut {
+            message: Bytes::copy_from_slice(s),
+        })
+    })));
+    let mut pty = Pty::new("test_session".to_string(), output, input);
+    pty.set_size(SCREEN_SIZE, SCREEN_SIZE);
+
+    for _ in stdout {
+        assert!(!pty.process_stdout_and_stderr(TIMEOUT));
+    }
+
+    use tokio::io::AsyncReadExt;
+    drop(pty);
+    // The write side is dropped with pty, so this will read until EOF
+    let mut result = Vec::new();
+    input_reader.read_to_end(&mut result).await.unwrap();
+    result
 }
