@@ -1,13 +1,27 @@
 use std::sync::mpsc::Sender;
 
 use bytes::Bytes;
-use tui_term::vt100::Callbacks;
+use tui_term::vt100::{Callbacks, Parser};
 
 /// `vt100::Callbacks` implementation, to properly handle unhandled by `vt100::Parser`
 /// escape codes.
 pub struct TerminalCallback(pub Sender<Bytes>);
 
 impl Callbacks for TerminalCallback {
+    fn unhandled_escape(
+        &mut self,
+        screen: &mut tui_term::vt100::Screen,
+        i1: Option<u8>,
+        i2: Option<u8>,
+        b: u8,
+    ) {
+        match (i1, i2, b) {
+            // https://ghostty.org/docs/vt/esc/decaln
+            (Some(b'#'), None, b'8') => decaln(screen),
+            _ => {},
+        }
+    }
+
     /// This callback is called when the terminal receives a CSI sequence
     /// (`\e[`) which is otherwise not implemented.
     ///
@@ -39,4 +53,16 @@ impl Callbacks for TerminalCallback {
             }
         }
     }
+}
+
+/// DECALN - Screen Alignment Test
+/// <https://ghostty.org/docs/vt/esc/decaln>
+fn decaln(screen: &mut tui_term::vt100::Screen) {
+    let (rows, cols) = screen.size();
+    let mut parser = Parser::new(rows, cols, 0);
+    // fills screen with 'E' characters
+    parser.process(&(0..rows*cols).map(|_| b'E').collect::<Vec<u8>>());
+    // move cursor to top left position
+    parser.process(b"\x1B[H");
+    screen.clone_from(parser.screen());
 }
