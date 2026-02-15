@@ -10,9 +10,11 @@ repo = "shell-cell"
 # See https://keats.github.io/tera/docs/#introduction
 body = """
 ## What's Changed
-
 {%- if version %} in {{ version | trim_start_matches(pat="v") }}{%- endif -%}
-{% for commit in commits %}
+
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits -%}
   {% if commit.remote.pr_title -%}
     {%- set commit_message = commit.remote.pr_title -%}
   {%- else -%}
@@ -21,30 +23,32 @@ body = """
   * {{ commit_message | split(pat="\n") | first | trim }}\
     {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
     {% if commit.remote.pr_number %} in \
-      [#{{ commit.remote.pr_number }}](<{{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}>) \
+      [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
     {%- endif %}
-{%- endfor -%}
+{% endfor -%}
+{% endfor -%}
 
 {%- if github -%}
-{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
-  {% raw %}\n{% endraw -%}
-  ### New Contributors
-{%- endif %}\
+{%- if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+### New Contributors
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution
     {%- if contributor.pr_number %} in \
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
-{%- endfor -%}
+{%- endfor %}
 {%- endif -%}
+{%- endif %}
 
-{% if version %}
-    {% if previous.version %}
-      **Full Changelog**: <{{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}>
-    {% endif %}
-{% else -%}
-  {% raw %}\n{% endraw %}
-{% endif %}
+{% if version -%}
+  {% if previous.version -%}
+    **Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
+  {% endif -%}
+
+**Links:**
+- [GitHub Release]({{ self::remote_url() }}/releases/tag/{{ version }})
+- [crates.io](https://crates.io/crates/scell)
+{% endif -%}
 
 {%- macro remote_url() -%}
   https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
@@ -54,11 +58,7 @@ body = """
 trim = true
 # A Tera template to be rendered as the changelog's footer.
 # See https://keats.github.io/tera/docs/#introduction
-footer = """
-**Links:**
-  - [GitHub Release](<https://github.com/Mr-Leshiy/shell-cell/releases/tag/${{ needs.plan.outputs.tag }}>)
-  - [crates.io](<https://crates.io/crates/scell>)"
-"""
+footer = ""
 # An array of regex based postprocessors to modify the changelog.
 # Replace the placeholder `<REPO>` with a URL.
 postprocessors = []
@@ -75,9 +75,18 @@ split_commits = false
 commit_preprocessors = [{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" }]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = true
-# Commits to skip
+# Commit group parsers
 commit_parsers = [
   { message = "^ci", skip = true },
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^refactor", group = "Refactoring" },
+  { message = "^doc", group = "Documentation" },
+  { message = "^perf", group = "Performance" },
+  { message = "^style", group = "Styling" },
+  { message = "^test", group = "Testing" },
+  { message = "^chore", skip = true },
+  { message = "^build", group = "Build" },
 ]
 # Order releases topologically instead of chronologically.
 topo_order = false
