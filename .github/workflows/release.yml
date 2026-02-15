@@ -385,7 +385,7 @@ jobs:
         run: |
           CHANGELOG=$(cat $RUNNER_TEMP/changelog.txt)
           MESSAGE=$(cat <<'MSGEOF'
-          **${{ fromJson(needs.host.outputs.val).announcement_title }}** has been released! :rocket:
+          **${{ fromJson(needs.host.outputs.val).announcement_title }}** has been released! :rocket: \n
 
           MSGEOF
           )
