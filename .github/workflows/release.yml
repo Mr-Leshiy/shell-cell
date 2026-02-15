@@ -39,7 +39,6 @@ permissions:
 # If there's a prerelease-style suffix to the version, then the release(s)
 # will be marked as a prerelease.
 on:
-  pull_request:
   push:
     tags:
       - '**[0-9]+.[0-9]+.[0-9]+*'
@@ -247,14 +246,40 @@ jobs:
           path: |
             ${{ steps.cargo-dist.outputs.paths }}
             ${{ env.BUILD_MANIFEST_NAME }}
+  # Generate changelog using git-cliff, uploaded as an artifact for reuse
+  generate-changelog:
+    needs:
+      - plan
+    if: ${{ needs.plan.outputs.publishing == 'true' }}
+    runs-on: "ubuntu-22.04"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Generate Changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: changelog.txt
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: changelog.txt
+
   # Determines if we should publish/announce
   host:
     needs:
       - plan
       - build-local-artifacts
       - build-global-artifacts
+      - generate-changelog
     # Only run if we're "publishing", and only if plan, local and global didn't fail (skipped is fine)
-    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' && (needs.build-global-artifacts.result == 'skipped' || needs.build-global-artifacts.result == 'success') && (needs.build-local-artifacts.result == 'skipped' || needs.build-local-artifacts.result == 'success') }}
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' && needs.generate-changelog.result == 'success' && (needs.build-global-artifacts.result == 'skipped' || needs.build-global-artifacts.result == 'success') && (needs.build-local-artifacts.result == 'skipped' || needs.build-local-artifacts.result == 'success') }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: "ubuntu-22.04"
@@ -302,16 +327,11 @@ jobs:
         run: |
           # Remove the granular manifests
           rm -f artifacts/*-dist-manifest.json
-      - name: Generate Changelog
-        uses: orhun/git-cliff-action@v4
-        id: changelog
+      - name: Download changelog
+        uses: actions/download-artifact@v4
         with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: ${{ runner.temp }}/changelog.txt
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          name: changelog
+          path: ${{ runner.temp }}
       - name: Create GitHub Release
         env:
           PRERELEASE_FLAG: "${{ fromJson(steps.host.outputs.manifest).announcement_is_prerelease && '--prerelease' || '' }}"
@@ -347,20 +367,40 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: cargo publish --token "$CARGO_REGISTRY_TOKEN"
 
-  # TODO: dont have that step yet
-  # announce:
-  #   needs:
-  #     - plan
-  #     - host
-  #   # use "always() && ..." to allow us to wait for all publish jobs while
-  #   # still allowing individual publish jobs to skip themselves (for prereleases).
-  #   # "host" however must run to completion, no skipping allowed!
-  #   if: ${{ always() && needs.host.result == 'success' }}
-  #   runs-on: "ubuntu-22.04"
-  #   env:
-  #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         persist-credentials: false
-  #         submodules: recursive
+  announce:
+    needs:
+      - host
+      - publish-crates-io
+      - generate-changelog
+    if: ${{ always() && needs.host.result == 'success' }}
+    runs-on: "ubuntu-22.04"
+    steps:
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: ${{ runner.temp }}
+      - name: Prepare announcement message
+        id: message
+        run: |
+          CHANGELOG=$(cat $RUNNER_TEMP/changelog.txt)
+          MESSAGE=$(cat <<'MSGEOF'
+          **${{ fromJson(needs.host.outputs.val).announcement_title }}** has been released! :rocket:
+
+          MSGEOF
+          )
+          MESSAGE="${MESSAGE}${CHANGELOG}"
+          MESSAGE="${MESSAGE}
+
+          **Links:**
+          - [GitHub Release](https://github.com/Mr-Leshiy/shell-cell/releases/tag/${{ needs.plan.outputs.tag }})
+          - [crates.io](https://crates.io/crates/scell)"
+
+          echo "content<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+      - name: Send Discord Announcement
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content: ${{ steps.message.outputs.content }}
