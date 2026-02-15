@@ -5,8 +5,10 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
-use super::App;
-use crate::cli::run::app::{LogType, vt::TerminalEmulator};
+use crate::{
+    cli::run::app::{App, LogType},
+    pty::Pty,
+};
 
 impl Widget for &mut App {
     fn render(
@@ -69,7 +71,7 @@ impl Widget for &mut App {
                 .title_bottom("Ctrl-D: exit");
             let inner = block.inner(area);
             Widget::render(block, area, buf);
-            Widget::render(&mut state.term, inner, buf);
+            Widget::render(&mut state.pty, inner, buf);
         } else if let App::Finished = self {
             let block = block.title("'Shell-Cell'");
             let inner = block.inner(area);
@@ -101,7 +103,7 @@ impl Widget for &mut App {
     }
 }
 
-impl Widget for &mut TerminalEmulator {
+impl Widget for &mut Pty {
     fn render(
         self,
         area: ratatui::prelude::Rect,

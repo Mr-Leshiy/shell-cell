@@ -13,7 +13,7 @@ use crate::{
         container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
         remove_container, remove_image, stop_container,
     },
-    pty::PtySession,
+    pty::Pty,
     scell::{SCell, container_info::SCellContainerInfo},
 };
 
@@ -118,13 +118,13 @@ impl BuildKitD {
     pub async fn attach_to_shell(
         &self,
         scell: &SCell,
-    ) -> color_eyre::Result<PtySession> {
+    ) -> color_eyre::Result<Pty> {
         let (session_id, output, input) =
             container_iteractive_exec(&self.docker, &scell.name()?.to_string(), true, vec![
                 scell.shell().to_string(),
             ])
             .await?;
-        Ok(PtySession::new(session_id, output, input))
+        Ok(Pty::new(session_id, output, input))
     }
 
     pub async fn resize_shell(
