@@ -3,6 +3,7 @@ use std::time::Duration;
 use bollard::container::LogOutput;
 use bytes::Bytes;
 use test_case::test_case;
+use tokio::io::AsyncReadExt;
 
 use crate::pty::Pty;
 
@@ -147,7 +148,6 @@ async fn pty_with_response_test(stdout: &'static [&[u8]]) -> Vec<u8> {
         assert!(!pty.process_stdout_and_stderr(TIMEOUT));
     }
 
-    use tokio::io::AsyncReadExt;
     drop(pty);
     // The write side is dropped with pty, so this will read until EOF
     let mut result = Vec::new();
