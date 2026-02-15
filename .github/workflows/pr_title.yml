@@ -4,9 +4,6 @@ on:
   pull_request_target:
     types: [opened, edited, synchronize, reopened]
 
-permissions:
-  pull-requests: read
-
 jobs:
   conventional-commits:
     name: Conventional Commits
