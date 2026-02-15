@@ -97,7 +97,7 @@ async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     let input = Box::pin(Vec::new());
     let output = Box::pin(futures::stream::iter(stdout.iter().map(|s| {
         Ok(LogOutput::StdOut {
-            message: Bytes::copy_from_slice(*s),
+            message: Bytes::copy_from_slice(s),
         })
     })));
     let mut pty = Pty::new("test_session".to_string(), output, input);

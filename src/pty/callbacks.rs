@@ -63,7 +63,8 @@ fn esc_decaln(screen: &mut tui_term::vt100::Screen) {
     let (rows, cols) = screen.size();
     let mut parser = Parser::new(rows, cols, 0);
     // fills screen with 'E' characters
-    parser.process(&(0..rows * cols).map(|_| b'E').collect::<Vec<u8>>());
+    let items = u32::from(rows).saturating_mul(cols.into());
+    parser.process(&(0..items).map(|_| b'E').collect::<Vec<u8>>());
     // move cursor to top left position
     parser.process(b"\x1B[H");
     screen.clone_from(parser.screen());
@@ -76,12 +77,19 @@ fn esc_ind(screen: &mut tui_term::vt100::Screen) {
     let (cursor_row, cursor_col) = screen.cursor_position();
 
     let mut seq = Vec::new();
-    if cursor_row == rows - 1 {
+    if cursor_row == rows.saturating_sub(1) {
         // At the bottom — scroll entire screen up one line
         seq.extend_from_slice(b"\x1B[S");
     } else {
         // Move cursor down one line, same column (1-indexed)
-        seq.extend_from_slice(format!("\x1B[{};{}H", cursor_row + 2, cursor_col + 1).as_bytes());
+        seq.extend_from_slice(
+            format!(
+                "\x1B[{};{}H",
+                cursor_row.saturating_add(2),
+                cursor_col.saturating_add(1)
+            )
+            .as_bytes(),
+        );
     }
 
     let contents = screen.contents_formatted();
@@ -104,7 +112,9 @@ fn esc_ri(screen: &mut tui_term::vt100::Screen) {
         seq.extend_from_slice(b"\x1B[T");
     } else {
         // Move cursor up one line, same column (1-indexed)
-        seq.extend_from_slice(format!("\x1B[{};{}H", cursor_row, cursor_col + 1).as_bytes());
+        seq.extend_from_slice(
+            format!("\x1B[{};{}H", cursor_row, cursor_col.saturating_add(1)).as_bytes(),
+        );
     }
 
     let contents = screen.contents_formatted();
