@@ -393,8 +393,8 @@ jobs:
           MESSAGE="${MESSAGE}
 
           **Links:**
-          - [GitHub Release](https://github.com/Mr-Leshiy/shell-cell/releases/tag/${{ needs.plan.outputs.tag }})
-          - [crates.io](https://crates.io/crates/scell)"
+          - [GitHub Release](<https://github.com/Mr-Leshiy/shell-cell/releases/tag/${{ needs.plan.outputs.tag }}>)
+          - [crates.io](<https://crates.io/crates/scell>)"
 
           echo "content<<EOF" >> "$GITHUB_OUTPUT"
           echo "$MESSAGE" >> "$GITHUB_OUTPUT"

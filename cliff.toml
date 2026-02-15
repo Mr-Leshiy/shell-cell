@@ -21,7 +21,7 @@ body = """
   * {{ commit_message | split(pat="\n") | first | trim }}\
     {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
     {% if commit.remote.pr_number %} in \
-      [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
+      [#{{ commit.remote.pr_number }}](<{{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}>) \
     {%- endif %}
 {%- endfor -%}
 
@@ -40,7 +40,7 @@ body = """
 
 {% if version %}
     {% if previous.version %}
-      **Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
+      **Full Changelog**: <{{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}>
     {% endif %}
 {% else -%}
   {% raw %}\n{% endraw %}
