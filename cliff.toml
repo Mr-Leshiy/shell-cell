@@ -10,9 +10,9 @@ repo = "shell-cell"
 # See https://keats.github.io/tera/docs/#introduction
 body = """
 {%- if version %}
-{{ version }} has been released! :rocket:
+# {{ version }} has been released! :rocket:
 
-## What's Changed in {{ version | trim_start_matches(pat="v") }}
+## What's Changed
 {%- else %}
 ## What's Changed
 {%- endif %}
