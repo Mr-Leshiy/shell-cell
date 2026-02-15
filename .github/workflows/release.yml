@@ -384,15 +384,9 @@ jobs:
         id: message
         run: |
           CHANGELOG=$(cat $RUNNER_TEMP/changelog.txt)
-          MESSAGE=$(cat <<'MSGEOF'
-          **${{ fromJson(needs.host.outputs.val).announcement_title }}** has been released! :rocket: \n
-
-          MSGEOF
-          )
-          MESSAGE="${MESSAGE}${CHANGELOG}"
 
           echo "content<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Send Discord Announcement
         uses: tsickert/discord-webhook@v7.0.0
