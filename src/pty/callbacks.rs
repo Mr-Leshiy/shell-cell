@@ -81,9 +81,7 @@ fn esc_ind(screen: &mut tui_term::vt100::Screen) {
         seq.extend_from_slice(b"\x1B[S");
     } else {
         // Move cursor down one line, same column (1-indexed)
-        seq.extend_from_slice(
-            format!("\x1B[{};{}H", cursor_row + 2, cursor_col + 1).as_bytes()
-        );
+        seq.extend_from_slice(format!("\x1B[{};{}H", cursor_row + 2, cursor_col + 1).as_bytes());
     }
 
     let contents = screen.contents_formatted();
@@ -106,9 +104,7 @@ fn esc_ri(screen: &mut tui_term::vt100::Screen) {
         seq.extend_from_slice(b"\x1B[T");
     } else {
         // Move cursor up one line, same column (1-indexed)
-        seq.extend_from_slice(
-            format!("\x1B[{};{}H", cursor_row, cursor_col + 1).as_bytes()
-        );
+        seq.extend_from_slice(format!("\x1B[{};{}H", cursor_row, cursor_col + 1).as_bytes());
     }
 
     let contents = screen.contents_formatted();

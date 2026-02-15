@@ -8,6 +8,9 @@ use crate::pty::Pty;
 
 const SCREEN_SIZE: u16 = 10;
 
+// -----
+// ESC test cases
+// -----
 #[test_case(
     &[b"\x1B#8"]
     =>
@@ -84,8 +87,11 @@ const SCREEN_SIZE: u16 = 10;
     ;
     "RI V-2: No Scroll Region, Not Top of Screen" // <https://ghostty.org/docs/vt/esc/ri#ri-v-2:-no-scroll-region-not-top-of-screen>
 )]
+// -----
+// CSI test cases
+// -----
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn esc_codes_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
+async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     const TIMEOUT: Duration = Duration::from_secs(1);
 
     let input = Box::pin(Vec::new());
