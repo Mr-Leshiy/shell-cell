@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Shell-Cell (`scell`) is a lightweight CLI tool that creates instant, isolated, and reproducible containerized development shell sessions. It uses YAML blueprint files (`scell.yml`) to define layered environments (called "targets") that compile into Docker images and run as persistent "shell server" containers.
+Shell-Cell (`scell`) is a lightweight CLI tool that creates instant, isolated, and reproducible containerized development shell sessions. It uses YAML blueprints (`scell.yml`) to define layered environments (called "targets") that compile into Docker images and run as persistent "shell server" containers.
 
 **Key Concept**: Unlike standard containers that run a task and exit, Shell-Cell containers use a `hang` instruction to stay alive as background servers, allowing multiple shell sessions to attach to a warm, ready environment.
 
@@ -129,7 +129,7 @@ This project has **strict linting** (see Cargo.toml lints):
 scell_home_dir() // Returns ~/.scell/
 ```
 
-### Blueprint File Location
+### Blueprint Location
 The CLI accepts a directory path, not a file path. It always looks for `scell.yml` in that directory.
 
 ### Docker Integration
@@ -138,7 +138,7 @@ All Docker operations go through `BuildKitD` (`src/buildkit/mod.rs`), which wrap
 ## Testing
 
 Tests use `test-case` crate for parameterized tests. Compilation tests are in `src/scell/compile/tests/` with subdirectories:
-- `ok/` - Valid blueprint files that should compile successfully
-- `err/` - Invalid blueprint files that should produce specific errors
+- `ok/` - Valid blueprints that should compile successfully
+- `err/` - Invalid blueprints that should produce specific errors
 
 **Critical**: Tests MUST run with `--test-threads 1` due to Docker state dependencies.

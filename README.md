@@ -6,13 +6,13 @@
 
 Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
 
-> ⚠️ Prototype, under heavy development
+> ⚠️ Under heavy development, backwards compatibility is not guaranteed, and future versions may introduce breaking changes.
 
 </div>
 
 ## 💡 How It Works
 
-`Shell-Cell` reads a `scell.yml` blueprint file, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
+`Shell-Cell` reads a `scell.yml` blueprint, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
 
 ## 🚀 Quick Start
 
@@ -38,7 +38,7 @@ For socket configuration and other setup details, see the [Install and Configure
 
 ### Create a Blueprint
 
-Place a `scell.yml` file in your project directory (see the full [Blueprint File Reference](https://mr-leshiy.github.io/shell-cell/blueprint) for all available instructions):
+Place a `scell.yml` file in your project directory (see the full [Blueprint Reference](https://mr-leshiy.github.io/shell-cell/blueprint) for all available instructions):
 
 ```yml
 main:
