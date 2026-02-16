@@ -154,18 +154,16 @@ fn render_confirm_remove(
     .split(vertical[1]);
 
     let confirm_text = vec![
-        Line::from(vec![
-            Span::styled(
-                "⚠ WARNING",
-                Style::default()
-                    .fg(Color::Red)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            "⚠ WARNING",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         Line::from(Span::styled(
             format!("Remove container '{container_name}'?"),
-            Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
         Line::from(Span::styled(
@@ -183,11 +181,22 @@ fn render_confirm_remove(
         Line::from(""),
         Line::from(vec![
             Span::styled("Press ", Style::default().fg(Color::Gray)),
-            Span::styled("y", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "y",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled(" to confirm, ", Style::default().fg(Color::Gray)),
-            Span::styled("n", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "n",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(" or ", Style::default().fg(Color::Gray)),
-            Span::styled("Esc", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Esc",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(" to cancel", Style::default().fg(Color::Gray)),
         ]),
     ];
@@ -231,9 +240,7 @@ fn render_removing(
         Line::from(vec![
             Span::styled(
                 "Removing",
-                Style::default()
-                    .fg(Color::Red)
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             ),
             Span::styled("...", Style::default().fg(Color::Red)),
         ]),

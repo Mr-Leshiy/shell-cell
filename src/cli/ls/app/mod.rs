@@ -8,11 +8,7 @@ use ratatui::{
     widgets::TableState,
 };
 
-use crate::{
-    buildkit::BuildKitD,
-    cli::MIN_FPS,
-    scell::container_info::SCellContainerInfo,
-};
+use crate::{buildkit::BuildKitD, cli::MIN_FPS, scell::container_info::SCellContainerInfo};
 
 /// State machine for the `ls` interactive TUI.
 ///
@@ -44,69 +40,51 @@ pub enum App {
 }
 
 impl App {
-    /// Creates a new `App` in the `Loading` state, spawning an async task
-    /// that fetches the current Shell-Cell container list.
-    pub fn loading(buildkit: BuildKitD) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        tokio::spawn({
-            let buildkit = buildkit.clone();
-            async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    res
-                }
-                .await;
-                drop(tx.send(result));
-            }
-        });
-
-        App::Loading { rx, buildkit }
-    }
-
     /// Runs the TUI event loop, polling for state transitions and key events.
     pub fn run<B: ratatui::backend::Backend>(
-        mut self,
+        buildkit: &BuildKitD,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
+        // First step
+        let mut app = Self::loading(buildkit.clone());
+
         loop {
             // Loading → Ls: container list is ready
             if let App::Loading {
                 ref rx,
                 ref buildkit,
-            } = self
+            } = app
                 && let Ok(result) = rx.try_recv()
             {
                 let containers = result?;
-                self = App::Ls(LsState::new(containers, buildkit.clone()));
+                app = App::Ls(LsState::new(containers, buildkit.clone()));
             }
 
             // Stopping → Ls: stop finished and refreshed list is available
-            if let App::Stopping(ref mut state) = self
-                && let Some((containers, buildkit)) = state.try_recv()
+            if let App::Stopping(ref mut state) = app
+                && let Some(containers) = state.try_recv()?
             {
-                self = App::Ls(LsState::new(containers, buildkit));
+                app = App::Ls(LsState::new(containers, buildkit.clone()));
             }
 
             // Removing → Ls: remove finished and refreshed list is available
-            if let App::Removing(ref mut state) = self
-                && let Some((containers, buildkit)) = state.try_recv()
+            if let App::Removing(ref mut state) = app
+                && let Some(containers) = state.try_recv()?
             {
-                self = App::Ls(LsState::new(containers, buildkit));
+                app = App::Ls(LsState::new(containers, buildkit.clone()));
             }
 
-            if matches!(self, App::Exit) {
+            if matches!(app, App::Exit) {
                 return Ok(());
             }
 
             terminal
                 .draw(|f| {
-                    f.render_widget(&self, f.area());
+                    f.render_widget(&app, f.area());
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 
-            self.handle_key_event()?;
+            app.handle_key_event()?;
         }
     }
 
@@ -168,6 +146,27 @@ impl App {
         }
         Ok(())
     }
+
+    /// Creates a new `App` in the `Loading` state, spawning an async task
+    /// that fetches the current Shell-Cell container list.
+    fn loading(buildkit: BuildKitD) -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        tokio::spawn({
+            let buildkit = buildkit.clone();
+            async move {
+                let result = async {
+                    let res = buildkit.list_containers().await;
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    res
+                }
+                .await;
+                drop(tx.send(result));
+            }
+        });
+
+        App::Loading { rx, buildkit }
+    }
 }
 
 /// Holds the data for the interactive container table view.
@@ -178,7 +177,10 @@ pub struct LsState {
 }
 
 impl LsState {
-    pub fn new(containers: Vec<SCellContainerInfo>, buildkit: BuildKitD) -> Self {
+    pub fn new(
+        containers: Vec<SCellContainerInfo>,
+        buildkit: BuildKitD,
+    ) -> Self {
         let mut table_state = TableState::default();
         if !containers.is_empty() {
             table_state.select(Some(0));
@@ -229,20 +231,17 @@ impl LsState {
         tokio::spawn({
             let buildkit = buildkit.clone();
             async move {
-                let res = buildkit
-                    .stop_container_by_name(&container_name)
-                    .await;
-                let result = match res {
+                let res = buildkit.stop_container_by_name(&container_name).await;
+                let res = match res {
                     Ok(()) => buildkit.list_containers().await,
                     Err(e) => Err(e),
                 };
-                drop(tx.send(result));
+                drop(tx.send(res));
             }
         });
 
         Some(StoppingState {
             container_name: container.name.to_string(),
-            buildkit,
             rx,
         })
     }
@@ -267,7 +266,6 @@ impl LsState {
 /// Displays a warning that all container state will be lost and waits for
 /// the user to press 'y' (confirm) or 'n'/'Esc' (cancel).
 pub struct ConfirmRemoveState {
-    /// Name of the container to be removed (used for UI display).
     container_name: String,
     containers: Vec<SCellContainerInfo>,
     buildkit: BuildKitD,
@@ -283,20 +281,17 @@ impl ConfirmRemoveState {
         tokio::spawn({
             let buildkit = buildkit.clone();
             async move {
-                let res = buildkit
-                    .cleanup_container_by_name(&container_name)
-                    .await;
-                let result = match res {
+                let res = buildkit.cleanup_container_by_name(&container_name).await;
+                let res = match res {
                     Ok(()) => buildkit.list_containers().await,
                     Err(e) => Err(e),
                 };
-                drop(tx.send(result));
+                drop(tx.send(res));
             }
         });
 
         RemovingState {
             container_name: self.container_name,
-            buildkit: self.buildkit,
             rx,
         }
     }
@@ -312,9 +307,7 @@ impl ConfirmRemoveState {
 /// The spawned task stops the container and then re-fetches the full
 /// container list, sending the result back over the channel.
 pub struct StoppingState {
-    /// Name of the container being stopped (used for UI display).
     container_name: String,
-    buildkit: BuildKitD,
     rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }
 
@@ -323,15 +316,14 @@ impl StoppingState {
     ///
     /// Returns `Some((containers, buildkit))` with the refreshed container
     /// list when the operation is done, or `None` if still in progress.
-    fn try_recv(&mut self) -> Option<(Vec<SCellContainerInfo>, BuildKitD)> {
+    fn try_recv(&mut self) -> color_eyre::Result<Option<Vec<SCellContainerInfo>>> {
         match self.rx.recv_timeout(MIN_FPS) {
-            Ok(result) => {
-                let containers = result.unwrap_or_default();
-                Some((containers, self.buildkit.clone()))
-            },
-            Err(RecvTimeoutError::Timeout) => None,
+            Ok(result) => result.map(Some),
+            Err(RecvTimeoutError::Timeout) => Ok(None),
             Err(RecvTimeoutError::Disconnected) => {
-                Some((Vec::new(), self.buildkit.clone()))
+                color_eyre::eyre::bail!(
+                    "StoppingState channel cannot be disconnected without returning a result"
+                )
             },
         }
     }
@@ -344,7 +336,6 @@ impl StoppingState {
 pub struct RemovingState {
     /// Name of the container being removed (used for UI display).
     container_name: String,
-    buildkit: BuildKitD,
     rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }
 
@@ -353,15 +344,14 @@ impl RemovingState {
     ///
     /// Returns `Some((containers, buildkit))` with the refreshed container
     /// list when the operation is done, or `None` if still in progress.
-    fn try_recv(&mut self) -> Option<(Vec<SCellContainerInfo>, BuildKitD)> {
+    fn try_recv(&mut self) -> color_eyre::Result<Option<Vec<SCellContainerInfo>>> {
         match self.rx.recv_timeout(MIN_FPS) {
-            Ok(result) => {
-                let containers = result.unwrap_or_default();
-                Some((containers, self.buildkit.clone()))
-            },
-            Err(RecvTimeoutError::Timeout) => None,
+            Ok(result) => result.map(Some),
+            Err(RecvTimeoutError::Timeout) => Ok(None),
             Err(RecvTimeoutError::Disconnected) => {
-                Some((Vec::new(), self.buildkit.clone()))
+                color_eyre::eyre::bail!(
+                    "RemovingState channel cannot be disconnected without returning a result"
+                )
             },
         }
     }
