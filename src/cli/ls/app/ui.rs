@@ -15,14 +15,13 @@ impl Widget for &App {
     ) where
         Self: Sized,
     {
-        if let App::Loading { .. } = self {
-            render_loading(area, buf);
-        }
-        if let App::Ls(ls_state) = self {
-            render_ls(ls_state, area, buf);
-        }
-        if let App::Stopping(state) = self {
-            render_stopping(&state.container_name, area, buf)
+        match self {
+            App::Loading { .. } => render_loading(area, buf),
+            App::Ls(ls_state) => render_ls(ls_state, area, buf),
+            App::Stopping(state) => render_stopping(&state.container_name, area, buf),
+            App::ConfirmRemove(state) => render_confirm_remove(&state.container_name, area, buf),
+            App::Removing(state) => render_removing(&state.container_name, area, buf),
+            App::Exit => {},
         }
     }
 }
@@ -131,6 +130,132 @@ fn render_stopping(
 }
 
 #[allow(clippy::indexing_slicing)]
+fn render_confirm_remove(
+    container_name: &str,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let block = main_block();
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
+    let vertical = Layout::vertical([
+        Constraint::Percentage(30),
+        Constraint::Length(9),
+        Constraint::Percentage(30),
+    ])
+    .split(inner);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(15),
+        Constraint::Percentage(70),
+        Constraint::Percentage(15),
+    ])
+    .split(vertical[1]);
+
+    let confirm_text = vec![
+        Line::from(vec![
+            Span::styled(
+                "⚠ WARNING",
+                Style::default()
+                    .fg(Color::Red)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("Remove container '{container_name}'?"),
+            Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            "This will permanently delete:",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from(Span::styled(
+            "  • The container and all its state",
+            Style::default().fg(Color::Gray),
+        )),
+        Line::from(Span::styled(
+            "  • The associated image",
+            Style::default().fg(Color::Gray),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("Press ", Style::default().fg(Color::Gray)),
+            Span::styled("y", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled(" to confirm, ", Style::default().fg(Color::Gray)),
+            Span::styled("n", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(" or ", Style::default().fg(Color::Gray)),
+            Span::styled("Esc", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(" to cancel", Style::default().fg(Color::Gray)),
+        ]),
+    ];
+
+    let paragraph = Paragraph::new(confirm_text)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Red)),
+        )
+        .centered();
+
+    paragraph.render(horizontal[1], buf);
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_removing(
+    container_name: &str,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let block = main_block();
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
+    let vertical = Layout::vertical([
+        Constraint::Percentage(40),
+        Constraint::Length(3),
+        Constraint::Percentage(40),
+    ])
+    .split(inner);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(20),
+        Constraint::Percentage(60),
+        Constraint::Percentage(20),
+    ])
+    .split(vertical[1]);
+
+    let removing_text = vec![
+        Line::from(vec![
+            Span::styled(
+                "Removing",
+                Style::default()
+                    .fg(Color::Red)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("...", Style::default().fg(Color::Red)),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("Removing container '{container_name}'"),
+            Style::default().fg(Color::Gray),
+        )),
+    ];
+
+    let paragraph = Paragraph::new(removing_text)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Red)),
+        )
+        .centered();
+
+    paragraph.render(horizontal[1], buf);
+}
+
+#[allow(clippy::indexing_slicing)]
 fn render_ls(
     state: &LsState,
     area: Rect,
@@ -203,6 +328,6 @@ fn main_block() -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
         .title("'Shell-Cell' Containers")
-        .title_bottom("↑↓: navigate, s: stop, Ctrl-C or Ctrl-D: exit")
+        .title_bottom("↑↓: navigate, s: stop, r: remove, Ctrl-C or Ctrl-D: exit")
         .border_style(Style::new().light_magenta())
 }

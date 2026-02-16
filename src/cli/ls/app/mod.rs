@@ -19,7 +19,11 @@ use crate::{
 /// Transitions:
 /// - `Loading` → `Ls` (once container list is fetched)
 /// - `Ls` → `Stopping` (user presses `s` on a selected container)
+/// - `Ls` → `ConfirmRemove` (user presses `r` on a selected container)
+/// - `ConfirmRemove` → `Removing` (user confirms with `y`)
+/// - `ConfirmRemove` → `Ls` (user cancels with `n` or `Esc`)
 /// - `Stopping` → `Ls` (once the container is stopped and the list is refreshed)
+/// - `Removing` → `Ls` (once the container is removed and the list is refreshed)
 /// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
     /// Fetching the container list from Docker in the background.
@@ -31,6 +35,10 @@ pub enum App {
     Ls(LsState),
     /// Stopping a selected container and refreshing the list.
     Stopping(StoppingState),
+    /// Confirming removal of a selected container.
+    ConfirmRemove(ConfirmRemoveState),
+    /// Removing a selected container and refreshing the list.
+    Removing(RemovingState),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -81,6 +89,13 @@ impl App {
                 self = App::Ls(LsState::new(containers, buildkit));
             }
 
+            // Removing → Ls: remove finished and refreshed list is available
+            if let App::Removing(ref mut state) = self
+                && let Some((containers, buildkit)) = state.try_recv()
+            {
+                self = App::Ls(LsState::new(containers, buildkit));
+            }
+
             if matches!(self, App::Exit) {
                 return Ok(());
             }
@@ -123,6 +138,29 @@ impl App {
                         && let Some(stopping) = ls_state.stop_selected()
                     {
                         *self = App::Stopping(stopping);
+                    }
+                },
+                KeyCode::Char('r') => {
+                    if let App::Ls(ls_state) = self
+                        && let Some(confirm) = ls_state.confirm_remove()
+                    {
+                        *self = App::ConfirmRemove(confirm);
+                    }
+                },
+                KeyCode::Char('y') => {
+                    if let App::ConfirmRemove(_) = self {
+                        let confirm_state = std::mem::replace(self, App::Exit);
+                        if let App::ConfirmRemove(state) = confirm_state {
+                            *self = App::Removing(state.confirm());
+                        }
+                    }
+                },
+                KeyCode::Char('n') | KeyCode::Esc => {
+                    if let App::ConfirmRemove(_) = self {
+                        let confirm_state = std::mem::replace(self, App::Exit);
+                        if let App::ConfirmRemove(state) = confirm_state {
+                            *self = App::Ls(state.cancel());
+                        }
                     }
                 },
                 _ => {},
@@ -208,6 +246,65 @@ impl LsState {
             rx,
         })
     }
+
+    /// Shows confirmation dialog for removing the currently selected container.
+    ///
+    /// Returns `None` if no container is selected.
+    fn confirm_remove(&self) -> Option<ConfirmRemoveState> {
+        let selected = self.table_state.selected()?;
+        let container = self.containers.get(selected)?.clone();
+
+        Some(ConfirmRemoveState {
+            container_name: container.name.to_string(),
+            containers: self.containers.clone(),
+            buildkit: self.buildkit.clone(),
+        })
+    }
+}
+
+/// Holds the state while waiting for user confirmation to remove a container.
+///
+/// Displays a warning that all container state will be lost and waits for
+/// the user to press 'y' (confirm) or 'n'/'Esc' (cancel).
+pub struct ConfirmRemoveState {
+    /// Name of the container to be removed (used for UI display).
+    container_name: String,
+    containers: Vec<SCellContainerInfo>,
+    buildkit: BuildKitD,
+}
+
+impl ConfirmRemoveState {
+    /// User confirmed removal - initiate the removal process.
+    fn confirm(self) -> RemovingState {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let container_name = self.container_name.clone();
+        let buildkit = self.buildkit.clone();
+
+        tokio::spawn({
+            let buildkit = buildkit.clone();
+            async move {
+                let res = buildkit
+                    .cleanup_container_by_name(&container_name)
+                    .await;
+                let result = match res {
+                    Ok(()) => buildkit.list_containers().await,
+                    Err(e) => Err(e),
+                };
+                drop(tx.send(result));
+            }
+        });
+
+        RemovingState {
+            container_name: self.container_name,
+            buildkit: self.buildkit,
+            rx,
+        }
+    }
+
+    /// User cancelled removal - return to the list view.
+    fn cancel(self) -> LsState {
+        LsState::new(self.containers, self.buildkit)
+    }
 }
 
 /// Holds the state while a container is being stopped in the background.
@@ -223,6 +320,36 @@ pub struct StoppingState {
 
 impl StoppingState {
     /// Polls the background stop task for completion.
+    ///
+    /// Returns `Some((containers, buildkit))` with the refreshed container
+    /// list when the operation is done, or `None` if still in progress.
+    fn try_recv(&mut self) -> Option<(Vec<SCellContainerInfo>, BuildKitD)> {
+        match self.rx.recv_timeout(MIN_FPS) {
+            Ok(result) => {
+                let containers = result.unwrap_or_default();
+                Some((containers, self.buildkit.clone()))
+            },
+            Err(RecvTimeoutError::Timeout) => None,
+            Err(RecvTimeoutError::Disconnected) => {
+                Some((Vec::new(), self.buildkit.clone()))
+            },
+        }
+    }
+}
+
+/// Holds the state while a container is being removed in the background.
+///
+/// The spawned task removes the container (and its image) and then re-fetches
+/// the full container list, sending the result back over the channel.
+pub struct RemovingState {
+    /// Name of the container being removed (used for UI display).
+    container_name: String,
+    buildkit: BuildKitD,
+    rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+}
+
+impl RemovingState {
+    /// Polls the background remove task for completion.
     ///
     /// Returns `Some((containers, buildkit))` with the refreshed container
     /// list when the operation is done, or `None` if still in progress.
