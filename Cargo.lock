@@ -2461,6 +2461,7 @@ dependencies = [
  "futures",
  "hex",
  "indicatif",
+ "indoc",
  "itertools",
  "metrohash",
  "ratatui",
