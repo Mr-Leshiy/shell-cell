@@ -113,13 +113,6 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .context("Container name must have a '/' prefix")?
             .to_string();
 
-        color_eyre::eyre::ensure!(
-            value
-                .image
-                .is_some_and(|i_name| i_name.starts_with(&container_name)),
-            "'Shell-Cell' container must have an image name equals to the container's name {container_name}"
-        );
-
         let created_at = value
             .created
             .map(|v| {

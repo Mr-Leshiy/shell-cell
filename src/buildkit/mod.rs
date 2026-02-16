@@ -13,6 +13,7 @@ use crate::{
         container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
         remove_container, remove_image, stop_container,
     },
+    error::WrapUserError,
     pty::Pty,
     scell::{SCell, container_info::SCellContainerInfo},
 };
@@ -26,11 +27,15 @@ impl BuildKitD {
     /// Runs the `BuildKit` daemon as a container.
     pub async fn start() -> color_eyre::Result<Self> {
         let docker = Docker::connect_with_local_defaults()?;
-        docker.ping().await.map_err(|_| {
-            color_eyre::eyre::eyre!(
-                "Cannot connect to the Docker daemon. Is the docker daemon running?"
-            )
-        })?;
+        docker
+            .ping()
+            .await
+            .map_err(|_| {
+                color_eyre::eyre::eyre!(
+                    "Cannot connect to the Docker daemon. Is the docker daemon running?"
+                )
+            })
+            .mark_as_user_err()?;
         Ok(Self { docker })
     }
 
