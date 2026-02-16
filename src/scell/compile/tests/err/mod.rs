@@ -9,7 +9,7 @@ use crate::{
         compile::errors::{
             CircularTargets, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
         },
-        parser::name::TargetName,
+        types::name::TargetName,
     },
 };
 

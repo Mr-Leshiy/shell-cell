@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::scell::parser::name::TargetName;
+use crate::scell::types::name::TargetName;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 #[error(

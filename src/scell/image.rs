@@ -8,12 +8,12 @@ use color_eyre::eyre::{Context, ContextCompat};
 
 use super::{
     Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    parser::{
+    types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
-use crate::scell::parser::target::env::EnvStmt;
+use crate::scell::types::target::env::EnvStmt;
 
 impl SCell {
     pub fn prepare_image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
