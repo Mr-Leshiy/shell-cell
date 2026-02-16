@@ -2,7 +2,7 @@
 
 <img src="./logo.png" alt="logo" />
 
-# `Shell-Cell`
+# **Shell-Cell**
 
 Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
 
@@ -12,7 +12,7 @@ Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, a
 
 ## 💡 How It Works
 
-`Shell-Cell` reads a `scell.yml` blueprint, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
+**Shell-Cell** reads a `scell.yml` blueprint, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
 
 ## 🚀 Quick Start
 
@@ -54,7 +54,7 @@ main:
 scell
 ```
 
-That's it! `Shell-Cell` will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](https://mr-leshiy.github.io/shell-cell/cli).
+That's it! **Shell-Cell** will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](https://mr-leshiy.github.io/shell-cell/cli).
 
 ## 👨🏻‍👩🏻‍👦🏻‍👦🏻 Community
 
@@ -62,7 +62,7 @@ Our Discord server <https://discord.gg/URTBEuU5>
 
 ## 🎓 Want to know more ?
 
-Follow the detailed documentation about how `Shell-Cell` works and how to use it:
+Follow the detailed documentation about how **Shell-Cell** works and how to use it:
 
 👉 [Docs](https://mr-leshiy.github.io/shell-cell/)
 

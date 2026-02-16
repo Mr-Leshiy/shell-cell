@@ -1,9 +1,9 @@
 
-# `Shell-Cell` CLI Reference
+# **Shell-Cell** CLI Reference
 
 Now that you’ve [installed and configured](./install.md) **Shell-Cell**, you’re ready to launch your very first session!
 
-To get started, place a `scell.yml` file in your project directory.
+To get started, create a blueprint `scell.yml` file in your project directory.
 This file defines the environment your shell will live in.
 (For a deep dive into the blueprint specification, check out the [Blueprint Guide](./blueprint.md)).
 
@@ -22,15 +22,15 @@ scell
 ```
 
 That’s it, simple as that!
-`Shell-Cell` will automatically look for a file named `scell.yml` in your current location and start the `Shell-Cell` session on the spot.
+**Shell-Cell** will automatically look for a file named `scell.yml` in your current location and start the **Shell-Cell** session on the spot.
 
 It would try to locate an entry point target - `main`.
 
 
-If your configuration file is located elsewhere and you don't want to change directories, you can point `Shell-Cell` directly to it:
+If your configuration file is located elsewhere and you don't want to change directories, you can point **Shell-Cell** directly to it:
 
 ```shell
-scell ./path/to/the/source/file/scell.yml
+scell ./path/to/the/blueprint/directory
 ```
 
 ## ❓ Need more help ? 

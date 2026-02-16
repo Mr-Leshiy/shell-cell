@@ -1,6 +1,6 @@
-# `Shell-Cell` Blueprint Reference
+# **Shell-Cell** Blueprint Reference
 
-`Shell-Cell` builds your environment by reading a set of instructions from a `scell.yml` files.
+**Shell-Cell** builds your environment by reading a set of instructions from a `scell.yml` files.
 
 `scell.yml` - is a [YAML](https://yaml.org) formatted file that contains everything needed to configure your session.
 Here is a minimal functional example:
@@ -12,8 +12,8 @@ main:
   hang: while true; do sleep 3600; done
 ```
 
-`Shell-Cell` follows a strict logic when building your image.
-It parses your target definitions into a Directed Linear Graph,
+**Shell-Cell** follows a strict logic when building your image.
+It parses your target definitions into a *Directed Linear Graph*,
 moving from your entry point (`main`) down to the base "bottom" target.
 
 The actual image building process, on contrary, happens backwards.
@@ -24,9 +24,9 @@ Starts from the "bottom" target and works its way up to your entry point (`main`
 4. `target_1`
 5. `main`
 
-## `Shell-Cell` target
+## **Shell-Cell** target
 
-`Shell-Cell` are comprised of a series of target declarations and recipe definitions.
+**Shell-Cell** are comprised of a series of target declarations and recipe definitions.
 
 ```yml
 <target-name>:
@@ -36,7 +36,7 @@ Starts from the "bottom" target and works its way up to your entry point (`main`
 
 A valid target name must start with a lowercase letter and contain only lowercase letters, digits, hyphens, and underscores (pattern: `^[a-z][a-z0-9_-]*$`).
 
-Inside each target, during the `Shell-Cell` image building process,
+Inside each target, during the **Shell-Cell** image building process,
 the instructions are executed in a specific, strict order:
 1. `workspace`
 2. `from`
@@ -47,16 +47,16 @@ the instructions are executed in a specific, strict order:
 ### `from`
 
 Similar to the Dockerfile [`FROM`](https://docs.docker.com/reference/dockerfile/#from) instruction,
-it specifies the base of the `Shell-Cell` image.
+it specifies the base of the **Shell-Cell** image.
 
-It could be either a plain image, or reference to other [`Shell-Cell` target](#shell-cell-target)
+It could be either a plain image, or reference to other [**Shell-Cell** target](#shell-cell-target)
 
 - Image with tag
 ```yml
 from: <image>:<tag>
 ```
 
-- `Shell-Cell` target reference
+- **Shell-Cell** target reference
 ```yml
 from: path/to/file+<target_name>
 ```
@@ -65,7 +65,7 @@ from: path/to/file+<target_name>
 
 A location to the shell, which would be available in the build image and running container.
 
-Such shell would be used for a `Shell-Cell` session.
+Such shell would be used for a **Shell-Cell** session.
 
 Only the first `shell` statement encountered in the target graph (starting from the entry point) is used.
 
@@ -75,7 +75,7 @@ shell: /bin/bash
 
 ### `hang`
 
-This instruction ensures your container stays active and doesn't exit immediately after it starts. This effectively transforms your `Shell-Cell` container into a persistent "shell server" that remains ready for you to jump in at any time.
+This instruction ensures your container stays active and doesn't exit immediately after it starts. This effectively transforms your **Shell-Cell** container into a persistent "shell server" that remains ready for you to jump in at any time.
 
 Only the first `hang` statement encountered in the target graph (starting from the entry point) is used.
 
@@ -97,7 +97,7 @@ workspace: /path/to/workspace
 
 ### `copy` (optional)
 
-Copies files into the `Shell-Cell` image.
+Copies files into the **Shell-Cell** image.
 Similar to the Dockerfile [`COPY`](https://docs.docker.com/reference/dockerfile/#workdir) instruction.
 
 ```yml
@@ -109,7 +109,7 @@ copy:
 
 ### `env` (optional)
 
-Sets environment variables in the `Shell-Cell` image.
+Sets environment variables in the **Shell-Cell** image.
 Similar to the Dockerfile [`ENV`](https://docs.docker.com/reference/dockerfile/#env) instruction.
 
 Each item follows the list format `<KEY>=<VALUE>`:
@@ -136,7 +136,7 @@ build:
 
 ### `config` (optional)
 
-Runtime configuration for the `Shell-Cell` container.
+Runtime configuration for the **Shell-Cell** container.
 Unlike `build`, `copy`, and `workspace`, which affect the image building process,
 `config` defines how the container behaves when it runs.
 
