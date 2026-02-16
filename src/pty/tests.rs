@@ -1,11 +1,10 @@
-use std::{time::Duration};
-use std::fmt::Write;
+use std::{fmt::Write, time::Duration};
 
 use bollard::container::LogOutput;
 use bytes::Bytes;
+use indoc::indoc;
 use test_case::test_case;
 use tokio::io::AsyncReadExt;
-use indoc::indoc;
 
 use crate::pty::Pty;
 
@@ -206,35 +205,62 @@ const SCREEN_SIZE_HEIGHT: u16 = 3;
 // -----
 // CSI test cases
 // -----
-// #[test_case(
-//     &[
-//         b"\x1B[10Z",
-//         b"A",
-//     ]
-//     =>
-//     (
-//         "A".to_string(),
-//         (0, 1),
-//     )
-//     ;
-//     "CBT V-1: Left Beyond First Column" // <https://ghostty.org/docs/vt/csi/cbt#cbt-v-1:-left-beyond-first-column>
-// )]
-// #[test_case(
-//     &[
-//         b"\x1B[1;9H",
-//         b"X",
-//         b"\x1B[1;9H",
-//         b"\x1B[Z",
-//         b"A",
-//     ]
-//     =>
-//     (
-//         "A       X".to_string(),
-//         (0, 9),
-//     )
-//     ;
-//     "CBT V-2: Left Starting After Tab Stop" // <https://ghostty.org/docs/vt/csi/cbt#cbt-v-2:-left-starting-after-tab-stop>
-// )]
+#[test_case(
+    &[
+        b"\x1B[2Z",
+        b"A",
+    ]
+    =>
+    (
+        indoc!{"
+        |A_________|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 1),
+    )
+    ;
+    "CBT V-1: Left Beyond First Column" // <https://ghostty.org/docs/vt/csi/cbt#cbt-v-1:-left-beyond-first-column>
+)]
+#[test_case(
+    &[
+        b"\x1B[1;10H",
+        b"X",
+        b"\x1B[Z",
+        b"A",
+    ]
+    =>
+    (
+        indoc!{"
+        |________AX|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 9),
+    )
+    ;
+    "CBT V-2: Left Starting After Tab Stop" // <https://ghostty.org/docs/vt/csi/cbt#cbt-v-2:-left-starting-after-tab-stop>
+)]
+#[test_case(
+    &[
+        b"\x1B[1;9H",
+        b"X",
+        b"\x1B[1;9H",
+        b"\x1B[Z",
+        b"A",
+    ]
+    =>
+    (
+        indoc!{"
+        |A_______X_|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 1),
+    )
+    ;
+    "CBT V-3: Left Starting on Tabstop" // <https://ghostty.org/docs/vt/csi/cbt#cbt-v-3:-left-starting-on-tabstop>
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     const TIMEOUT: Duration = Duration::from_secs(1);
@@ -253,7 +279,7 @@ async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     }
 
     let mut res = String::new();
-    let (rows, cols) =  pty.size();
+    let (rows, cols) = pty.size();
     for i in 0..rows {
         write!(&mut res, "|").unwrap();
         for j in 0..cols {

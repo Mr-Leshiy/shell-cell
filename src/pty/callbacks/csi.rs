@@ -14,19 +14,15 @@ pub fn cbt(
     n: u16,
 ) {
     const TAB_WIDTH: u16 = 8;
-
     let (rows, cols) = screen.size();
     let (cursor_row, cursor_col) = screen.cursor_position();
 
-    // Find the target column by moving left across n tab stops
-    let mut col = cursor_col;
-    for _ in 0..n {
-        if col == 0 {
-            break;
-        }
-        // Move to the previous tab stop: the largest multiple of TAB_WIDTH less than col
-        col = col.saturating_sub(1) / TAB_WIDTH;
-    }
+    // Calculate how many full tab stops to move back (n extra, plus the partial one we're
+    // already in)
+    let tabs_back = n.saturating_add(if cursor_col % TAB_WIDTH == 0 { 1 } else { 0 });
+    let col = cursor_col.saturating_sub(tabs_back.saturating_mul(TAB_WIDTH));
+    let tab_offset = col % TAB_WIDTH;
+    let col = col.saturating_sub(tab_offset);
 
     let contents = screen.contents_formatted();
     let mut parser = Parser::new(rows, cols, 0);
