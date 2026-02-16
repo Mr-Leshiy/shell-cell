@@ -1,6 +1,6 @@
 ## 💡 The Core Idea
 
-**Shell-Cell** is a lightweight containerised shells orchestrator
+**Shell-Cell** is a lightweight containerized shells orchestrator
 that turns simple [YAML](https://yaml.org) blueprints into instant, isolated shell sessions.
 
 It could be really handy, when you want to have secure, isolated place for your development.
@@ -17,4 +17,4 @@ It could be really handy, when you want to have secure, isolated place for your 
 3. **"Shell Server" Model.**<br>
     Unlike a standard container that runs a single task and exits, a **Shell-Cell** is designed to hang.
     By using the `hang` instruction, the container stays alive in the background, acting as a persistent server.
-    This allows you to attach multiple **Shell-Cell** sessions to a warm, ready-to-use environment instantly and preserving the container's state accross different sessions.
+    This allows you to attach multiple **Shell-Cell** sessions to a warm, ready-to-use environment instantly and preserving the container's state across different sessions.
