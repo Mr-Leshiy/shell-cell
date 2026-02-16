@@ -1,7 +1,7 @@
-# Install and Configure `Shell-Cell`
+# Install and Configure **Shell-Cell**
 
-`Shell-Cell` requires a running instance of either [Docker] or [Podman] daemon.
-So firstly prepare and install [Docker] or [Podman] daemons.
+**Shell-Cell** requires a running instance of either [Docker] or [Podman] daemon.
+You have to firstly prepare and install [Docker] or [Podman], for your choice.
 
 ### Install
 
@@ -17,14 +17,14 @@ curl -fsSL https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shel
 cargo install shell-cell --locked
 ```
 
-`Shell-Cell` requires a running instance of either [Docker] or [Podman] daemon.
+**Shell-Cell** requires a running instance of either [Docker] or [Podman] daemon.
 
 ### UNIX socket configuration (UNIX)
 
 To interact with the [Docker] or [Podman] daemon
-`Shell-Cell` uses a UNIX socket connection on UNIX based operating systems.
+**Shell-Cell** uses a UNIX socket connection on UNIX based operating systems.
 The URL of this socket is read from the `DOCKER_HOST` environment variable.
-Before running `Shell-Cell`, you should set the proper value of `DOCKER_HOST`
+Before running **Shell-Cell**, you should set the proper value of `DOCKER_HOST`
 
 ```shell
 export DOCKER_HOST="<unix_socket_url>"
