@@ -26,6 +26,12 @@ That’s it, simple as that!
 
 It would try to locate an entry point target - `main`.
 
+If you want to specify some other entry point target, rather than `main`,
+you could pass a `-t`, `--target` CLI option.
+```shell
+scell -t <other-entrypoint-target>
+```
+
 
 If your configuration file is located elsewhere and you don't want to change directories, you can point **Shell-Cell** directly to it:
 
