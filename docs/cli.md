@@ -38,7 +38,36 @@ If your configuration file is located elsewhere and you don't want to change dir
 scell ./path/to/the/blueprint/directory
 ```
 
-## ❓ Need more help ? 
+## Commands
+
+### `ls` — List Shell-Cell Containers
+
+```shell
+scell ls
+```
+
+Displays an interactive table of all existing **Shell-Cell** containers.
+
+### `stop` — Stop All Running Shell-Cell Containers
+
+```shell
+scell stop
+```
+
+Stops **all** running **Shell-Cell** containers (only **Shell-Cell** related containers, not any others).
+
+Press `Ctrl-C` or `Ctrl-D` to abort early.
+
+### `cleanup` — Remove Orphan Containers and Images
+
+```shell
+scell cleanup
+```
+
+Cleans up **orphan** **Shell-Cell** containers and corresponding images. A container is considered an orphan when it is no longer associated with any existing `scell.yml` blueprint file (e.g., the blueprint was deleted or moved, or the blueprint contents changed so the container hash no longer matches).
+
+
+## ❓ Need more help ?
 
 If you want to explore the full list of commands, flags, and capabilities, our built-in help menu is always there for you:
 ```shell
