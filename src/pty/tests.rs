@@ -261,6 +261,42 @@ const SCREEN_SIZE_HEIGHT: u16 = 3;
     ;
     "CBT V-3: Left Starting on Tabstop" // <https://ghostty.org/docs/vt/csi/cbt#cbt-v-3:-left-starting-on-tabstop>
 )]
+#[test_case(
+    &[
+        b"\x1B[100I",
+        b"A",
+    ]
+    =>
+    (
+        indoc!{"
+        |_________A|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 10),
+    )
+    ;
+    "CHT V-1: Right Beyond Last Column" // <https://ghostty.org/docs/vt/csi/cht#cht-v-1:-right-beyond-last-column>
+)]
+#[test_case(
+    &[
+        b"\x1B[1;2H",
+        b"A",
+        b"\x1B[I",
+        b"X",
+    ]
+    =>
+    (
+        indoc!{"
+        |_A______X_|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 9),
+    )
+    ;
+    "CHT V-2: Right From Before a Tabstop" // <https://ghostty.org/docs/vt/csi/cht#cht-v-2:-right-from-before-a-tabstop>
+)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     const TIMEOUT: Duration = Duration::from_secs(1);

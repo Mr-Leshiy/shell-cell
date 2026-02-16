@@ -42,6 +42,8 @@ impl Callbacks for TerminalCallback {
         match (i1, i2, params, c) {
             // Cursor Backward Tabulation <https://ghostty.org/docs/vt/csi/cbt>
             (None, None, &[&[n]], 'Z') => csi::cbt(screen, n),
+            // Cursor Horizontal Tabulation <https://ghostty.org/docs/vt/csi/cht>
+            (None, None, &[&[n]], 'I') => csi::cht(screen, n),
             // Device Status Report (operating status) <https://ghostty.org/docs/vt/csi/dsr>
             (None, None, &[&[5]], 'n') => csi::dsr_status(&self.0),
             // Device Status Report (cursor position) <https://ghostty.org/docs/vt/csi/dsr>

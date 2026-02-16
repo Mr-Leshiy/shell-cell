@@ -38,6 +38,39 @@ pub fn cbt(
     screen.clone_from(parser.screen());
 }
 
+/// CHT - Cursor Horizontal Tabulation
+///
+/// Moves the cursor `n` tab stops to the right. Default tab stops are every 8 columns.
+///
+/// <https://ghostty.org/docs/vt/csi/cbt>
+pub fn cht(
+    screen: &mut tui_term::vt100::Screen,
+    n: u16,
+) {
+    const TAB_WIDTH: u16 = 8;
+    let (rows, cols) = screen.size();
+    let (cursor_row, cursor_col) = screen.cursor_position();
+
+    // Calculate how many full tab stops to move forward
+    let tabs_forward = n.saturating_add(1);
+    let col = cursor_col.saturating_add(tabs_forward.saturating_mul(TAB_WIDTH));
+    let tab_offset = col % TAB_WIDTH;
+    let col = col.saturating_sub(tab_offset);
+
+    let contents = screen.contents_formatted();
+    let mut parser = Parser::new(rows, cols, 0);
+    parser.process(&contents);
+    parser.process(
+        format!(
+            "\x1B[{};{}H",
+            cursor_row.saturating_add(1),
+            col.saturating_add(1)
+        )
+        .as_bytes(),
+    );
+    screen.clone_from(parser.screen());
+}
+
 /// DSR - Device Status Report (operating status)
 ///
 /// Responds with `ESC[0n` to indicate the terminal is functioning normally.
