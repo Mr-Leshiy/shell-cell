@@ -1,6 +1,6 @@
 [package]
 name = "shell-cell"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2024"
 description = "Shell-Cell. CLI app to spawn and manage containerized shell environments"
 repository = "https://github.com/Mr-Leshiy/shell-cell"
