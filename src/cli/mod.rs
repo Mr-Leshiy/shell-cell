@@ -11,7 +11,7 @@ use std::{path::PathBuf, time::Duration};
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
 
-use crate::crate_info;
+use crate::{crate_info, error::UserError};
 
 // 60 frames per second
 const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
@@ -44,11 +44,15 @@ impl Cli {
         const SUGGESTION: &str = "If you've got a second, please toss a full backtrace into your ticket—it helps us squash the bug way faster! You can grab it by running the app with `RUST_BACKTRACE=1`.";
 
         self.exec_inner().await.map_err(|e| {
-            e.note(format!(
-                "Internal bug, please report it `{}/issues/new`",
-                crate_info::repository()
-            ))
-            .suggestion(SUGGESTION)
+            if e.is::<UserError>() {
+                e
+            } else {
+                e.note(format!(
+                    "Internal bug, please report it `{}/issues/new`",
+                    crate_info::repository()
+                ))
+                .suggestion(SUGGESTION)
+            }
         })?;
 
         Ok(())
