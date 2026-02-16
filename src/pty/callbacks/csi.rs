@@ -19,7 +19,7 @@ pub fn cbt(
 
     // Calculate how many full tab stops to move back (n extra, plus the partial one we're
     // already in)
-    let tabs_back = n.saturating_add(if cursor_col % TAB_WIDTH == 0 { 1 } else { 0 });
+    let tabs_back = n.saturating_add(u16::from(cursor_col % TAB_WIDTH == 0));
     let col = cursor_col.saturating_sub(tabs_back.saturating_mul(TAB_WIDTH));
     let tab_offset = col % TAB_WIDTH;
     let col = col.saturating_sub(tab_offset);
