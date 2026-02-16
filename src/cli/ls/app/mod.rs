@@ -1,6 +1,6 @@
 mod ui;
 
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{Receiver, RecvTimeoutError};
 
 use ratatui::{
     Terminal,
@@ -8,43 +8,77 @@ use ratatui::{
     widgets::TableState,
 };
 
-use crate::{buildkit::BuildKitD, scell::container_info::SCellContainerInfo};
+use crate::{
+    buildkit::BuildKitD,
+    cli::MIN_FPS,
+    scell::container_info::SCellContainerInfo,
+};
 
+/// State machine for the `ls` interactive TUI.
+///
+/// Transitions:
+/// - `Loading` → `Ls` (once container list is fetched)
+/// - `Ls` → `Stopping` (user presses `s` on a selected container)
+/// - `Stopping` → `Ls` (once the container is stopped and the list is refreshed)
+/// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
-    Loading(Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>),
+    /// Fetching the container list from Docker in the background.
+    Loading {
+        rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+        buildkit: BuildKitD,
+    },
+    /// Displaying the interactive container table.
     Ls(LsState),
+    /// Stopping a selected container and refreshing the list.
+    Stopping(StoppingState),
+    /// Terminal state — the event loop exits.
     Exit,
 }
 
 impl App {
+    /// Creates a new `App` in the `Loading` state, spawning an async task
+    /// that fetches the current Shell-Cell container list.
     pub fn loading(buildkit: BuildKitD) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
-        // Spawn async task to fetch containers
-        tokio::spawn(async move {
-            let result = async {
-                let res = buildkit.list_containers().await;
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                res
+        tokio::spawn({
+            let buildkit = buildkit.clone();
+            async move {
+                let result = async {
+                    let res = buildkit.list_containers().await;
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    res
+                }
+                .await;
+                drop(tx.send(result));
             }
-            .await;
-            drop(tx.send(result));
         });
 
-        App::Loading(rx)
+        App::Loading { rx, buildkit }
     }
 
+    /// Runs the TUI event loop, polling for state transitions and key events.
     pub fn run<B: ratatui::backend::Backend>(
         mut self,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         loop {
-            // Check for state transitions
-            if let App::Loading(ref rx) = self
+            // Loading → Ls: container list is ready
+            if let App::Loading {
+                ref rx,
+                ref buildkit,
+            } = self
                 && let Ok(result) = rx.try_recv()
             {
                 let containers = result?;
-                self = App::Ls(LsState::new(containers));
+                self = App::Ls(LsState::new(containers, buildkit.clone()));
+            }
+
+            // Stopping → Ls: stop finished and refreshed list is available
+            if let App::Stopping(ref mut state) = self
+                && let Some((containers, buildkit)) = state.try_recv()
+            {
+                self = App::Ls(LsState::new(containers, buildkit));
             }
 
             if matches!(self, App::Exit) {
@@ -61,6 +95,8 @@ impl App {
         }
     }
 
+    /// Handles a single key event, dispatching navigation and actions
+    /// based on the current state.
     fn handle_key_event(&mut self) -> color_eyre::Result<()> {
         if event::poll(std::time::Duration::from_millis(100))?
             && let Event::Key(key) = event::read()?
@@ -82,6 +118,13 @@ impl App {
                         ls_state.previous();
                     }
                 },
+                KeyCode::Char('s') => {
+                    if let App::Ls(ls_state) = self
+                        && let Some(stopping) = ls_state.stop_selected()
+                    {
+                        *self = App::Stopping(stopping);
+                    }
+                },
                 _ => {},
             }
         }
@@ -89,13 +132,15 @@ impl App {
     }
 }
 
+/// Holds the data for the interactive container table view.
 pub struct LsState {
     containers: Vec<SCellContainerInfo>,
     table_state: TableState,
+    buildkit: BuildKitD,
 }
 
 impl LsState {
-    pub fn new(containers: Vec<SCellContainerInfo>) -> Self {
+    pub fn new(containers: Vec<SCellContainerInfo>, buildkit: BuildKitD) -> Self {
         let mut table_state = TableState::default();
         if !containers.is_empty() {
             table_state.select(Some(0));
@@ -103,30 +148,94 @@ impl LsState {
         Self {
             containers,
             table_state,
+            buildkit,
         }
     }
 
+    /// Moves the table selection to the next row, wrapping to the top.
     fn next(&mut self) {
         if self.containers.is_empty() {
             return;
         }
         let i = match self.table_state.selected() {
-            // if not the bottom item
             Some(i) if i != self.containers.len().saturating_sub(1) => i.saturating_add(1),
             _ => 0,
         };
         self.table_state.select(Some(i));
     }
 
+    /// Moves the table selection to the previous row, wrapping to the bottom.
     fn previous(&mut self) {
         if self.containers.is_empty() {
             return;
         }
         let i = match self.table_state.selected() {
-            // if not top item
             Some(i) if i != 0 => i.saturating_sub(1),
             _ => self.containers.len().saturating_sub(1),
         };
         self.table_state.select(Some(i));
+    }
+
+    /// Initiates stopping of the currently selected container.
+    ///
+    /// Spawns an async task that stops the container and then re-fetches
+    /// the full container list. Returns `None` if no container is selected.
+    fn stop_selected(&mut self) -> Option<StoppingState> {
+        let selected = self.table_state.selected()?;
+        let container = self.containers.get(selected)?.clone();
+        let buildkit = self.buildkit.clone();
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        let container_name = container.name.to_string();
+
+        tokio::spawn({
+            let buildkit = buildkit.clone();
+            async move {
+                let res = buildkit
+                    .stop_container_by_name(&container_name)
+                    .await;
+                let result = match res {
+                    Ok(()) => buildkit.list_containers().await,
+                    Err(e) => Err(e),
+                };
+                drop(tx.send(result));
+            }
+        });
+
+        Some(StoppingState {
+            container_name: container.name.to_string(),
+            buildkit,
+            rx,
+        })
+    }
+}
+
+/// Holds the state while a container is being stopped in the background.
+///
+/// The spawned task stops the container and then re-fetches the full
+/// container list, sending the result back over the channel.
+pub struct StoppingState {
+    /// Name of the container being stopped (used for UI display).
+    container_name: String,
+    buildkit: BuildKitD,
+    rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+}
+
+impl StoppingState {
+    /// Polls the background stop task for completion.
+    ///
+    /// Returns `Some((containers, buildkit))` with the refreshed container
+    /// list when the operation is done, or `None` if still in progress.
+    fn try_recv(&mut self) -> Option<(Vec<SCellContainerInfo>, BuildKitD)> {
+        match self.rx.recv_timeout(MIN_FPS) {
+            Ok(result) => {
+                let containers = result.unwrap_or_default();
+                Some((containers, self.buildkit.clone()))
+            },
+            Err(RecvTimeoutError::Timeout) => None,
+            Err(RecvTimeoutError::Disconnected) => {
+                Some((Vec::new(), self.buildkit.clone()))
+            },
+        }
     }
 }

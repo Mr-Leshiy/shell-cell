@@ -15,11 +15,14 @@ impl Widget for &App {
     ) where
         Self: Sized,
     {
-        if let App::Loading(_) = self {
+        if let App::Loading { .. } = self {
             render_loading(area, buf);
         }
         if let App::Ls(ls_state) = self {
             render_ls(ls_state, area, buf);
+        }
+        if let App::Stopping(state) = self {
+            render_stopping(&state.container_name, area, buf)
         }
     }
 }
@@ -69,6 +72,58 @@ fn render_loading(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Cyan)),
+        )
+        .centered();
+
+    paragraph.render(horizontal[1], buf);
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_stopping(
+    container_name: &str,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let block = main_block();
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
+    let vertical = Layout::vertical([
+        Constraint::Percentage(40),
+        Constraint::Length(3),
+        Constraint::Percentage(40),
+    ])
+    .split(inner);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(20),
+        Constraint::Percentage(60),
+        Constraint::Percentage(20),
+    ])
+    .split(vertical[1]);
+
+    let stopping_text = vec![
+        Line::from(vec![
+            Span::styled(
+                "Stopping",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("...", Style::default().fg(Color::Yellow)),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("Stopping container '{container_name}'"),
+            Style::default().fg(Color::Gray),
+        )),
+    ];
+
+    let paragraph = Paragraph::new(stopping_text)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Yellow)),
         )
         .centered();
 
@@ -148,6 +203,6 @@ fn main_block() -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
         .title("'Shell-Cell' Containers")
-        .title_bottom("↑↓: navigate, Ctrl-C or Ctrl-D: exit")
+        .title_bottom("↑↓: navigate, s: stop, Ctrl-C or Ctrl-D: exit")
         .border_style(Style::new().light_magenta())
 }
