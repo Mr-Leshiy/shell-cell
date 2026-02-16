@@ -89,7 +89,7 @@ fn render_stopping(
 
     let vertical = Layout::vertical([
         Constraint::Percentage(40),
-        Constraint::Length(3),
+        Constraint::Percentage(20),
         Constraint::Percentage(40),
     ])
     .split(inner);
@@ -141,7 +141,7 @@ fn render_confirm_remove(
 
     let vertical = Layout::vertical([
         Constraint::Percentage(30),
-        Constraint::Length(9),
+        Constraint::Percentage(40),
         Constraint::Percentage(30),
     ])
     .split(inner);
@@ -215,7 +215,7 @@ fn render_removing(
 
     let vertical = Layout::vertical([
         Constraint::Percentage(40),
-        Constraint::Length(3),
+        Constraint::Percentage(20),
         Constraint::Percentage(40),
     ])
     .split(inner);
