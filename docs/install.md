@@ -38,8 +38,8 @@ docker context inspect | grep sock
 ```
 - for [Podman]
 When you are starting a podman virtual machine `podman machine start`, it prints it in stdout, e.g.
+<!-- cspell: disable -->
 ```shell
-
 Starting machine "podman-machine-default"
 API forwarding listening on: /var/folders/5m/2c6173tx1nb6m5mnkjz27gk00000gn/T/podman/podman-machine-default-api.sock
 
@@ -56,6 +56,7 @@ following command in your terminal session:
 
 Machine "podman-machine-default" started successfully
 ```
+<!-- cspell: enable -->
 
 
 [Podman]: https://podman.io
