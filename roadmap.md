@@ -11,12 +11,15 @@
 - [X] `cleanup` CLI feature.
 - [X] `stop` CLI feature
 - [X] Detect cycle dependencies during `SCell::compile` step.
-- [ ] Manage distribution channels for the `scell` binary, so it would be possible to install it easily on different platforms.
+- [X] Manage distribution channels for the `scell` binary, so it would be possible to install it easily on different platforms.
+- [ ] Test how it works with `Podman`
 
 ## Version `2.0.0`
 
-- [ ] Use BuildKit cache feature, to cache each Cell individually.
+- [ ] Performance improvements
+- [ ] BuildKit usage.
 - [ ] Allow Github for the `from` statement `Shell-Cell` file location.
-- [ ] `Dockerfile` support
+- [ ] `Dockerfile` support (???)
 - [ ] `Earthfile` support (???)
 - [ ] Dager files support (???)
+- [ ] UI themes 
