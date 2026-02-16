@@ -36,16 +36,74 @@ const SCREEN_SIZE_HEIGHT: u16 = 3;
     &[
         b"\x1B[11G", // move to last column
         b"A",
-        // b"\r",
+        b"\r",
         b"X"
     ]
     =>
     (
-        "X        A".to_string(),
-        (1, 0),
+        indoc!{"
+        |X________A|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 1),
     )
     ;
-    "CR V-1: Pending Wrap is Unset" // <https://ghostty.org/docs/vt/control/cr#cr-v-1:-pending-wrap-is-unset>
+    "Carriage Return V-1" // <https://ghostty.org/docs/vt/control/cr>
+)]
+#[test_case(
+    &[
+        b"\x1B[4G",
+        b"A",
+        b"\x1B[1G",
+        b"\r",
+        b"X"
+    ]
+    =>
+    (
+        indoc!{"
+        |X__A______|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 1),
+    )
+    ;
+    "Carriage Return V-2" // <https://ghostty.org/docs/vt/control/cr>
+)]
+#[test_case(
+    &[
+        b"\x0A",
+        b"A",
+    ]
+    =>
+    (
+        indoc!{"
+        |__________|
+        |A_________|
+        |__________|
+        "}.to_string(),
+        (1, 1),
+    )
+    ;
+    "Linefeed" // <https://ghostty.org/docs/vt/control/lf>
+)]
+#[test_case(
+    &[
+        b"\x09",
+        b"A",
+    ]
+    =>
+    (
+        indoc!{"
+        |________A_|
+        |__________|
+        |__________|
+        "}.to_string(),
+        (0, 9),
+    )
+    ;
+    "Tab" // <https://ghostty.org/docs/vt/control/tab>
 )]
 // -----
 // ESC test cases
