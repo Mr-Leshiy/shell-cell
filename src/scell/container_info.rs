@@ -4,7 +4,7 @@ use bollard::secret::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use super::{METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, parser::name::TargetName};
+use super::{METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, types::name::TargetName};
 use crate::scell::name::SCellName;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

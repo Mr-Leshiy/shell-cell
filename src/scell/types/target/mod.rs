@@ -11,7 +11,7 @@ use self::{
     build::BuildStmt, config::ConfigStmt, copy::CopyStmt, from::FromStmt, shell::ShellStmt,
     workspace::WorkspaceStmt,
 };
-use crate::scell::parser::target::env::EnvStmt;
+use crate::scell::types::target::env::EnvStmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct TargetStmt {

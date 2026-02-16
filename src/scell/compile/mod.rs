@@ -14,7 +14,7 @@ use crate::{
             CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingEntrypoint,
             MissingHangStmt, MissingShellStmt, MissingTarget, MountHostDirNotFound,
         },
-        parser::{
+        types::{
             SCellFile,
             name::TargetName,
             target::{config::ConfigStmt, from::FromStmt},

@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell::parser::{name::TargetName, target::image::ImageDef};
+use crate::scell::types::{name::TargetName, target::image::ImageDef};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 

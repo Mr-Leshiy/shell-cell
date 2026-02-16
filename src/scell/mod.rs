@@ -9,7 +9,7 @@ mod compile;
 pub mod container_info;
 mod image;
 mod name;
-mod parser;
+pub mod types;
 
 use std::{
     hash::{Hash, Hasher},
@@ -18,7 +18,7 @@ use std::{
 
 use hex::ToHex;
 
-use self::parser::{
+use self::types::{
     name::TargetName,
     target::{
         build::BuildStmt, copy::CopyStmt, image::ImageDef, shell::ShellStmt,
@@ -27,7 +27,7 @@ use self::parser::{
 };
 use crate::scell::{
     name::SCellName,
-    parser::target::{
+    types::target::{
         config::{ConfigStmt, mounts::MountsStmt},
         env::EnvStmt,
     },

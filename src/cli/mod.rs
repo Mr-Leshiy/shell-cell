@@ -11,7 +11,7 @@ use std::{path::PathBuf, time::Duration};
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
 
-use crate::{crate_info, error::UserError};
+use crate::{crate_info, error::UserError, scell::types::name::TargetName};
 
 // 60 frames per second
 const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
@@ -20,12 +20,16 @@ const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
 #[clap(version = crate_info::version())]
 #[clap(about = crate_info::description())]
 pub struct Cli {
-    /// Path to the directory with 'scell.yml' file (Optional),
+    /// Path to the directory with 'scell.yml' file (optional),
     #[clap(value_name = "FILE", default_value = ".")]
-    pub scell_path: PathBuf,
+    scell_path: PathBuf,
+
+    /// Entry point target name to execute, instead of 'main' (optional)
+    #[clap(short, long)]
+    target: Option<TargetName>,
 
     #[clap(subcommand)]
-    pub command: Option<Commands>,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]

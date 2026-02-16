@@ -4,7 +4,7 @@ use test_case::test_case;
 
 use crate::scell::{
     Link, SCell, SCellInner,
-    parser::{
+    types::{
         name::TargetName,
         target::{
             build::BuildStmt, copy::CopyStmt, env::EnvStmt, shell::ShellStmt,

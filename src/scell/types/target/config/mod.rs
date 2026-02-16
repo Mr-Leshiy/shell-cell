@@ -1,4 +1,4 @@
-use crate::scell::parser::target::config::mounts::MountsStmt;
+use crate::scell::types::target::config::mounts::MountsStmt;
 
 pub mod mounts;
 
