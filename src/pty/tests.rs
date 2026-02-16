@@ -185,7 +185,6 @@ const SCREEN_SIZE_HEIGHT: u16 = 3;
     &[
         b"A\r\n",      // print A + CR+LF
         b"B\r\n",      // print B + CR+LF
-        b"C\r\n",      // print C + CR+LF
         b"\x1B[2;1H",  // move to row 2, col 1
         b"\x1BM",      // RI - reverse index (move up, no scroll needed)
         b"X",          // print X at row 1, col 1
@@ -195,7 +194,7 @@ const SCREEN_SIZE_HEIGHT: u16 = 3;
         indoc!{"
         |X_________|
         |B_________|
-        |C_________|
+        |__________|
         "}.to_string(),
         (0, 1),
     )
