@@ -33,8 +33,7 @@ scell -t <other-entrypoint-target>
 ```
 
 
-If your configuration file is located elsewhere and you don't want to change directories, you can point **Shell-Cell** directly to it:
-
+If your configuration file is located elsewhere and you don't want to change directories, you can point **Shell-Cell** directly to it.
 ```shell
 scell ./path/to/the/blueprint/directory
 ```
