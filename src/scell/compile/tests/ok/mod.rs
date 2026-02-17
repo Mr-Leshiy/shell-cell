@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use test_case::test_case;
 
@@ -8,7 +8,7 @@ use crate::scell::{
         name::TargetName,
         target::{
             build::BuildStmt,
-            copy::CopyStmt,
+            copy::{CopyStmt, CopyStmtEntry},
             env::{EnvStmt, EnvStmtItem},
             shell::ShellStmt,
             workspace::WorkspaceStmt,
@@ -149,8 +149,14 @@ use crate::scell::{
                 location: std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt").unwrap(),
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt(vec![
-                    "src dst".parse().unwrap(),
-                    "file.txt /app/file.txt".parse().unwrap(),
+                    CopyStmtEntry {
+                        src: vec![std::fs::canonicalize("src").unwrap()],
+                        dest: PathBuf::from("dst"),
+                    },
+                    CopyStmtEntry {
+                        src: vec![std::fs::canonicalize("Cargo.toml").unwrap()],
+                        dest: PathBuf::from("dst2"),
+                    },
                 ]),
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
@@ -218,7 +224,10 @@ use crate::scell::{
                 location: std::fs::canonicalize("src/scell/compile/tests/ok/all_stmts").unwrap(),
                 workspace: WorkspaceStmt(Some("/app".to_string())),
                 copy: CopyStmt(vec![
-                    "src /app/src".parse().unwrap(),
+                    CopyStmtEntry {
+                        src: vec![std::fs::canonicalize("src").unwrap()],
+                        dest: PathBuf::from("/app/src"),
+                    },
                 ]),
                 build: BuildStmt(vec![
                     "apt-get update".to_string(),

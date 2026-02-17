@@ -73,7 +73,7 @@ impl SCell {
         report.check()?;
 
         color_eyre::eyre::ensure!(
-            links.len() == 2,
+            links.len() >= 2,
             "It must be at least two links in the target graph"
         );
 

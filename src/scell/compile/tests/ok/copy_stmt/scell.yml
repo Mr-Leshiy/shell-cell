@@ -4,4 +4,4 @@ main:
   hang: hang
   copy:
     - src dst
-    - file.txt /app/file.txt
+    - Cargo.toml dst2
