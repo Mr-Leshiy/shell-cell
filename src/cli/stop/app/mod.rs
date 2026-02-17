@@ -22,7 +22,45 @@ pub enum App {
 }
 
 impl App {
-    pub fn loading(buildkit: BuildKitD) -> Self {
+    pub fn run<B: ratatui::backend::Backend>(
+        buildkit: &BuildKitD,
+        terminal: &mut Terminal<B>,
+    ) -> color_eyre::Result<()> {
+        // First step
+        let mut app = Self::loading(buildkit.clone());
+        loop {
+            // Check for state transitions
+            if let App::Loading {
+                ref rx,
+                ref buildkit,
+            } = app
+                && let Ok(result) = rx.recv_timeout(MIN_FPS)
+            {
+                let containers = result?;
+                app = Self::stopping(containers, buildkit.clone());
+            }
+
+            if let App::Stopping(ref mut state) = app
+                && state.try_update()
+            {
+                app = App::Exit;
+            }
+
+            if matches!(app, App::Exit) {
+                return Ok(());
+            }
+
+            terminal
+                .draw(|f| {
+                    f.render_widget(&app, f.area());
+                })
+                .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+
+            app.handle_key_event()?;
+        }
+    }
+
+    fn loading(buildkit: BuildKitD) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
         // Spawn async task to fetch containers for stop
@@ -40,42 +78,6 @@ impl App {
         });
 
         App::Loading { rx, buildkit }
-    }
-
-    pub fn run<B: ratatui::backend::Backend>(
-        mut self,
-        terminal: &mut Terminal<B>,
-    ) -> color_eyre::Result<()> {
-        loop {
-            // Check for state transitions
-            if let App::Loading {
-                ref rx,
-                ref buildkit,
-            } = self
-                && let Ok(result) = rx.recv_timeout(MIN_FPS)
-            {
-                let containers = result?;
-                self = Self::stopping(containers, buildkit.clone());
-            }
-
-            if let App::Stopping(ref mut state) = self
-                && state.try_update()
-            {
-                self = App::Exit;
-            }
-
-            if matches!(self, App::Exit) {
-                return Ok(());
-            }
-
-            terminal
-                .draw(|f| {
-                    f.render_widget(&self, f.area());
-                })
-                .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
-
-            self.handle_key_event()?;
-        }
     }
 
     fn stopping(
