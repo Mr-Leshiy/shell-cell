@@ -335,6 +335,6 @@ fn main_block() -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
         .title("'Shell-Cell' Containers")
-        .title_bottom("↑↓: navigate, s: stop, r: remove, Ctrl-C or Ctrl-D: exit")
+        .title_bottom("↑↓ or k/j: navigate, s: stop, r: remove, Ctrl-C or Ctrl-D: exit")
         .border_style(Style::new().light_magenta())
 }
