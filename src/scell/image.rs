@@ -81,41 +81,36 @@ fn prepare_copy_stmt<W: std::io::Write>(
     ctx_path: &Path,
 ) -> color_eyre::Result<()> {
     for e in &copy_stmt.0 {
-        let mut iter = e.iter().peekable();
         let mut cp_tmt = String::new();
-        while let Some(item) = iter.next() {
-            // The last item is the destination to where to copy
-            // https://docs.docker.com/reference/dockerfile/#copy
-            if iter.peek().is_none() {
-                let _ = write!(&mut cp_tmt, " {}", item.display());
-            } else {
-                // Tweaking the original item path from the `CopyStmt` by resolving
-                // it with the corresponding
-                // Shell-Cell blueprint location where
-                // `CopyStmt` locates. Making a path
-                // a relative from the root
-                // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
-                // Copying files into the tar archive.
-                let ctx_path = ctx_path
-                    .parent()
-                    .context("Must have a parent as its a path to the file")?;
-                let item = ctx_path.join(item);
-                let mut f = std::fs::File::open(&item)
-                    .context(format!("Cannot open file {}", item.display()))?;
-                let item: PathBuf = std::fs::canonicalize(item)?
-                    .components()
-                    .filter(|c| {
-                        !matches!(
-                            c,
-                            std::path::Component::Prefix(_) | std::path::Component::RootDir
-                        )
-                    })
-                    .collect();
+        for src_item in &e.src {
+            // Tweaking the original item path from the `CopyStmt` by resolving
+            // it with the corresponding
+            // Shell-Cell blueprint location where
+            // `CopyStmt` locates. Making a path
+            // a relative from the root
+            // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
+            // Copying files into the tar archive.
+            let ctx_path = ctx_path
+                .parent()
+                .context("Must have a parent as its a path to the file")?;
+            let item = ctx_path.join(src_item);
+            let mut f = std::fs::File::open(&item)
+                .context(format!("Cannot open file {}", item.display()))?;
+            let item: PathBuf = std::fs::canonicalize(item)?
+                .components()
+                .filter(|c| {
+                    !matches!(
+                        c,
+                        std::path::Component::Prefix(_) | std::path::Component::RootDir
+                    )
+                })
+                .collect();
 
-                tar.append_file(&item, &mut f)?;
-                let _ = write!(&mut cp_tmt, " {}", item.display());
-            }
+            tar.append_file(&item, &mut f)?;
+            let _ = write!(&mut cp_tmt, " {}", item.display());
         }
+
+        let _ = write!(&mut cp_tmt, " {}", e.dest.display());
 
         let _ = writeln!(dockerfile, "COPY {cp_tmt}",);
     }

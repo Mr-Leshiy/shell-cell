@@ -8,7 +8,7 @@ use crate::scell::{
         name::TargetName,
         target::{
             build::BuildStmt,
-            copy::{CopyStmt, CopyStmtEntry},
+            copy::CopyStmt,
             env::{EnvStmt, EnvStmtItem},
             shell::ShellStmt,
             workspace::WorkspaceStmt,
@@ -149,8 +149,8 @@ use crate::scell::{
                 location: std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt").unwrap(),
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt(vec![
-                    CopyStmtEntry::from("src dst"),
-                    CopyStmtEntry::from("file.txt /app/file.txt"),
+                    "src dst".parse().unwrap(),
+                    "file.txt /app/file.txt".parse().unwrap(),
                 ]),
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
@@ -218,7 +218,7 @@ use crate::scell::{
                 location: std::fs::canonicalize("src/scell/compile/tests/ok/all_stmts").unwrap(),
                 workspace: WorkspaceStmt(Some("/app".to_string())),
                 copy: CopyStmt(vec![
-                    CopyStmtEntry::from("src /app/src"),
+                    "src /app/src".parse().unwrap(),
                 ]),
                 build: BuildStmt(vec![
                     "apt-get update".to_string(),
