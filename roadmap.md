@@ -16,7 +16,8 @@
 
 ## Version `2.0.0`
 
-- [ ] Performance improvements
+- [ ] `docker-compose.yml` like configuration of the container, including exposing ports, setup other containers as a services.
+- [ ] Performance improvements, bug fixes.
 - [ ] BuildKit usage.
 - [ ] Allow Github for the `from` statement **Shell-Cell** file location.
 - [ ] `Dockerfile` support (???)
