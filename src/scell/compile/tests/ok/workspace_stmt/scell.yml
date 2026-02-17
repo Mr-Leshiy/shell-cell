@@ -1,0 +1,5 @@
+main:
+  from: from
+  shell: shell
+  hang: hang
+  workspace: /workspace
