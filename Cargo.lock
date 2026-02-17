@@ -2448,7 +2448,7 @@ dependencies = [
 
 [[package]]
 name = "shell-cell"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "async-channel",
  "bollard",
