@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytes::Bytes;
-use color_eyre::eyre::{Context, ContextCompat};
+use color_eyre::eyre::Context;
 
 use super::{
     Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
@@ -35,19 +35,19 @@ impl SCell {
                 Link::Node {
                     build,
                     copy,
-                    location: path,
+                    location,
                     workspace,
                     env,
                     name,
                 } => {
                     prepare_workspace_stmt(&mut dockerfile, workspace);
                     prepare_env_stmt(&mut dockerfile, env);
-                    prepare_copy_stmt(&mut dockerfile, &mut tar, copy, path)?;
+                    prepare_copy_stmt(&mut dockerfile, &mut tar, copy)?;
                     prepare_build_stmt(&mut dockerfile, build);
                     // The last item
                     if links_iter.peek().is_none() {
                         // Adding metadata
-                        prepare_metadata_stmt(&mut dockerfile, name, path)?;
+                        prepare_metadata_stmt(&mut dockerfile, name, location)?;
                     }
                 },
             }
@@ -71,32 +71,21 @@ impl SCell {
 /// sequence is treated as the **destination**
 /// inside the container and is excluded.
 ///
-/// All other elements are treated as **source paths** and are joined
-/// with the `ctx_path` to create absolute or relative paths rooted in the build
-/// context.
+/// Its assumed that all **source paths** are absolute paths.
 fn prepare_copy_stmt<W: std::io::Write>(
     dockerfile: &mut String,
     tar: &mut tar::Builder<W>,
     copy_stmt: &CopyStmt,
-    ctx_path: &Path,
 ) -> color_eyre::Result<()> {
     for e in &copy_stmt.0 {
         let mut cp_tmt = String::new();
         for src_item in &e.src {
-            // Tweaking the original item path from the `CopyStmt` by resolving
-            // it with the corresponding
-            // Shell-Cell blueprint location where
-            // `CopyStmt` locates. Making a path
-            // a relative from the root
+            // Tweaking the original item path from the `CopyStmt.
+            // Making a path a relative from the root
             // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
-            // Copying files into the tar archive.
-            let ctx_path = ctx_path
-                .parent()
-                .context("Must have a parent as its a path to the file")?;
-            let item = ctx_path.join(src_item);
-            let mut f = std::fs::File::open(&item)
-                .context(format!("Cannot open file {}", item.display()))?;
-            let item: PathBuf = std::fs::canonicalize(item)?
+            let mut f = std::fs::File::open(src_item)
+                .context(format!("Cannot open file {}", src_item.display()))?;
+            let item: PathBuf = src_item
                 .components()
                 .filter(|c| {
                     !matches!(
