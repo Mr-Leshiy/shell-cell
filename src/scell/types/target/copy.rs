@@ -52,7 +52,7 @@ mod tests {
         }
     ; "two entries")]
     #[test_case(
-        "src1 src1 dst"
+        "src1 src2 dst"
         => CopyStmtEntry {
             src: vec![
                 PathBuf::from("src1"),
@@ -62,7 +62,7 @@ mod tests {
         }
     ; "three entries")]
     #[test_case(
-        "       src1        src1            dst"
+        "       src1        src2            dst"
         => CopyStmtEntry {
             src: vec![
                 PathBuf::from("src1"),
