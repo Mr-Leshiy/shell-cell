@@ -1,0 +1,7 @@
+main:
+  from: from
+  shell: shell
+  hang: hang
+  copy:
+    - src dst
+    - Cargo.toml dst2

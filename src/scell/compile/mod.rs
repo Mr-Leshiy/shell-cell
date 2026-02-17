@@ -11,19 +11,29 @@ use crate::{
     scell::{
         Link, SCell,
         compile::errors::{
-            CircularTargets, DirNotFoundFromStmt, FileLoadFromStmt, MissingEntrypoint,
-            MissingHangStmt, MissingShellStmt, MissingTarget, MountHostDirNotFound,
+            CircularTargets, CopySrcNotFound, DirNotFoundFromStmt, FileLoadFromStmt,
+            MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
+            MountHostDirNotFound,
         },
         types::{
             SCellFile,
             name::TargetName,
-            target::{config::ConfigStmt, from::FromStmt},
+            target::{
+                TargetStmt, config::ConfigStmt, copy::CopyStmt, from::FromStmt, shell::ShellStmt,
+            },
         },
     },
     scell_home_dir,
 };
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
+
+type CompileInnerResult = (
+    Vec<Link>,
+    Option<ShellStmt>,
+    Option<String>,
+    Option<ConfigStmt>,
+);
 
 impl SCell {
     /// Process the provided `SCellFile` file recursively, to build a proper chain of
@@ -50,17 +60,43 @@ impl SCell {
                 entry_point_target.clone(),
             ))?;
 
+        let (links, shell, hang, config) =
+            Self::compile_inner(scell_f, entry_point, entry_point_target)?;
+
+        let mut report = Report::new();
+        if shell.is_none() {
+            report.add_error(UserError::wrap(MissingShellStmt));
+        }
+        if hang.is_none() {
+            report.add_error(UserError::wrap(MissingHangStmt));
+        }
+        report.check()?;
+
+        color_eyre::eyre::ensure!(
+            links.len() >= 2,
+            "It must be at least two links in the target graph"
+        );
+
+        Ok(Self(super::SCellInner {
+            links,
+            shell: shell.context("'shell' cannot be 'None'")?,
+            hang: hang.context("'hang' cannot be 'None'")?,
+            config,
+        }))
+    }
+
+    fn compile_inner(
+        mut walk_f: SCellFile,
+        mut walk_target: TargetStmt,
+        mut walk_target_name: TargetName,
+    ) -> color_eyre::Result<CompileInnerResult> {
         // Store processed target's name and location, to detect circular target dependencies
         let mut visited_targets = HashSet::new();
-
         let mut links = Vec::new();
-
-        let mut walk_f = scell_f;
-        let mut walk_target = entry_point;
-        let mut walk_target_name = entry_point_target;
         let mut shell = None;
         let mut hang = None;
         let mut config = None;
+
         loop {
             // Use only the most recent 'shell` and 'hang' statements from the targets graph.
             if shell.is_none() {
@@ -72,11 +108,16 @@ impl SCell {
             if config.is_none() {
                 config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
             }
+            let copy = resolve_copy(
+                &walk_f.location,
+                &walk_target_name,
+                walk_target.copy.clone(),
+            )?;
             links.push(Link::Node {
                 name: walk_target_name.clone(),
                 location: walk_f.location.clone(),
                 workspace: walk_target.workspace.clone(),
-                copy: walk_target.copy.clone(),
+                copy,
                 build: walk_target.build.clone(),
                 env: walk_target.env.clone(),
             });
@@ -118,21 +159,7 @@ impl SCell {
             }
         }
 
-        let mut report = Report::new();
-        if shell.is_none() {
-            report.add_error(UserError::wrap(MissingShellStmt));
-        }
-        if hang.is_none() {
-            report.add_error(UserError::wrap(MissingHangStmt));
-        }
-        report.check()?;
-
-        Ok(Self(super::SCellInner {
-            links,
-            shell: shell.context("'shell' cannot be 'None'")?,
-            hang: hang.context("'hang' cannot be 'None'")?,
-            config,
-        }))
+        Ok((links, shell, hang, config))
     }
 }
 
@@ -159,6 +186,35 @@ fn resolve_config(
             color_eyre::eyre::Ok(c)
         })
         .transpose()
+}
+
+/// **source paths** and are joined with the target `location` to create absolute or
+/// relative paths rooted in the build context.
+///
+/// It is important for the image tar archive builder process, during which it is assumed
+/// that all **source paths** are absolute, exists, and properly resolved related to the
+/// target `location`
+fn resolve_copy(
+    location: &Path,
+    target_name: &TargetName,
+    mut copy: CopyStmt,
+) -> color_eyre::Result<CopyStmt> {
+    let mut report = Report::new();
+    for e in &mut copy.0 {
+        for src_item in &mut e.src {
+            if let Ok(new_src) = std::fs::canonicalize(&*src_item) {
+                *src_item = new_src;
+            } else {
+                report.add_error(UserError::wrap(CopySrcNotFound(
+                    src_item.clone(),
+                    target_name.clone(),
+                    location.to_path_buf(),
+                )));
+            }
+        }
+    }
+    report.check()?;
+    Ok(copy)
 }
 
 fn global() -> color_eyre::Result<Option<SCellFile>> {

@@ -1,22 +1,30 @@
-use std::{ops::Deref, path::PathBuf};
+use std::{path::PathBuf, str::FromStr};
+
+use color_eyre::eyre::ContextCompat;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct CopyStmt(pub Vec<CopyStmtEntry>);
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-pub struct CopyStmtEntry(Vec<PathBuf>);
-
-impl Deref for CopyStmtEntry {
-    type Target = Vec<PathBuf>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+pub struct CopyStmtEntry {
+    pub dest: PathBuf,
+    pub src: Vec<PathBuf>,
 }
 
-impl From<&str> for CopyStmtEntry {
-    fn from(s: &str) -> Self {
-        Self(s.split_whitespace().map(PathBuf::from).collect())
+impl FromStr for CopyStmtEntry {
+    type Err = color_eyre::eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut res = s.split_whitespace().map(PathBuf::from).collect::<Vec<_>>();
+        let dest = res.pop().context(format!(
+            "'from' statement entry must have desctination path, entry: {s}"
+        ))?;
+        color_eyre::eyre::ensure!(
+            !res.is_empty(),
+            "'from' statement entry must have at least one source path, entry: {s}"
+        );
+
+        Ok(Self { dest, src: res })
     }
 }
 
@@ -24,7 +32,7 @@ impl<'de> serde::Deserialize<'de> for CopyStmtEntry {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
         let str = String::deserialize(deserializer)?;
-        Ok(str.as_str().into())
+        str.parse().map_err(serde::de::Error::custom)
     }
 }
 
@@ -36,27 +44,34 @@ mod tests {
 
     use super::*;
 
-    #[test_case("entry" => CopyStmtEntry(
-        vec![
-            PathBuf::from("entry")
-        ]
-    )
-    ; "one entry")]
-    #[test_case("entry1 entry2" => CopyStmtEntry(
-        vec![
-            PathBuf::from("entry1"),
-            PathBuf::from("entry2"),
-        ]
-    )
+    #[test_case(
+        "src1 dst"
+        => CopyStmtEntry {
+            src: vec![PathBuf::from("src1")],
+            dest: PathBuf::from("dst"),
+        }
     ; "two entries")]
-    #[test_case("       entry1     entry2      " => CopyStmtEntry(
-        vec![
-            PathBuf::from("entry1"),
-            PathBuf::from("entry2"),
-        ]
-    )
-    ; "two entries more spaces")]
+    #[test_case(
+        "src1 src2 dst"
+        => CopyStmtEntry {
+            src: vec![
+                PathBuf::from("src1"),
+                PathBuf::from("src2"),
+            ],
+            dest: PathBuf::from("dst"),
+        }
+    ; "three entries")]
+    #[test_case(
+        "       src1        src2            dst"
+        => CopyStmtEntry {
+            src: vec![
+                PathBuf::from("src1"),
+                PathBuf::from("src2"),
+            ],
+            dest: PathBuf::from("dst"),
+        }
+    ; "three entries more space")]
     fn parsing_test(input: &str) -> CopyStmtEntry {
-        input.into()
+        input.parse().unwrap()
     }
 }

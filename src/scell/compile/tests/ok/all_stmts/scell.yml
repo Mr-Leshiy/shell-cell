@@ -1,0 +1,13 @@
+main:
+  from: from
+  shell: shell
+  hang: hang
+  workspace: /app
+  copy:
+    - src /app/src
+  build:
+    - apt-get update
+    - apt-get install -y git
+  env:
+    - MY_VAR=hello
+    - PATH=/usr/local/bin:/usr/bin
