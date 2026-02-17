@@ -222,7 +222,7 @@ impl LsState {
     /// the full container list. Returns `None` if no container is selected.
     fn stop_selected(&mut self) -> Option<StoppingState> {
         let selected = self.table_state.selected()?;
-        let container = self.containers.get(selected)?.clone();
+        let container = self.containers.get(selected)?;
         let buildkit = self.buildkit.clone();
 
         let (tx, rx) = std::sync::mpsc::channel();
@@ -250,7 +250,7 @@ impl LsState {
     /// Returns `None` if no container is selected.
     fn confirm_remove(&self) -> Option<ConfirmRemoveState> {
         let selected = self.table_state.selected()?;
-        let container = self.containers.get(selected)?.clone();
+        let container = self.containers.get(selected)?;
 
         Some(ConfirmRemoveState {
             container_name: container.name.to_string(),
