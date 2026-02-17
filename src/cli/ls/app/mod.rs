@@ -229,7 +229,6 @@ impl LsState {
         let container_name = container.name.to_string();
 
         tokio::spawn({
-            let buildkit = buildkit.clone();
             async move {
                 let res = buildkit.stop_container_by_name(&container_name).await;
                 let res = match res {
@@ -276,10 +275,8 @@ impl ConfirmRemoveState {
     fn confirm(self) -> RemovingState {
         let (tx, rx) = std::sync::mpsc::channel();
         let container_name = self.container_name.clone();
-        let buildkit = self.buildkit.clone();
-
+        let buildkit = self.buildkit;
         tokio::spawn({
-            let buildkit = buildkit.clone();
             async move {
                 let res = buildkit.cleanup_container_by_name(&container_name).await;
                 let res = match res {
