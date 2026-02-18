@@ -23,7 +23,37 @@ jobs:
       run: cargo +nightly fmt --check
     - name: Clippy
       run: cargo clippy --all-targets
-    - name: Run tests
-      run: cargo test -- --test-threads 1
+    - name: Run unit tests
+      run: cargo test --bins
     - name: Deny
       uses: EmbarkStudios/cargo-deny-action@v2
+    - name: Build debug binary
+      run: cargo build
+    - name: Upload scell binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: scell
+        path: target/debug/scell
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download scell binary
+      uses: actions/download-artifact@v4
+      with:
+        name: scell
+        path: target/debug
+    - name: Make binary executable
+      run: chmod +x target/debug/scell
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - uses: astral-sh/setup-uv@v5
+    - name: Run e2e tests
+      working-directory: e2e-tests
+      env:
+        SCELL_BIN: ${{ github.workspace }}/target/debug/scell
+      run: uv run pytest
