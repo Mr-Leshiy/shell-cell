@@ -140,12 +140,16 @@ Runtime configuration for the **Shell-Cell** container.
 Unlike `build`, `copy`, and `workspace`, which affect the image building process,
 `config` defines how the container behaves when it runs.
 
+All `config` statements are optional.
+
 Only the first `config` statement encountered in the target graph (starting from the entry point) is used.
 
 ```yml
 config:
     mounts:
         - <host_path>:<container_absolute_path>
+    ports:
+        - "<host_port>:<container_port>"
 ```
 
 #### `mounts`
@@ -162,4 +166,32 @@ config:
     mounts:
         - ./src:/app/src
         - /data:/container/data
+```
+
+#### `ports`
+
+Publishes container ports to the host.
+Follows the [Docker Compose short form syntax](https://docs.docker.com/reference/compose-file/services/#ports).
+
+Each item can be one of:
+
+| Format | Description |
+|---|---|
+| `CONTAINER_PORT` | Expose container port; Docker assigns a random host port |
+| `HOST_PORT:CONTAINER_PORT` | Map a specific host port to a container port |
+| `HOST_IP:HOST_PORT:CONTAINER_PORT` | Map with a specific host IP and port |
+| `HOST_IP::CONTAINER_PORT` | Bind to a host IP with a random host port |
+
+Append `/tcp` or `/udp` to any format to specify the protocol (default: `tcp`).
+
+Bare port numbers (e.g. `3000`) can be written unquoted; all other formats should be quoted.
+
+```yml
+config:
+    ports:
+        - "8080:80"
+        - "127.0.0.1:9000:9000"
+        - "127.0.0.1::5000"
+        - 3000
+        - "6060:6060/udp"
 ```

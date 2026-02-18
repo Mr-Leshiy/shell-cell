@@ -2,9 +2,11 @@
 
 mod docker;
 
+use std::collections::HashMap;
+
 use bollard::{
     Docker,
-    secret::{ContainerCreateBody, HostConfig},
+    secret::{ContainerCreateBody, HostConfig, PortBinding},
 };
 
 use self::docker::{build_image, start_container};
@@ -68,16 +70,31 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
+        let binds: Vec<String> = scell
+            .mounts()
+            .0
+            .iter()
+            .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
+            .collect();
+
+        let port_bindings: HashMap<String, Option<Vec<PortBinding>>> = scell
+            .ports()
+            .0
+            .into_iter()
+            .map(|p| {
+                let key = format!("{}/{}", p.container_port, p.protocol.as_str());
+                let binding = PortBinding {
+                    host_ip: p.host_ip,
+                    host_port: Some(p.host_port),
+                };
+                (key, Some(vec![binding]))
+            })
+            .collect();
+
         let config = ContainerCreateBody {
             host_config: Some(HostConfig {
-                binds: Some(
-                    scell
-                        .mounts()
-                        .0
-                        .iter()
-                        .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
-                        .collect(),
-                ),
+                binds: (!binds.is_empty()).then_some(binds),
+                port_bindings: (!port_bindings.is_empty()).then_some(port_bindings),
                 ..Default::default()
             }),
             ..Default::default()

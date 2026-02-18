@@ -8,6 +8,11 @@ use crate::scell::{
         name::TargetName,
         target::{
             build::BuildStmt,
+            config::{
+                ConfigStmt,
+                mounts::MountsStmt,
+                ports::{PortItem, PortProtocol, PortsStmt},
+            },
             copy::{CopyStmt, CopyStmtEntry},
             env::{EnvStmt, EnvStmtItem},
             shell::ShellStmt,
@@ -245,6 +250,33 @@ use crate::scell::{
         config: Option::default(),
     })
     ; "all statements"
+)]
+#[test_case(
+    "ports_config", None
+    => SCell(SCellInner {
+        links: vec![
+            Link::Node {
+                name: "main".parse().unwrap(),
+                location: std::fs::canonicalize("src/scell/compile/tests/ok/ports_config").unwrap(),
+                workspace: WorkspaceStmt::default(),
+                copy: CopyStmt::default(),
+                build: BuildStmt::default(),
+                env: EnvStmt::default(),
+            },
+            Link::Root("from".parse().unwrap())
+        ],
+        shell: ShellStmt("shell".to_string()),
+        hang: "hang".to_string(),
+        config: Some(ConfigStmt {
+            mounts: MountsStmt::default(),
+            ports: PortsStmt(vec![
+                PortItem { host_ip: None, host_port: "8080".to_string(), container_port: "80".to_string(), protocol: PortProtocol::Tcp },
+                PortItem { host_ip: Some("127.0.0.1".to_string()), host_port: "9000".to_string(), container_port: "9000".to_string(), protocol: PortProtocol::Tcp },
+                PortItem { host_ip: None, host_port: "6060".to_string(), container_port: "6060".to_string(), protocol: PortProtocol::Udp },
+            ]),
+        }),
+    })
+    ; "ports config"
 )]
 fn compile_ok_test(
     dir_path: &str,
