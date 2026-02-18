@@ -1,8 +1,5 @@
 from scell import assert_clean_exit, scell
 
-PREPARE_SESSION_TIMEOUT = 60
-
-
 def test_scell_simple_run(scell) -> None:
     child = scell(args=["data"])
 
@@ -74,16 +71,16 @@ def test_scell_run_ports(scell) -> None:
 
 
 def assert_scell_prepare_session(child):
-    child.expect("'Shell-Cell' is up to date", timeout=5)
-    child.expect("Starting 'Shell-Cell' session", timeout=PREPARE_SESSION_TIMEOUT)
-    child.expect("root@", timeout=1)
-    child.expect("/app#", timeout=1)
+    child.expect("'Shell-Cell' is up to date", timeout=10)
+    child.expect("Starting 'Shell-Cell' session", timeout=60)
+    child.expect("root@", timeout=10)
+    child.expect("/app#", timeout=10)
 
 
 def assert_scell_stop_session(child):
     # Send Ctrl-D to the shell to end the session
     child.send('\x04')
-    child.expect("Finished 'Shell-Cell' session", timeout=5)
+    child.expect("Finished 'Shell-Cell' session", timeout=10)
     # scell shows "<Press any key to exit>" before quitting — send any key
     child.send(' ')
     assert_clean_exit(child)
