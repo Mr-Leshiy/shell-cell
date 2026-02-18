@@ -1,7 +1,7 @@
 import os
 
-import pytest
 import pexpect
+import pytest
 
 SCELL_WINDOWN_WIDTH = 800
 SCELL_WINDOWN_HEIGHT = 600
@@ -10,8 +10,8 @@ SCELL_WINDOWN_HEIGHT = 600
 def scell():
     scell_bin = os.environ.get("SCELL_BIN")
     assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
-    
-    def spawn_scell(args: list[str], timeout: int = 10):
+
+    def spawn_scell(args: list[str], timeout: int = 10) -> pexpect.spawn:
         scell_process = pexpect.spawn(
             scell_bin,
             args=args,
@@ -21,5 +21,3 @@ def scell():
         return scell_process
 
     return spawn_scell
-
-
