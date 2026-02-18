@@ -63,9 +63,13 @@ def test_scell_run_ports(scell) -> None:
 
     assert_scell_prepare_session(child)
     child.sendline("python3 -m http.server 4321")
+    child.expect("Serving", timeout=10)
+    child.expect("HTTP", timeout=10)
     import requests
     resp = requests.get("http://0.0.0.0:4321", timeout=10)
     assert resp.status_code == 200
+    # Send Ctrl-c to stop the python3 HTTP server
+    child.send('\x03')
     assert_scell_stop_session(child)
 
 
