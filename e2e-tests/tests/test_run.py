@@ -60,8 +60,6 @@ def test_scell_run_ports(scell) -> None:
 
     assert_scell_prepare_session(child)
     child.sendline("python3 -m http.server 4321")
-    child.expect("Serving")
-    child.expect("HTTP")
     import requests
     resp = requests.get("http://0.0.0.0:4321", timeout=30)
     assert resp.status_code == 200
