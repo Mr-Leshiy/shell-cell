@@ -202,11 +202,12 @@ fn resolve_copy(
     let mut report = Report::new();
     for e in &mut copy.0 {
         for src_item in &mut e.src {
-            if let Ok(new_src) = std::fs::canonicalize(location.join(&*src_item)) {
+            let src = location.join(&*src_item);
+            if let Ok(new_src) = std::fs::canonicalize(&src) {
                 *src_item = new_src;
             } else {
                 report.add_error(UserError::wrap(CopySrcNotFound(
-                    src_item.clone(),
+                    src,
                     target_name.clone(),
                     location.to_path_buf(),
                 )));

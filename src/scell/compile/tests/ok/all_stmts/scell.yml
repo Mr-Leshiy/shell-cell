@@ -4,7 +4,7 @@ main:
   hang: hang
   workspace: /app
   copy:
-    - src /app/src
+    - ../../../../../../src /app/src
   build:
     - apt-get update
     - apt-get install -y git
