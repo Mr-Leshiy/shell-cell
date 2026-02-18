@@ -101,18 +101,28 @@ impl App {
                 {
                     *self = App::Exit;
                 },
-                KeyCode::Down | KeyCode::Char('j') => {
+                KeyCode::Char('i') => {
                     if let App::Ls(ls_state) = self {
+                        ls_state.show_help = !ls_state.show_help;
+                    }
+                },
+                KeyCode::Down | KeyCode::Char('j') => {
+                    if let App::Ls(ls_state) = self
+                        && !ls_state.show_help
+                    {
                         ls_state.next();
                     }
                 },
                 KeyCode::Up | KeyCode::Char('k') => {
-                    if let App::Ls(ls_state) = self {
+                    if let App::Ls(ls_state) = self
+                        && !ls_state.show_help
+                    {
                         ls_state.previous();
                     }
                 },
                 KeyCode::Char('s') => {
                     if let App::Ls(ls_state) = self
+                        && !ls_state.show_help
                         && let Some(stopping) = ls_state.stop_selected()
                     {
                         *self = App::Stopping(stopping);
@@ -120,6 +130,7 @@ impl App {
                 },
                 KeyCode::Char('r') => {
                     if let App::Ls(ls_state) = self
+                        && !ls_state.show_help
                         && let Some(confirm) = ls_state.confirm_remove()
                     {
                         *self = App::ConfirmRemove(confirm);
@@ -133,12 +144,26 @@ impl App {
                         }
                     }
                 },
-                KeyCode::Char('n') | KeyCode::Esc => {
+                KeyCode::Char('n') => {
                     if let App::ConfirmRemove(_) = self {
                         let confirm_state = std::mem::replace(self, App::Exit);
                         if let App::ConfirmRemove(state) = confirm_state {
                             *self = App::Ls(state.cancel());
                         }
+                    }
+                },
+                KeyCode::Esc => {
+                    match self {
+                        App::Ls(ls_state) if ls_state.show_help => {
+                            ls_state.show_help = false;
+                        },
+                        App::ConfirmRemove(_) => {
+                            let confirm_state = std::mem::replace(self, App::Exit);
+                            if let App::ConfirmRemove(state) = confirm_state {
+                                *self = App::Ls(state.cancel());
+                            }
+                        },
+                        _ => {},
                     }
                 },
                 _ => {},
@@ -174,6 +199,7 @@ pub struct LsState {
     containers: Vec<SCellContainerInfo>,
     table_state: TableState,
     buildkit: BuildKitD,
+    show_help: bool,
 }
 
 impl LsState {
@@ -189,6 +215,7 @@ impl LsState {
             containers,
             table_state,
             buildkit,
+            show_help: false,
         }
     }
 
