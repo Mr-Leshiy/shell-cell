@@ -28,7 +28,7 @@ use self::types::{
 use crate::scell::{
     name::SCellName,
     types::target::{
-        config::{ConfigStmt, mounts::MountsStmt},
+        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
         env::EnvStmt,
     },
 };
@@ -72,6 +72,14 @@ impl SCell {
             .config
             .as_ref()
             .map(|c| c.mounts.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn ports(&self) -> PortsStmt {
+        self.0
+            .config
+            .as_ref()
+            .map(|c| c.ports.clone())
             .unwrap_or_default()
     }
 

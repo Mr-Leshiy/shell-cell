@@ -1,5 +1,5 @@
 main:
-  from: debian:bookworm
+  from: python:3.14-trixie
   workspace: /app
   shell: /bin/bash
   hang: while true; do sleep 3600; done
@@ -12,3 +12,5 @@ main:
   config:
     mounts:
       - ./mount-source:/app/mnt
+    ports:
+      - "4321:4321"
