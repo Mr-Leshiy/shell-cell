@@ -77,8 +77,15 @@ impl BuildKitD {
             .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
             .collect();
 
-        let port_bindings: HashMap<String, Option<Vec<PortBinding>>> = scell
-            .ports()
+        let ports = scell.ports();
+
+        let exposed_ports: Vec<String> = ports
+            .0
+            .iter()
+            .map(|p| format!("{}/{}", p.container_port, p.protocol.as_str()))
+            .collect();
+
+        let port_bindings: HashMap<String, Option<Vec<PortBinding>>> = ports
             .0
             .into_iter()
             .map(|p| {
@@ -97,6 +104,7 @@ impl BuildKitD {
                 port_bindings: (!port_bindings.is_empty()).then_some(port_bindings),
                 ..Default::default()
             }),
+            exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
             ..Default::default()
         };
         let scell_name = scell.name()?.to_string();
