@@ -3,3 +3,12 @@ main:
   workspace: /app
   shell: /bin/bash
   hang: while true; do sleep 3600; done
+  copy:
+    - data/hello.txt /app/hello.txt
+  env:
+    - SCELL_TEST_VAR=hello_from_env
+  build:
+    - echo 'build works' > /app/build_marker.txt
+  config:
+    mounts:
+      - ./mount-source:/mnt/test
