@@ -3,5 +3,5 @@ main:
   shell: shell
   hang: hang
   copy:
-    - src dst
-    - Cargo.toml dst2
+    - ../../../../../../src dst
+    - ../../../../../../Cargo.toml dst2
