@@ -421,15 +421,14 @@ fn render_help_overlay(
         ]),
     ];
 
-    let paragraph = Paragraph::new(help_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Info ")
-                .title_bottom("i / Esc: close this window")
-                .title_alignment(HorizontalAlignment::Center)
-                .border_style(Style::default().fg(Color::Cyan)),
-        );
+    let paragraph = Paragraph::new(help_text).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" Info ")
+            .title_bottom("i / Esc: close this window")
+            .title_alignment(HorizontalAlignment::Center)
+            .border_style(Style::default().fg(Color::Cyan)),
+    );
 
     paragraph.render(horizontal[1], buf);
 }
