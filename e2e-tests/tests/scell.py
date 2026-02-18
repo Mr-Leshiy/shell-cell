@@ -1,0 +1,30 @@
+import os
+
+import pexpect
+import pytest
+
+SCELL_WINDOWN_WIDTH = 800
+SCELL_WINDOWN_HEIGHT = 600
+
+
+def assert_clean_exit(child: pexpect.spawn) -> None:
+    child.expect(pexpect.EOF, timeout=1)
+    child.close()
+    assert child.exitstatus == 0
+
+
+@pytest.fixture(scope="session")
+def scell():
+    scell_bin = os.environ.get("SCELL_BIN")
+    assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
+
+    def spawn_scell(args: list[str], timeout: int = 10) -> pexpect.spawn:
+        scell_process = pexpect.spawn(
+            scell_bin,
+            args=args,
+            dimensions=(SCELL_WINDOWN_HEIGHT, SCELL_WINDOWN_WIDTH),
+            timeout=timeout,
+        )
+        return scell_process
+
+    return spawn_scell
