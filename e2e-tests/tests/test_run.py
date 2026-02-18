@@ -58,6 +58,16 @@ def test_scell_run_mount(scell) -> None:
     child.expect("works!", timeout=10)
     assert_scell_stop_session(child)
 
+def test_scell_run_ports(scell) -> None:
+    child = scell(args=["data"])
+
+    assert_scell_prepare_session(child)
+    child.sendline("python3 -m http.server 4321")
+    import requests
+    resp = requests.get("http://0.0.0.0:4321", timeout=10)
+    assert resp.status_code == 200
+    assert_scell_stop_session(child)
+
 
 def assert_scell_prepare_session(child):
     child.expect("'Shell-Cell' is up to date", timeout=5)
