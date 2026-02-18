@@ -1,11 +1,8 @@
-from scell import scell
-
-import pexpect
+from scell import assert_clean_exit, scell
 
 
 def test_scell_basic(scell) -> None:
     child = scell(args=["--version"])
     child.expect("shell-cell 1.0.1")
-    child.expect(pexpect.EOF)
-    child.close()
-    assert child.exitstatus == 0
+
+    assert_clean_exit(child)

@@ -6,6 +6,13 @@ import pytest
 SCELL_WINDOWN_WIDTH = 800
 SCELL_WINDOWN_HEIGHT = 600
 
+
+def assert_clean_exit(child: pexpect.spawn) -> None:
+    child.expect(pexpect.EOF, timeout=1)
+    child.close()
+    assert child.exitstatus == 0
+
+
 @pytest.fixture(scope="session")
 def scell():
     scell_bin = os.environ.get("SCELL_BIN")

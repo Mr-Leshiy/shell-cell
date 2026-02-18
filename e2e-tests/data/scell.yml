@@ -1,0 +1,5 @@
+main:
+  from: debian:bookworm
+  workspace: /app
+  shell: /bin/bash
+  hang: while true; do sleep 3600; done
