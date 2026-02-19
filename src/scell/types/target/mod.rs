@@ -3,7 +3,6 @@ pub mod config;
 pub mod copy;
 pub mod env;
 pub mod from;
-pub mod image;
 pub mod shell;
 pub mod workspace;
 

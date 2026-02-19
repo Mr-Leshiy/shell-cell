@@ -1,6 +1,8 @@
+pub mod image;
+
 use std::{path::PathBuf, str::FromStr};
 
-use crate::scell::types::{name::TargetName, target::image::ImageDef};
+use crate::scell::types::{name::TargetName, target::from::image::ImageDef};
 
 const SCELL_DEF_FROM_DELIMITER: char = '+';
 

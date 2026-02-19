@@ -21,7 +21,7 @@ use hex::ToHex;
 use self::types::{
     name::TargetName,
     target::{
-        build::BuildStmt, copy::CopyStmt, image::ImageDef, shell::ShellStmt,
+        build::BuildStmt, copy::CopyStmt, from::image::ImageDef, shell::ShellStmt,
         workspace::WorkspaceStmt,
     },
 };
