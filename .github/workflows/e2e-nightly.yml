@@ -1,14 +1,9 @@
 name: E2E Nightly
 
-# on:
-#   schedule:
-#     - cron: '0 0 * * *'
-
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  schedule:
+    # Runs every day at 00:00
+    - cron: '0 0 * * *'
 
 env:
   CARGO_TERM_COLOR: always
