@@ -6,7 +6,7 @@ const TARGET_REF_DELIMITER: char = '+';
 
 #[derive(Debug, thiserror::Error)]
 #[error(
-    "Target reference must be in the format '[<path_to_the_blueprint>]+<target_name>', provided: {0}"
+    "Target reference must be in the format '[<path_to_the_blueprint>]+<target_name>', provided: {0}\n(maybe you've meant 'from_image')\n"
 )]
 pub struct TargetRefParsingError(String);
 
@@ -33,7 +33,7 @@ impl FromStr for TargetRef {
                     name: suffix.parse()?,
                 })
             },
-            _ => color_eyre::eyre::bail!(TargetRefParsingError(str.to_string())),
+            _ => Err(color_eyre::eyre::eyre!(TargetRefParsingError(str.to_string()))),
         }
     }
 }
