@@ -17,7 +17,7 @@ use crate::{
     },
     error::WrapUserError,
     pty::Pty,
-    scell::{SCell, container_info::SCellContainerInfo},
+    scell::{SCell, container_info::SCellContainerInfo, image::SCellImage},
 };
 
 #[derive(Clone)]
@@ -46,7 +46,8 @@ impl BuildKitD {
         scell: &SCell,
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<()> {
-        let (tar, dockerfile_path) = scell.prepare_image_tar_artifact_bytes()?;
+        let image = SCellImage::new(scell)?;
+        let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
         build_image(
             &self.docker,
             &scell.name()?.to_string(),

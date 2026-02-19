@@ -7,7 +7,7 @@ main:
     - copy_test.txt copy_test.txt
     - copy-source cp
   env:
-    - ENV_TEST="env works!"
+    - ENV_TEST='env works!'
   build:
     - echo 'build works!' > build_test.txt
   config:

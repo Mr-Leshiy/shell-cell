@@ -91,6 +91,7 @@ yaml_serde = "0.10.3"
 terminput = "0.5.12"
 terminput-crossterm = "0.4.8"
 ratatui = "0.30.0"
+dockerfile-parser-rs = "3.2.2"
 
 [dev-dependencies]
 indoc = "2.0.7"
