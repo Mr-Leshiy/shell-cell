@@ -1,5 +1,6 @@
 use std::{
-    fmt::Write, path::{Path, PathBuf}
+    fmt::Write,
+    path::{Path, PathBuf},
 };
 
 use bytes::Bytes;
@@ -15,11 +16,12 @@ use super::{
 };
 use crate::scell::{link::RootNode, types::target::env::EnvStmt};
 
-impl SCell {
-    pub fn prepare_dockerfile(&self) -> color_eyre::Result<Dockerfile> {
-        let mut dockerfile_instructions = Vec::new();
+pub struct SCellImage(Dockerfile);
 
-        let mut links_iter = self.0.links.iter().rev().peekable();
+impl SCellImage {
+    pub fn new(scell: &SCell) -> color_eyre::Result<Self> {
+        let mut dockerfile_instructions = Vec::new();
+        let mut links_iter = scell.0.links.iter().rev().peekable();
         while let Some(link) = links_iter.next() {
             match link {
                 Link::Root(RootNode::Image(image)) => {
@@ -53,22 +55,39 @@ impl SCell {
             }
         }
         // TODO: find better solution how to hang the container
-        prepare_hang_stmt(&mut dockerfile_instructions, &self.0.hang);
+        prepare_hang_stmt(&mut dockerfile_instructions, &scell.0.hang);
 
-        Ok(Dockerfile::new(dockerfile_instructions))
+        Ok(Self(Dockerfile::new(dockerfile_instructions)))
     }
 
-    pub fn prepare_image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
+    pub fn dump_to_string(&self) -> color_eyre::Result<String> {
+        let mut dockerfile_str = String::new();
+        let mut iter = self.0.instructions.iter().peekable();
+        while let Some(instruction) = iter.next() {
+            if iter.peek().is_none() {
+                if let Instruction::Entrypoint(entrypoint) = instruction
+                    && let [entrypoint] = entrypoint.as_slice()
+                {
+                    writeln!(&mut dockerfile_str, "ENTRYPOINT {entrypoint}")?;
+                } else {
+                    color_eyre::eyre::bail!("Last instruction MUST be only single ETRYPOINT item");
+                }
+            } else {
+                writeln!(&mut dockerfile_str, "{instruction}")?;
+            }
+        }
+        Ok(dockerfile_str)
+    }
+
+    pub fn image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
         const DOCKERFILE_NAME: &str = "Dockerfile";
         const TEMP_DIR_PREFIX: &str = "scell";
         // Unix file mode,
         // 6 (Owner): Read (4) + Write (2) = Read & Write.
         const FILE_MODE: u32 = 0o600;
 
-        let dockerfile = self.prepare_dockerfile()?;
-
         let mut tar = tar::Builder::new(Vec::new());
-        for i in &dockerfile.instructions {
+        for i in &self.0.instructions {
             match i {
                 Instruction::Copy { sources, .. } => {
                     for s in sources {
@@ -101,7 +120,7 @@ impl SCell {
             }
         }
 
-        let dockerfile_str = dockerfile_str(&dockerfile)?;
+        let dockerfile_str = self.dump_to_string()?;
         // Attach generated dockerfile string to tar
         let mut header = tar::Header::new_gnu();
         header.set_path(DOCKERFILE_NAME)?;
@@ -111,25 +130,6 @@ impl SCell {
         tar.append(&header, dockerfile_str.as_bytes())?;
         Ok((tar.into_inner()?.into(), DOCKERFILE_NAME))
     }
-}
-
-fn dockerfile_str(dockerfile: &Dockerfile) -> color_eyre::Result<String> {
-    let mut dockerfile_str = String::new();
-    let mut iter = dockerfile.instructions.iter().peekable();
-    while let Some(instruction) = iter.next() {
-        if iter.peek().is_none() {
-            if let Instruction::Entrypoint(entrypoint) = instruction
-                && let [entrypoint] = entrypoint.as_slice()
-            {
-                writeln!(&mut dockerfile_str, "ENTRYPOINT {entrypoint}")?;
-            } else {
-                color_eyre::eyre::bail!("Last instruction MUST be only single ETRYPOINT item");
-            }
-        } else {
-            writeln!(&mut dockerfile_str, "{instruction}")?;
-        }
-    }
-    Ok(dockerfile_str)
 }
 
 /// Following Docker's `COPY` syntax, the last element in each

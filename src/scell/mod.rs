@@ -7,7 +7,7 @@
 
 mod compile;
 pub mod container_info;
-mod image;
+pub mod image;
 mod link;
 mod name;
 pub mod types;
@@ -17,6 +17,7 @@ use std::hash::{Hash, Hasher};
 use hex::ToHex;
 
 use crate::scell::{
+    image::SCellImage,
     link::Link,
     name::SCellName,
     types::target::{
@@ -72,7 +73,10 @@ impl SCell {
     fn hex_hash(&self) -> color_eyre::Result<String> {
         let mut hasher = metrohash::MetroHash64::new();
         self.0.hash(&mut hasher);
-        // self.prepare_image_tar_artifact_bytes()?.hash(&mut hasher);
+
+        let image = SCellImage::new(self)?;
+        image.dump_to_string()?.hash(&mut hasher);
+
         Ok(hasher.finish().to_be_bytes().encode_hex())
     }
 }
