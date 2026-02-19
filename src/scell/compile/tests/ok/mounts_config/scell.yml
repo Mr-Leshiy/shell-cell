@@ -1,0 +1,7 @@
+main:
+  from_image: from
+  shell: shell
+  hang: hang
+  config:
+    mounts:
+      - ./:/dst
