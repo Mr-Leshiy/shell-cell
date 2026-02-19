@@ -1,6 +1,8 @@
 pub mod image;
 pub mod target_ref;
 
+use std::path::PathBuf;
+
 use serde::Deserialize;
 
 use crate::scell::types::target::from::{image::ImageDef, target_ref::TargetRef};
@@ -11,4 +13,6 @@ pub enum FromStmt {
     Target(TargetRef),
     #[serde(rename = "from_image")]
     Image(ImageDef),
+    #[serde(rename = "from_docker")]
+    Docker(PathBuf),
 }

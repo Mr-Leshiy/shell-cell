@@ -1,6 +1,5 @@
 use std::{
-    fmt::Write,
-    path::{Path, PathBuf},
+    fmt::Write, io::Read, path::{Path, PathBuf}
 };
 
 use bytes::Bytes;
@@ -13,7 +12,7 @@ use super::{
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
-use crate::scell::types::target::env::EnvStmt;
+use crate::scell::{link::RootNode, types::target::env::EnvStmt};
 
 impl SCell {
     pub fn prepare_image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
@@ -29,8 +28,12 @@ impl SCell {
 
         while let Some(link) = links_iter.next() {
             match link {
-                Link::Root(root) => {
-                    let _ = writeln!(dockerfile, "FROM {root}");
+                Link::Root(RootNode::Image(image)) => {
+                    let _ = writeln!(dockerfile, "FROM {image}");
+                },
+                Link::Root(RootNode::Dockerfile(docker_path)) => {
+                    let mut f = std::fs::File::open(docker_path)?;
+                    f.read_to_string(&mut dockerfile)?;
                 },
                 Link::Node {
                     build,

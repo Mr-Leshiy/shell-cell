@@ -10,7 +10,7 @@ use crate::scell::types::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Link {
-    Root(ImageDef),
+    Root(RootNode),
     Node {
         name: TargetName,
         location: PathBuf,
@@ -19,4 +19,10 @@ pub enum Link {
         copy: CopyStmt,
         build: BuildStmt,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum RootNode {
+    Image(ImageDef),
+    Dockerfile(PathBuf),
 }

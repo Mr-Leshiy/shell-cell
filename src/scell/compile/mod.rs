@@ -2,20 +2,18 @@ pub mod errors;
 #[cfg(test)]
 mod tests;
 
-use std::{collections::HashSet, path::Path};
+use std::{collections::HashSet, path::{Path, PathBuf}};
 
 use color_eyre::eyre::{Context, ContextCompat};
 
 use crate::{
     error::{OptionUserError, Report, UserError, WrapUserError},
     scell::{
-        Link, SCell,
-        compile::errors::{
+        Link, SCell, compile::errors::{
             CircularTargets, CopySrcNotFound, DirNotFoundFromStmt, FileLoadFromStmt,
             MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
             MountHostDirNotFound,
-        },
-        types::{
+        }, link::RootNode, types::{
             SCellFile,
             name::TargetName,
             target::{
@@ -25,7 +23,7 @@ use crate::{
                 from::{FromStmt, target_ref::TargetRef},
                 shell::ShellStmt,
             },
-        },
+        }
     },
     scell_home_dir,
 };
@@ -128,15 +126,19 @@ impl SCell {
 
             match walk_target.from {
                 FromStmt::Image(docker_image_def) => {
-                    links.push(Link::Root(docker_image_def));
+                    links.push(Link::Root(RootNode::Image(docker_image_def)));
+                    break;
+                },
+                FromStmt::Docker(docker_file_path) => {
+                    links.push(Link::Root(RootNode::Dockerfile(docker_file_path)));
                     break;
                 },
                 FromStmt::Target(TargetRef { location, name }) => {
                     if let Some(location) = location {
                         let location = walk_f.location.join(location);
                         let location =
-                            std::fs::canonicalize(&location).user_err(DirNotFoundFromStmt(
-                                location.clone(),
+                            resolve_path( &walk_f.location, &location).user_err(DirNotFoundFromStmt(
+                                location,
                                 name.clone(),
                                 walk_f.location.clone(),
                             ))?;
@@ -180,7 +182,7 @@ fn resolve_config(
                 .0
                 .into_iter()
                 .map(|mut m| {
-                    m.host = std::fs::canonicalize(location.join(&m.host)).user_err(
+                    m.host = resolve_path(location, &m.host).user_err(
                         MountHostDirNotFound(m.host, target_name.clone(), location.to_path_buf()),
                     )?;
                     color_eyre::eyre::Ok(m)
@@ -206,12 +208,11 @@ fn resolve_copy(
     let mut report = Report::new();
     for e in &mut copy.0 {
         for src_item in &mut e.src {
-            let src = location.join(&*src_item);
-            if let Ok(new_src) = std::fs::canonicalize(&src) {
+            if let Ok(new_src) = resolve_path(location, src_item) {
                 *src_item = new_src;
             } else {
                 report.add_error(UserError::wrap(CopySrcNotFound(
-                    src,
+                    src_item.clone(),
                     target_name.clone(),
                     location.to_path_buf(),
                 )));
@@ -220,6 +221,10 @@ fn resolve_copy(
     }
     report.check()?;
     Ok(copy)
+}
+
+fn resolve_path(ctx: &Path, path: &Path) -> color_eyre::Result<PathBuf> {
+    Ok(std::fs::canonicalize(ctx.join(path))?)
 }
 
 fn global() -> color_eyre::Result<Option<SCellFile>> {
