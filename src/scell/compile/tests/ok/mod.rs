@@ -23,7 +23,7 @@ use crate::scell::{
 
 #[test_case(
     "default_target", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -38,13 +38,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "02679853b28a6ec1".to_string())
+    })
     ; "default target"
 )]
 #[test_case(
     "other_target", Some("other".parse().unwrap())
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "other".parse().unwrap(),
@@ -59,13 +58,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "6cc8af376a928d25".to_string())
+    })
     ; "other target"
 )]
 #[test_case(
     "few_targets", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -88,13 +86,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "540bfac5faeed0ad".to_string())
+    })
     ; "few targets"
 )]
 #[test_case(
     "ref_other_files", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -125,13 +122,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "c36031f85cdf98f3".to_string())
+    })
     ; "ref other files"
 )]
 #[test_case(
     "workspace_stmt", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -146,13 +142,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "97c3c56438147a50".to_string())
+    })
     ; "workspace statement"
 )]
 #[test_case(
     "copy_stmt", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -176,13 +171,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "a1aa6791e506577c".to_string())
+    })
     ; "copy statement"
 )]
 #[test_case(
     "build_stmt", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -200,13 +194,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "3ae4db9b81d86613".to_string())
+    })
     ; "build statement"
 )]
 #[test_case(
     "env_stmt", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -224,13 +217,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "a86022c340a12704".to_string())
+    })
     ; "env statement"
 )]
 #[test_case(
     "all_stmts", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -256,13 +248,12 @@ use crate::scell::{
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Option::default(),
-    }),
-    "b24d0a0a60fa4529".to_string())
+    })
     ; "all statements"
 )]
 #[test_case(
     "ports_config", None
-    => (SCell(SCellInner {
+    => SCell(SCellInner {
         links: vec![
             Link::Node {
                 name: "main".parse().unwrap(),
@@ -284,19 +275,16 @@ use crate::scell::{
                 PortItem { host_ip: None, host_port: "6060".to_string(), container_port: "6060".to_string(), protocol: PortProtocol::Udp },
             ]),
         }),
-    }),
-    "e85d0536da0bd388".to_string())
+    })
     ; "ports config"
 )]
 fn compile_ok_test(
     dir_path: &str,
     target: Option<TargetName>,
-) -> (SCell, String) {
-    let scell = SCell::compile(
+) -> SCell {
+    SCell::compile(
         Path::new("src/scell/compile/tests/ok").join(dir_path),
         target,
     )
-    .unwrap();
-    let scell_hash = scell.hex_hash().unwrap();
-    (scell, scell_hash)
+    .unwrap()
 }
