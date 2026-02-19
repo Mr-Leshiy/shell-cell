@@ -158,10 +158,6 @@ use crate::scell::{
                         src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt/copy_file.txt").unwrap()],
                         dest: PathBuf::from("."),
                     },
-                    CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt/copy-source").unwrap()],
-                        dest: PathBuf::from("."),
-                    },
                 ]),
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),

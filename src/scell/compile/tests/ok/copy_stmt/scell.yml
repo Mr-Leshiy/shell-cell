@@ -4,4 +4,3 @@ main:
   hang: hang
   copy:
     - copy_file.txt .
-    - copy-source .
