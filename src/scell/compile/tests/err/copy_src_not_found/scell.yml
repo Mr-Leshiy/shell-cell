@@ -1,0 +1,6 @@
+main:
+  from_image: from
+  copy:
+    - nonexistent.txt .
+  shell: shell
+  hang: hang
