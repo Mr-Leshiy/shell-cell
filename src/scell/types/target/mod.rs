@@ -14,6 +14,7 @@ use crate::scell::types::target::env::EnvStmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct TargetStmt {
+    #[serde(flatten)]
     pub from: FromStmt,
     #[serde(default)]
     pub workspace: WorkspaceStmt,

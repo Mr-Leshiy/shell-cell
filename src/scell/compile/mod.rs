@@ -127,7 +127,7 @@ impl SCell {
                     links.push(Link::Root(docker_image_def));
                     break;
                 },
-                FromStmt::TargetRef { location, name } => {
+                FromStmt::From { location, name } => {
                     if let Some(location) = location {
                         let location = walk_f.location.join(location);
                         let location =

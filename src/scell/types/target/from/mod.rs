@@ -1,4 +1,5 @@
 pub mod image;
+pub mod target_ref;
 
 use std::{path::PathBuf, str::FromStr};
 
@@ -8,7 +9,7 @@ const SCELL_DEF_FROM_DELIMITER: char = '+';
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FromStmt {
-    TargetRef {
+    From {
         location: Option<PathBuf>,
         name: TargetName,
     },
@@ -21,13 +22,13 @@ impl FromStr for FromStmt {
     fn from_str(str: &str) -> Result<Self, Self::Err> {
         match str.split_once(SCELL_DEF_FROM_DELIMITER) {
             Some(("", suffix)) => {
-                Ok(Self::TargetRef {
+                Ok(Self::From {
                     location: None,
                     name: suffix.parse()?,
                 })
             },
             Some((prefix, suffix)) => {
-                Ok(Self::TargetRef {
+                Ok(Self::From {
                     location: PathBuf::from_str(prefix).map(Some)?,
                     name: suffix.parse()?,
                 })
@@ -58,11 +59,11 @@ mod tests {
         TargetName::from_str(s).unwrap()
     }
 
-    #[test_case("+my-cell" => FromStmt::TargetRef { 
+    #[test_case("+my-cell" => FromStmt::From { 
         location: None,
         name: name("my-cell") 
     } ; "local cell")]
-    #[test_case("path/to/dir+my-cell" => FromStmt::TargetRef { 
+    #[test_case("path/to/dir+my-cell" => FromStmt::From { 
         location: Some(PathBuf::from("path/to/dir")), 
         name: name("my-cell") 
     } ; "path and cell")]
