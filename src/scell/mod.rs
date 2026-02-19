@@ -8,28 +8,20 @@
 mod compile;
 pub mod container_info;
 mod image;
+mod link;
 mod name;
 pub mod types;
 
-use std::{
-    hash::{Hash, Hasher},
-    path::PathBuf,
-};
+use std::hash::{Hash, Hasher};
 
 use hex::ToHex;
 
-use self::types::{
-    name::TargetName,
-    target::{
-        build::BuildStmt, copy::CopyStmt, from::image::ImageDef, shell::ShellStmt,
-        workspace::WorkspaceStmt,
-    },
-};
 use crate::scell::{
+    link::Link,
     name::SCellName,
     types::target::{
         config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
-        env::EnvStmt,
+        shell::ShellStmt,
     },
 };
 
@@ -46,19 +38,6 @@ struct SCellInner {
     shell: ShellStmt,
     hang: String,
     config: Option<ConfigStmt>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Link {
-    Root(ImageDef),
-    Node {
-        name: TargetName,
-        location: PathBuf,
-        workspace: WorkspaceStmt,
-        env: EnvStmt,
-        copy: CopyStmt,
-        build: BuildStmt,
-    },
 }
 
 impl SCell {
