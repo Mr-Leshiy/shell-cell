@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use test_case::test_case;
 
 use crate::scell::{
-    Link, SCell, SCellInner,
+    SCell, SCellInner, link::{Link, RootNode},
     types::{
         name::TargetName,
         target::{
@@ -33,7 +33,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -53,7 +53,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -81,7 +81,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -117,7 +117,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -137,7 +137,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -162,7 +162,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -185,7 +185,7 @@ use crate::scell::{
                 ]),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -208,7 +208,7 @@ use crate::scell::{
                     EnvStmtItem { key: "PORT".to_string(), value: "8080".to_string() },
                 ]),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -239,7 +239,7 @@ use crate::scell::{
                     EnvStmtItem { key: "PATH".to_string(), value: "/usr/local/bin:/usr/bin".to_string() },
                 ]),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -259,7 +259,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
