@@ -2,18 +2,24 @@ pub mod errors;
 #[cfg(test)]
 mod tests;
 
-use std::{collections::HashSet, path::{Path, PathBuf}};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use color_eyre::eyre::{Context, ContextCompat};
 
 use crate::{
     error::{OptionUserError, Report, UserError, WrapUserError},
     scell::{
-        Link, SCell, compile::errors::{
-            CircularTargets, CopySrcNotFound, DirNotFoundFromStmt, FileLoadFromStmt,
-            MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
+        Link, SCell,
+        compile::errors::{
+            CircularTargets, CopySrcNotFound, DirNotFoundFromStmt, DockerfileNotFound,
+            FileLoadFromStmt, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
             MountHostDirNotFound,
-        }, link::RootNode, types::{
+        },
+        link::RootNode,
+        types::{
             SCellFile,
             name::TargetName,
             target::{
@@ -23,7 +29,7 @@ use crate::{
                 from::{FromStmt, target_ref::TargetRef},
                 shell::ShellStmt,
             },
-        }
+        },
     },
     scell_home_dir,
 };
@@ -130,18 +136,21 @@ impl SCell {
                     break;
                 },
                 FromStmt::Docker(docker_file_path) => {
-                    links.push(Link::Root(RootNode::Dockerfile(docker_file_path)));
+                    let docker_path = resolve_path(&walk_f.location, &docker_file_path).user_err(
+                        DockerfileNotFound(
+                            docker_file_path,
+                            walk_target_name.clone(),
+                            walk_f.location.clone(),
+                        ),
+                    )?;
+                    links.push(Link::Root(RootNode::Dockerfile(docker_path)));
                     break;
                 },
                 FromStmt::Target(TargetRef { location, name }) => {
                     if let Some(location) = location {
-                        let location = walk_f.location.join(location);
-                        let location =
-                            resolve_path( &walk_f.location, &location).user_err(DirNotFoundFromStmt(
-                                location,
-                                name.clone(),
-                                walk_f.location.clone(),
-                            ))?;
+                        let location = resolve_path(&walk_f.location, &location).user_err(
+                            DirNotFoundFromStmt(location, name.clone(), walk_f.location.clone()),
+                        )?;
                         walk_f =
                             SCellFile::from_path(&location).wrap_user_err(FileLoadFromStmt(
                                 location.clone(),
@@ -182,9 +191,11 @@ fn resolve_config(
                 .0
                 .into_iter()
                 .map(|mut m| {
-                    m.host = resolve_path(location, &m.host).user_err(
-                        MountHostDirNotFound(m.host, target_name.clone(), location.to_path_buf()),
-                    )?;
+                    m.host = resolve_path(location, &m.host).user_err(MountHostDirNotFound(
+                        m.host,
+                        target_name.clone(),
+                        location.to_path_buf(),
+                    ))?;
                     color_eyre::eyre::Ok(m)
                 })
                 .collect::<Result<_, _>>()?;
@@ -223,7 +234,10 @@ fn resolve_copy(
     Ok(copy)
 }
 
-fn resolve_path(ctx: &Path, path: &Path) -> color_eyre::Result<PathBuf> {
+fn resolve_path(
+    ctx: &Path,
+    path: &Path,
+) -> color_eyre::Result<PathBuf> {
     Ok(std::fs::canonicalize(ctx.join(path))?)
 }
 

@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 use test_case::test_case;
 
 use crate::scell::{
-    SCell, SCellInner, link::{Link, RootNode},
+    SCell, SCellInner,
+    link::{Link, RootNode},
     types::{
         name::TargetName,
         target::{

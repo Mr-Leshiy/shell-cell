@@ -1,5 +1,7 @@
 use std::{
-    fmt::Write, io::Read, path::{Path, PathBuf}
+    fmt::Write,
+    io::Read,
+    path::{Path, PathBuf},
 };
 
 use bytes::Bytes;

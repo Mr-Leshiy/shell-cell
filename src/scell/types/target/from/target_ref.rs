@@ -33,7 +33,11 @@ impl FromStr for TargetRef {
                     name: suffix.parse()?,
                 })
             },
-            _ => Err(color_eyre::eyre::eyre!(TargetRefParsingError(str.to_string()))),
+            _ => {
+                Err(color_eyre::eyre::eyre!(TargetRefParsingError(
+                    str.to_string()
+                )))
+            },
         }
     }
 }
