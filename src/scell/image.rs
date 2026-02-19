@@ -36,6 +36,7 @@ impl SCell {
                 Link::Root(RootNode::Dockerfile(docker_path)) => {
                     let mut f = std::fs::File::open(docker_path)?;
                     f.read_to_string(&mut dockerfile)?;
+                    let _ = writeln!(dockerfile);
                 },
                 Link::Node {
                     build,
