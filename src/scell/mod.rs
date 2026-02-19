@@ -72,7 +72,7 @@ impl SCell {
     fn hex_hash(&self) -> color_eyre::Result<String> {
         let mut hasher = metrohash::MetroHash64::new();
         self.0.hash(&mut hasher);
-        self.prepare_image_tar_artifact_bytes()?.hash(&mut hasher);
+        // self.prepare_image_tar_artifact_bytes()?.hash(&mut hasher);
         Ok(hasher.finish().to_be_bytes().encode_hex())
     }
 }
