@@ -59,6 +59,14 @@ impl FromStr for ImageDef {
     }
 }
 
+impl<'de> serde::Deserialize<'de> for ImageDef {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        let str = String::deserialize(deserializer)?;
+        str.parse().map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use test_case::test_case;

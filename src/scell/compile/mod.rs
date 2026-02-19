@@ -19,7 +19,11 @@ use crate::{
             SCellFile,
             name::TargetName,
             target::{
-                TargetStmt, config::ConfigStmt, copy::CopyStmt, from::FromStmt, shell::ShellStmt,
+                TargetStmt,
+                config::ConfigStmt,
+                copy::CopyStmt,
+                from::{FromStmt, target_ref::TargetRef},
+                shell::ShellStmt,
             },
         },
     },
@@ -127,7 +131,7 @@ impl SCell {
                     links.push(Link::Root(docker_image_def));
                     break;
                 },
-                FromStmt::From { location, name } => {
+                FromStmt::Target(TargetRef { location, name }) => {
                     if let Some(location) = location {
                         let location = walk_f.location.join(location);
                         let location =

@@ -5,13 +5,15 @@ use crate::scell::types::name::TargetName;
 const TARGET_REF_DELIMITER: char = '+';
 
 #[derive(Debug, thiserror::Error)]
-#[error("Target reference must be in the format '[<path_to_the_blueprint>]+<target_name>', provided: {0}")]
+#[error(
+    "Target reference must be in the format '[<path_to_the_blueprint>]+<target_name>', provided: {0}"
+)]
 pub struct TargetRefParsingError(String);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TargetRef {
-    location: Option<PathBuf>,
-    name: TargetName,
+    pub location: Option<PathBuf>,
+    pub name: TargetName,
 }
 
 impl FromStr for TargetRef {
