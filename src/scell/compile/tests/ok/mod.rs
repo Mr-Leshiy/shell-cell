@@ -160,12 +160,12 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt(vec![
                     CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("src").unwrap()],
-                        dest: PathBuf::from("dst"),
+                        src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt/copy_file.txt").unwrap()],
+                        dest: PathBuf::from("."),
                     },
                     CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("Cargo.toml").unwrap()],
-                        dest: PathBuf::from("dst2"),
+                        src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt/copy-source").unwrap()],
+                        dest: PathBuf::from("."),
                     },
                 ]),
                 build: BuildStmt::default(),
@@ -177,7 +177,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "6b59fa930bd03520".to_string())
+    "a4e01bdd977f071f".to_string())
     ; "copy statement"
 )]
 #[test_case(
@@ -238,8 +238,8 @@ use crate::scell::{
                 workspace: WorkspaceStmt(Some("/app".to_string())),
                 copy: CopyStmt(vec![
                     CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("src").unwrap()],
-                        dest: PathBuf::from("/app/src"),
+                        src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/all_stmts/copy_file.txt").unwrap()],
+                        dest: PathBuf::from("."),
                     },
                 ]),
                 build: BuildStmt(vec![
@@ -257,7 +257,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "57f53e4d236953c7".to_string())
+    "4965f0867f01e705".to_string())
     ; "all statements"
 )]
 #[test_case(
