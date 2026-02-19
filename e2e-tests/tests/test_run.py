@@ -23,6 +23,9 @@ def test_scell_run_copy(scell) -> None:
     child.sendline("cat copy_test.txt")
     child.expect("copy")
     child.expect("works!")
+    child.sendline("cat cp/copy_test.txt")
+    child.expect("copy")
+    child.expect("works!")
     assert_scell_stop_session(child)
 
 
