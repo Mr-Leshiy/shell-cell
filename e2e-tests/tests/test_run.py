@@ -1,14 +1,13 @@
 from scell import assert_clean_exit, scell
 
 def test_scell_simple_run(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     assert_scell_stop_session(child)
 
-
 def test_scell_run_check_workspace(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     child.sendline("pwd")
@@ -17,7 +16,7 @@ def test_scell_run_check_workspace(scell) -> None:
 
 
 def test_scell_run_copy(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     child.sendline("cat copy_test.txt")
@@ -30,7 +29,7 @@ def test_scell_run_copy(scell) -> None:
 
 
 def test_scell_run_env(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     child.sendline("echo $ENV_TEST")
@@ -40,7 +39,7 @@ def test_scell_run_env(scell) -> None:
 
 
 def test_scell_run_build(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     child.sendline("cat build_test.txt")
@@ -50,7 +49,7 @@ def test_scell_run_build(scell) -> None:
 
 
 def test_scell_run_mount(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     child.sendline("cat mnt/mount_test.txt")
@@ -59,7 +58,7 @@ def test_scell_run_mount(scell) -> None:
     assert_scell_stop_session(child)
 
 def skip_test_scell_run_ports(scell) -> None:
-    child = scell(args=["data"])
+    child = scell(args=["data/common"])
 
     assert_scell_prepare_session(child)
     import requests
