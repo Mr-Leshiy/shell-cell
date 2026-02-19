@@ -5,7 +5,7 @@ pub mod name;
 pub mod target;
 
 use std::{
-    collections::BTreeMap,
+    collections::HashMap,
     path::{Path, PathBuf},
 };
 
@@ -20,7 +20,7 @@ const SCELL_FILE_NAME: &str = "scell.yml";
 
 #[derive(Debug)]
 pub struct SCellFile {
-    pub cells: BTreeMap<TargetName, TargetStmt>,
+    pub cells: HashMap<TargetName, TargetStmt>,
     pub location: PathBuf,
 }
 
@@ -32,7 +32,7 @@ impl SCellFile {
 
         let file: std::fs::File =
             std::fs::File::open(&file_path).wrap_user_err(FileOpenFailed(file_path.clone()))?;
-        let cells: BTreeMap<TargetName, TargetStmt> =
+        let cells: HashMap<TargetName, TargetStmt> =
             yaml_serde::from_reader(&file).mark_as_user_err()?;
 
         Ok(Self { cells, location })
