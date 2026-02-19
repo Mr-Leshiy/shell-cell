@@ -1,0 +1,32 @@
+name: E2E Nightly
+
+on:
+  schedule:
+    # Runs every day at 00:00
+    - cron: '0 0 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Build debug binary
+      run: cargo build
+    - name: Make binary executable
+      run: chmod +x target/debug/scell
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - uses: astral-sh/setup-uv@v5
+    - name: Run e2e tests
+      working-directory: e2e-tests
+      env:
+        SCELL_BIN: ${{ github.workspace }}/target/debug/scell
+      run: uv run pytest
