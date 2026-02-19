@@ -177,7 +177,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "".to_string())
+    "6b59fa930bd03520".to_string())
     ; "copy statement"
 )]
 #[test_case(
@@ -257,7 +257,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "".to_string())
+    "57f53e4d236953c7".to_string())
     ; "all statements"
 )]
 #[test_case(
