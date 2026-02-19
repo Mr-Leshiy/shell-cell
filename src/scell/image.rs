@@ -83,8 +83,6 @@ fn prepare_copy_stmt<W: std::io::Write>(
             // Tweaking the original item path from the `CopyStmt.
             // Making a path a relative from the root
             // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
-            let mut f = std::fs::File::open(src_item)
-                .context(format!("Cannot open file {}", src_item.display()))?;
             let item: PathBuf = src_item
                 .components()
                 .filter(|c| {
@@ -95,7 +93,14 @@ fn prepare_copy_stmt<W: std::io::Write>(
                 })
                 .collect();
 
-            tar.append_file(&item, &mut f)?;
+            if src_item.is_file() {
+                let mut f = std::fs::File::open(src_item)
+                    .context(format!("Cannot open file {}", src_item.display()))?;
+                tar.append_file(&item, &mut f)?;
+            }
+            if src_item.is_dir() {
+                tar.append_dir_all(&item, src_item)?;
+            }
             let _ = write!(&mut cp_tmt, " {}", item.display());
         }
 

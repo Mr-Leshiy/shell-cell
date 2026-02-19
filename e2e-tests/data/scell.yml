@@ -5,6 +5,7 @@ main:
   hang: python3 -m http.server 4321
   copy:
     - copy_test.txt copy_test.txt
+    - copy-source cp
   env:
     - ENV_TEST="env works!"
   build:

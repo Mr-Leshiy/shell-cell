@@ -3,5 +3,4 @@ main:
   shell: shell
   hang: hang
   copy:
-    - ../../../../../../src dst
-    - ../../../../../../Cargo.toml dst2
+    - copy_file.txt .

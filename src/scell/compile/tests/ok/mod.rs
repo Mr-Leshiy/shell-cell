@@ -155,12 +155,8 @@ use crate::scell::{
                 workspace: WorkspaceStmt::default(),
                 copy: CopyStmt(vec![
                     CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("src").unwrap()],
-                        dest: PathBuf::from("dst"),
-                    },
-                    CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("Cargo.toml").unwrap()],
-                        dest: PathBuf::from("dst2"),
+                        src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/copy_stmt/copy_file.txt").unwrap()],
+                        dest: PathBuf::from("."),
                     },
                 ]),
                 build: BuildStmt::default(),
@@ -230,8 +226,8 @@ use crate::scell::{
                 workspace: WorkspaceStmt(Some("/app".to_string())),
                 copy: CopyStmt(vec![
                     CopyStmtEntry {
-                        src: vec![std::fs::canonicalize("src").unwrap()],
-                        dest: PathBuf::from("/app/src"),
+                        src: vec![std::fs::canonicalize("src/scell/compile/tests/ok/all_stmts/copy_file.txt").unwrap()],
+                        dest: PathBuf::from("."),
                     },
                 ]),
                 build: BuildStmt(vec![

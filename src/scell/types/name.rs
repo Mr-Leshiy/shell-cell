@@ -6,7 +6,7 @@ use regex::Regex;
 static TARGET_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[a-z][a-z0-9_-]*$").expect("Must be valid REGEX expression"));
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TargetName(String);
 
 impl Display for TargetName {
