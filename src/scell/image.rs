@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytes::Bytes;
-use color_eyre::eyre::Context;
+use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
@@ -89,10 +89,13 @@ impl SCellImage {
         let mut tar = tar::Builder::new(Vec::new());
         for i in &self.0.instructions {
             match i {
-                Instruction::Copy { sources, .. } => {
+                Instruction::Copy { sources, .. } | Instruction::Add { sources, .. } => {
                     for s in sources {
                         let s = Path::new(s);
-                        color_eyre::eyre::ensure!(s.is_absolute(), "Must be an absolute path");
+                        color_eyre::eyre::ensure!(
+                            s.is_absolute() && s.exists(),
+                            "Must be an absolute path and exists"
+                        );
                         // Tweaking the original item path
                         // Making a path a relative from the root
                         // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
@@ -107,7 +110,7 @@ impl SCellImage {
                             .collect();
 
                         if s.is_file() {
-                            let mut f = std::fs::File::open(&s)
+                            let mut f = std::fs::File::open(s)
                                 .context(format!("Cannot open file {}", s.display()))?;
                             tar.append_file(&item, &mut f)?;
                         }
@@ -170,8 +173,23 @@ fn prepare_dockerfile(
         dockerfile_p.is_absolute(),
         "prepare_dockerfile, path be absolute"
     );
-    let dockerfile =
+    let mut dockerfile =
         Dockerfile::from(dockerfile_p.to_path_buf()).map_err(|e| color_eyre::eyre::eyre!(e))?;
+
+    let dir = dockerfile_p
+        .parent()
+        .context("Dockerfile must have a parent directory")?;
+    for i in &mut dockerfile.instructions {
+        match i {
+            Instruction::Copy { sources, .. } | Instruction::Add { sources, .. } => {
+                for s in sources {
+                    *s = format!("{}", dir.join(&s).display());
+                }
+            },
+            _ => {},
+        }
+    }
+
     dockerfile_instructions.extend(dockerfile.instructions);
     Ok(())
 }
