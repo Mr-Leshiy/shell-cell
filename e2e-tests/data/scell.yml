@@ -2,9 +2,9 @@ main:
   from: python:3.14-trixie
   workspace: /app
   shell: /bin/bash
-  hang: while true; do sleep 3600; done
+  hang: python3 -m http.server 4321
   copy:
-    - data/copy_test.txt copy_test.txt
+    - copy_test.txt copy_test.txt
   env:
     - ENV_TEST="env works!"
   build:
