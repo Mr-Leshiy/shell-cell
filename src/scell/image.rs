@@ -98,12 +98,11 @@ fn prepare_copy_stmt<W: std::io::Write>(
                 let mut f = std::fs::File::open(src_item)
                     .context(format!("Cannot open file {}", src_item.display()))?;
                 tar.append_file(&item, &mut f)?;
-                let _ = write!(&mut cp_tmt, " {}", item.display());
             }
             if src_item.is_dir() {
-                tar.append_dir(&item, src_item)?;
-                let _ = write!(&mut cp_tmt, " {}", item.display());
+                tar.append_dir_all(&item, src_item)?;
             }
+            let _ = write!(&mut cp_tmt, " {}", item.display());
         }
 
         let _ = write!(&mut cp_tmt, " {}", e.dest.display());
