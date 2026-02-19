@@ -300,6 +300,26 @@ use crate::scell::{
     })
     ; "mounts config"
 )]
+#[test_case(
+    "from_docker", None
+    => SCell(SCellInner {
+        links: vec![
+            Link::Node {
+                name: "main".parse().unwrap(),
+                location: std::fs::canonicalize("src/scell/compile/tests/ok/from_docker").unwrap(),
+                workspace: WorkspaceStmt::default(),
+                copy: CopyStmt::default(),
+                build: BuildStmt::default(),
+                env: EnvStmt::default(),
+            },
+            Link::Root(RootNode::Dockerfile(std::fs::canonicalize("src/scell/compile/tests/ok/from_docker/Dockerfile").unwrap()))
+        ],
+        shell: ShellStmt("shell".to_string()),
+        hang: "hang".to_string(),
+        config: Option::default(),
+    })
+    ; "from docker"
+)]
 fn compile_ok_test(
     dir_path: &str,
     target: Option<TargetName>,
