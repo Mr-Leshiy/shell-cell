@@ -1,5 +1,5 @@
 other:
-  from: from
+  from_image: from
 
 main:
   from: +other

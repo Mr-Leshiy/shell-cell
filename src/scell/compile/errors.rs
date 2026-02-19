@@ -44,6 +44,12 @@ pub struct MissingHangStmt;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 #[error(
-    "File or directory does not exist {0} while processing 'copy' statement for target '{1}' at '{2}'"
+    "File or directory does not exist at {0} while processing 'copy' statement for target '{1}' at '{2}'"
 )]
 pub struct CopySrcNotFound(pub PathBuf, pub TargetName, pub PathBuf);
+
+#[derive(Debug, PartialEq, thiserror::Error)]
+#[error(
+    "Dockerfile does not exist at {0} while processing 'from_docker' statement for target '{1}' at '{2}'"
+)]
+pub struct DockerfileNotFound(pub PathBuf, pub TargetName, pub PathBuf);

@@ -1,5 +1,5 @@
 main:
-  from: python:3.14-trixie
+  from_image: python:3.14-trixie
   workspace: /app
   shell: /bin/bash
   hang: python3 -m http.server 4321

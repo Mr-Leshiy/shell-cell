@@ -1,4 +1,4 @@
 main:
-  from_image: from
+  from_docker: Dockerfile
   shell: shell
   hang: hang

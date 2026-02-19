@@ -1,14 +1,33 @@
+from dataclasses import dataclass
+
+import pytest
+
 from scell import assert_clean_exit, scell
 
-def test_scell_simple_run(scell) -> None:
-    child = scell(args=["data"])
+
+@dataclass
+class ScellEnv:
+    data_dir: str
+    port: int
+
+
+ENVS = [
+    ScellEnv("data/common", 4321),
+    # ScellEnv("data/from_docker", 4322),
+]
+
+
+@pytest.mark.parametrize("env", ENVS)
+def test_scell_simple_run(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     assert_scell_stop_session(child)
 
 
-def test_scell_run_check_workspace(scell) -> None:
-    child = scell(args=["data"])
+@pytest.mark.parametrize("env", ENVS)
+def test_scell_run_check_workspace(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     child.sendline("pwd")
@@ -16,8 +35,9 @@ def test_scell_run_check_workspace(scell) -> None:
     assert_scell_stop_session(child)
 
 
-def test_scell_run_copy(scell) -> None:
-    child = scell(args=["data"])
+@pytest.mark.parametrize("env", ENVS)
+def test_scell_run_copy(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     child.sendline("cat copy_test.txt")
@@ -29,8 +49,9 @@ def test_scell_run_copy(scell) -> None:
     assert_scell_stop_session(child)
 
 
-def test_scell_run_env(scell) -> None:
-    child = scell(args=["data"])
+@pytest.mark.parametrize("env", ENVS)
+def test_scell_run_env(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     child.sendline("echo $ENV_TEST")
@@ -39,8 +60,9 @@ def test_scell_run_env(scell) -> None:
     assert_scell_stop_session(child)
 
 
-def test_scell_run_build(scell) -> None:
-    child = scell(args=["data"])
+@pytest.mark.parametrize("env", ENVS)
+def test_scell_run_build(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     child.sendline("cat build_test.txt")
@@ -49,8 +71,9 @@ def test_scell_run_build(scell) -> None:
     assert_scell_stop_session(child)
 
 
-def test_scell_run_mount(scell) -> None:
-    child = scell(args=["data"])
+@pytest.mark.parametrize("env", ENVS)
+def test_scell_run_mount(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     child.sendline("cat mnt/mount_test.txt")
@@ -58,12 +81,14 @@ def test_scell_run_mount(scell) -> None:
     child.expect("works!")
     assert_scell_stop_session(child)
 
-def skip_test_scell_run_ports(scell) -> None:
-    child = scell(args=["data"])
+
+@pytest.mark.parametrize("env", ENVS)
+def skip_test_scell_run_ports(scell, env: ScellEnv) -> None:
+    child = scell(args=[env.data_dir])
 
     assert_scell_prepare_session(child)
     import requests
-    resp = requests.get("http://0.0.0.0:4321", timeout=30)
+    resp = requests.get(f"http://0.0.0.0:{env.port}", timeout=30)
     assert resp.status_code == 200
     assert_scell_stop_session(child)
 

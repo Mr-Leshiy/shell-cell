@@ -1,0 +1,10 @@
+main:
+  from_docker: Dockerfile
+  workspace: /app
+  shell: /bin/bash
+  hang: python3 -m http.server 4322
+  config:
+    mounts:
+      - ./mount-source:/app/mnt
+    ports:
+      - "4322:4322"

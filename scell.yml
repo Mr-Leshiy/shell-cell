@@ -1,29 +1,19 @@
-
-rust-base:
-  from: rust:1.93-trixie
-  build:
-    - rustup component add clippy
-    - rustup component add rustfmt
-    - apt-get update --fix-missing
-    - apt-get -y install git curl wget
-
 main:
-  from: +rust-base
-  env:
-    # claude code instalation path 
-    - PATH="/root/.local/bin:$PATH"
-  build:
-    # claude code
-    - curl -fsSL https://claude.ai/install.sh | bash
-    # zsh
-    - apt install -y zsh
-    # nushell
-    - wget -qO- https://apt.fury.io/nushell/gpg.key | gpg --dearmor -o /etc/apt/keyrings/fury-nushell.gpg
-    - echo "deb [signed-by=/etc/apt/keyrings/fury-nushell.gpg] https://apt.fury.io/nushell/ /" | tee /etc/apt/sources.list.d/fury-nushell.list
-    - apt update
-    - apt install -y nushell
-    # neovim
-    - apt-get install -y neovim
+  # from: rust:1.93-trixie
+  from_docker: Dockerfile
+  # env:
+  #   # claude code instalation path 
+  #   - PATH="/root/.local/bin:$PATH"
+  # build:
+  #   # Prepare Rust
+  #   - rustup component add clippy
+  #   - rustup component add rustfmt
+  #   - apt-get update --fix-missing
+  #   - apt-get -y install git curl wget
+  #   # claude code
+  #   - curl -fsSL https://claude.ai/install.sh | bash
+  #   # zsh
+  #   - apt install -y zsh
   workspace: shell_cell
   shell: /bin/zsh
   hang: while true; do sleep 3600; done

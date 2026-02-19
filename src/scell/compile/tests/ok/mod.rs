@@ -3,14 +3,15 @@ use std::path::{Path, PathBuf};
 use test_case::test_case;
 
 use crate::scell::{
-    Link, SCell, SCellInner,
+    SCell, SCellInner,
+    link::{Link, RootNode},
     types::{
         name::TargetName,
         target::{
             build::BuildStmt,
             config::{
                 ConfigStmt,
-                mounts::MountsStmt,
+                mounts::{MountItem, MountsStmt},
                 ports::{PortItem, PortProtocol, PortsStmt},
             },
             copy::{CopyStmt, CopyStmtEntry},
@@ -33,7 +34,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -53,7 +54,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -81,7 +82,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -117,7 +118,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -137,7 +138,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -162,7 +163,7 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -185,7 +186,7 @@ use crate::scell::{
                 ]),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -208,7 +209,7 @@ use crate::scell::{
                     EnvStmtItem { key: "PORT".to_string(), value: "8080".to_string() },
                 ]),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -239,7 +240,7 @@ use crate::scell::{
                     EnvStmtItem { key: "PATH".to_string(), value: "/usr/local/bin:/usr/bin".to_string() },
                 ]),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
@@ -259,20 +260,65 @@ use crate::scell::{
                 build: BuildStmt::default(),
                 env: EnvStmt::default(),
             },
-            Link::Root("from".parse().unwrap())
+            Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
         hang: "hang".to_string(),
         config: Some(ConfigStmt {
-            mounts: MountsStmt::default(),
             ports: PortsStmt(vec![
                 PortItem { host_ip: None, host_port: "8080".to_string(), container_port: "80".to_string(), protocol: PortProtocol::Tcp },
                 PortItem { host_ip: Some("127.0.0.1".to_string()), host_port: "9000".to_string(), container_port: "9000".to_string(), protocol: PortProtocol::Tcp },
                 PortItem { host_ip: None, host_port: "6060".to_string(), container_port: "6060".to_string(), protocol: PortProtocol::Udp },
             ]),
+            ..Default::default()
         }),
     })
     ; "ports config"
+)]
+#[test_case(
+    "mounts_config", None
+    => SCell(SCellInner {
+        links: vec![
+            Link::Node {
+                name: "main".parse().unwrap(),
+                location: std::fs::canonicalize("src/scell/compile/tests/ok/mounts_config").unwrap(),
+                workspace: WorkspaceStmt::default(),
+                copy: CopyStmt::default(),
+                build: BuildStmt::default(),
+                env: EnvStmt::default(),
+            },
+            Link::Root(RootNode::Image("from".parse().unwrap()))
+        ],
+        shell: ShellStmt("shell".to_string()),
+        hang: "hang".to_string(),
+        config: Some(ConfigStmt {
+            mounts: MountsStmt(vec![
+                MountItem {host: std::fs::canonicalize("src/scell/compile/tests/ok/mounts_config").unwrap(), container: PathBuf::from("/dst")},
+            ]),
+            ..Default::default()
+        }),
+    })
+    ; "mounts config"
+)]
+#[test_case(
+    "from_docker", None
+    => SCell(SCellInner {
+        links: vec![
+            Link::Node {
+                name: "main".parse().unwrap(),
+                location: std::fs::canonicalize("src/scell/compile/tests/ok/from_docker").unwrap(),
+                workspace: WorkspaceStmt::default(),
+                copy: CopyStmt::default(),
+                build: BuildStmt::default(),
+                env: EnvStmt::default(),
+            },
+            Link::Root(RootNode::Dockerfile(std::fs::canonicalize("src/scell/compile/tests/ok/from_docker/Dockerfile").unwrap()))
+        ],
+        shell: ShellStmt("shell".to_string()),
+        hang: "hang".to_string(),
+        config: Option::default(),
+    })
+    ; "from docker"
 )]
 fn compile_ok_test(
     dir_path: &str,
