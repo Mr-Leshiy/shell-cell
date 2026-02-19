@@ -1,9 +1,20 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{hash::Hash, path::PathBuf, str::FromStr};
 
 use color_eyre::eyre::ContextCompat;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
 pub struct CopyStmt(pub Vec<CopyStmtEntry>);
+
+impl Hash for CopyStmt {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        if !self.0.is_empty() {
+            self.0.hash(state);
+        }
+    }
+}
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct CopyStmtEntry {

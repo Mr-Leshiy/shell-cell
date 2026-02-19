@@ -39,7 +39,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "66117e88adcb8b95".to_string())
+    "02679853b28a6ec1".to_string())
     ; "default target"
 )]
 #[test_case(
@@ -60,7 +60,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "13ff39d86b030dd6".to_string())
+    "6cc8af376a928d25".to_string())
     ; "other target"
 )]
 #[test_case(
@@ -89,7 +89,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "74ba6b7179999094".to_string())
+    "540bfac5faeed0ad".to_string())
     ; "few targets"
 )]
 #[test_case(
@@ -126,7 +126,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "041d386c26dfbb22".to_string())
+    "c36031f85cdf98f3".to_string())
     ; "ref other files"
 )]
 #[test_case(
@@ -147,7 +147,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "3ee7a7fb6463a26d".to_string())
+    "97c3c56438147a50".to_string())
     ; "workspace statement"
 )]
 #[test_case(
@@ -177,7 +177,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "a4e01bdd977f071f".to_string())
+    "d3920a2c5f269027".to_string())
     ; "copy statement"
 )]
 #[test_case(
@@ -201,7 +201,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "4b7147e0a763ea54".to_string())
+    "3ae4db9b81d86613".to_string())
     ; "build statement"
 )]
 #[test_case(
@@ -225,7 +225,7 @@ use crate::scell::{
         hang: "hang".to_string(),
         config: Option::default(),
     }),
-    "631c9f05fc8e82c1".to_string())
+    "a86022c340a12704".to_string())
     ; "env statement"
 )]
 #[test_case(
@@ -285,7 +285,7 @@ use crate::scell::{
             ]),
         }),
     }),
-    "9a433832927fc091".to_string())
+    "e85d0536da0bd388".to_string())
     ; "ports config"
 )]
 fn compile_ok_test(

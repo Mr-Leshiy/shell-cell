@@ -1,7 +1,18 @@
-use std::str::FromStr;
+use std::{hash::Hash, str::FromStr};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PortsStmt(pub Vec<PortItem>);
+
+impl Hash for PortsStmt {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        if !self.0.is_empty() {
+            self.0.hash(state);
+        }
+    }
+}
 
 impl<'de> serde::Deserialize<'de> for PortsStmt {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

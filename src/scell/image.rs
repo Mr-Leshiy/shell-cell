@@ -77,7 +77,6 @@ fn prepare_copy_stmt<W: std::io::Write>(
     tar: &mut tar::Builder<W>,
     copy_stmt: &CopyStmt,
 ) -> color_eyre::Result<()> {
-    println!("Here");
     for e in &copy_stmt.0 {
         let mut cp_tmt = String::new();
         for src_item in &e.src {

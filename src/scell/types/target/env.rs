@@ -1,9 +1,20 @@
-use std::{fmt::Display, str::FromStr};
+use std::{fmt::Display, hash::Hash, str::FromStr};
 
 const ENV_DELIMETER: char = '=';
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
 pub struct EnvStmt(pub Vec<EnvStmtItem>);
+
+impl Hash for EnvStmt {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        if !self.0.is_empty() {
+            self.0.hash(state);
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EnvStmtItem {
