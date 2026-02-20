@@ -2,6 +2,7 @@ mod ui;
 
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 
+use color_eyre::eyre::ContextCompat;
 use ratatui::{
     Terminal,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -84,13 +85,13 @@ impl App {
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 
-            app.handle_key_event()?;
+            app = app.handle_key_event()?;
         }
     }
 
     /// Handles a single key event, dispatching navigation and actions
     /// based on the current state.
-    fn handle_key_event(&mut self) -> color_eyre::Result<()> {
+    fn handle_key_event(mut self) -> color_eyre::Result<Self> {
         if event::poll(std::time::Duration::from_millis(100))?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
@@ -99,69 +100,58 @@ impl App {
                 KeyCode::Char('c' | 'd')
                     if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                 {
-                    *self = App::Exit;
+                    self = App::Exit;
                 },
                 KeyCode::Char('i') => {
-                    if let App::Ls(ls_state) = self {
+                    if let App::Ls(ref mut ls_state) = self {
                         ls_state.show_help = !ls_state.show_help;
                     }
                 },
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if let App::Ls(ls_state) = self
+                    if let App::Ls(ref mut ls_state) = self
                         && !ls_state.show_help
                     {
                         ls_state.next();
                     }
                 },
                 KeyCode::Up | KeyCode::Char('k') => {
-                    if let App::Ls(ls_state) = self
+                    if let App::Ls(ref mut ls_state) = self
                         && !ls_state.show_help
                     {
                         ls_state.previous();
                     }
                 },
                 KeyCode::Char('s') => {
-                    if let App::Ls(ls_state) = self
-                        && !ls_state.show_help
-                        && let Some(stopping) = ls_state.stop_selected()
-                    {
-                        *self = App::Stopping(stopping);
+                    if let App::Ls(ls_state) = self {
+                        if !ls_state.show_help {
+                            self = App::Stopping(ls_state.stop_selected()?);
+                        } else {
+                            self = App::Ls(ls_state);
+                        }
                     }
                 },
                 KeyCode::Char('r') => {
-                    if let App::Ls(ls_state) = self
-                        && !ls_state.show_help
-                        && let Some(confirm) = ls_state.confirm_remove()
-                    {
-                        *self = App::ConfirmRemove(confirm);
+                    if let App::Ls(ls_state) = self {
+                        self = App::ConfirmRemove(ls_state.confirm_remove()?);
                     }
                 },
                 KeyCode::Char('y') => {
-                    if let App::ConfirmRemove(_) = self {
-                        let confirm_state = std::mem::replace(self, App::Exit);
-                        if let App::ConfirmRemove(state) = confirm_state {
-                            *self = App::Removing(state.confirm());
-                        }
+                    if let App::ConfirmRemove(confirm_state) = self {
+                        self = App::Removing(confirm_state.confirm());
                     }
                 },
                 KeyCode::Char('n') => {
-                    if let App::ConfirmRemove(_) = self {
-                        let confirm_state = std::mem::replace(self, App::Exit);
-                        if let App::ConfirmRemove(state) = confirm_state {
-                            *self = App::Ls(state.cancel());
-                        }
+                    if let App::ConfirmRemove(confirm_state) = self {
+                        self = App::Ls(confirm_state.cancel());
                     }
                 },
                 KeyCode::Esc => {
                     match self {
-                        App::Ls(ls_state) if ls_state.show_help => {
+                        App::Ls(ref mut ls_state) if ls_state.show_help => {
                             ls_state.show_help = false;
                         },
-                        App::ConfirmRemove(_) => {
-                            let confirm_state = std::mem::replace(self, App::Exit);
-                            if let App::ConfirmRemove(state) = confirm_state {
-                                *self = App::Ls(state.cancel());
-                            }
+                        App::ConfirmRemove(confirm_state) => {
+                            self = App::Ls(confirm_state.cancel());
                         },
                         _ => {},
                     }
@@ -169,7 +159,8 @@ impl App {
                 _ => {},
             }
         }
-        Ok(())
+
+        Ok(self)
     }
 
     /// Creates a new `App` in the `Loading` state, spawning an async task
@@ -246,10 +237,16 @@ impl LsState {
     /// Initiates stopping of the currently selected container.
     ///
     /// Spawns an async task that stops the container and then re-fetches
-    /// the full container list. Returns `None` if no container is selected.
-    fn stop_selected(&mut self) -> Option<StoppingState> {
-        let selected = self.table_state.selected()?;
-        let container = self.containers.get(selected)?;
+    /// the full container list.
+    fn stop_selected(self) -> color_eyre::Result<StoppingState> {
+        let selected = self
+            .table_state
+            .selected()
+            .context("Some item in the list must be selected")?;
+        let container = self
+            .containers
+            .get(selected)
+            .context("Selected item must be present in the list")?;
         let buildkit = self.buildkit.clone();
 
         let (tx, rx) = std::sync::mpsc::channel();
@@ -266,23 +263,27 @@ impl LsState {
             }
         });
 
-        Some(StoppingState {
+        Ok(StoppingState {
             container_name: container.name.to_string(),
             rx,
         })
     }
 
     /// Shows confirmation dialog for removing the currently selected container.
-    ///
-    /// Returns `None` if no container is selected.
-    fn confirm_remove(&self) -> Option<ConfirmRemoveState> {
-        let selected = self.table_state.selected()?;
-        let container = self.containers.get(selected)?;
+    fn confirm_remove(self) -> color_eyre::Result<ConfirmRemoveState> {
+        let selected = self
+            .table_state
+            .selected()
+            .context("Some item in the list must be selected")?;
+        let container = self
+            .containers
+            .get(selected)
+            .context("Selected item must be present in the list")?;
 
-        Some(ConfirmRemoveState {
+        Ok(ConfirmRemoveState {
             selected_to_remove: container.clone(),
-            containers: self.containers.clone(),
-            buildkit: self.buildkit.clone(),
+            containers: self.containers,
+            buildkit: self.buildkit,
         })
     }
 }
