@@ -1,4 +1,4 @@
-//! `BuildKit` daemon client implementation.
+//! daemon client implementation for orchestrating containers and images.
 
 mod docker;
 
@@ -17,7 +17,7 @@ use crate::{
     },
     error::WrapUserError,
     pty::Pty,
-    scell::{SCell, container_info::SCellContainerInfo, image::SCellImage},
+    scell::{SCell, container_info::SCellContainerInfo},
 };
 
 pub type ImageId = String;
@@ -48,9 +48,8 @@ impl BuildKitD {
         scell: &SCell,
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<ImageId> {
-        let image = SCellImage::new(scell)?;
+        let image = scell.image()?;
         let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
-
         let scell_name = scell.name()?.to_string();
 
         let image_id = build_image(
@@ -63,7 +62,8 @@ impl BuildKitD {
                 log_fn(info);
             },
         )
-        .await?;
+        .await
+        .mark_as_user_err()?;
 
         Ok(image_id)
     }
@@ -110,7 +110,9 @@ impl BuildKitD {
             ..Default::default()
         };
         let scell_name = scell.name()?.to_string();
-        start_container(&self.docker, &scell_name, "latest", &scell_name, config).await?;
+        start_container(&self.docker, &scell_name, "latest", &scell_name, config)
+            .await
+            .mark_as_user_err()?;
         Ok(())
     }
 

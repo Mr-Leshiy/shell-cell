@@ -14,7 +14,10 @@ use super::{
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
-use crate::scell::{link::RootNode, types::target::env::EnvStmt};
+use crate::scell::{
+    link::RootNode,
+    types::target::{env::EnvStmt, hang::HangStmt},
+};
 
 pub struct SCellImage(Dockerfile);
 
@@ -261,7 +264,7 @@ fn prepare_env_stmt(
 
 fn prepare_hang_stmt(
     dockerfile_instructions: &mut Vec<Instruction>,
-    hang_stmt: &str,
+    hang_stmt: &HangStmt,
 ) {
-    dockerfile_instructions.push(Instruction::Entrypoint(vec![hang_stmt.to_string()]));
+    dockerfile_instructions.push(Instruction::Entrypoint(vec![hang_stmt.0.clone()]));
 }

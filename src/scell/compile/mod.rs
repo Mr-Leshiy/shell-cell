@@ -27,6 +27,7 @@ use crate::{
                 config::ConfigStmt,
                 copy::CopyStmt,
                 from::{FromStmt, target_ref::TargetRef},
+                hang::HangStmt,
                 shell::ShellStmt,
             },
         },
@@ -39,7 +40,7 @@ const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 type CompileInnerResult = (
     Vec<Link>,
     Option<ShellStmt>,
-    Option<String>,
+    Option<HangStmt>,
     Option<ConfigStmt>,
 );
 
