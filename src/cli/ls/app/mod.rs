@@ -123,10 +123,10 @@ impl App {
                 },
                 KeyCode::Char('s') => {
                     if let App::Ls(ls_state) = self {
-                        if !ls_state.show_help {
-                            self = App::Stopping(ls_state.stop_selected()?);
-                        } else {
+                        if ls_state.show_help {
                             self = App::Ls(ls_state);
+                        } else {
+                            self = App::Stopping(ls_state.stop_selected()?);
                         }
                     }
                 },
