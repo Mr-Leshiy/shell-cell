@@ -83,7 +83,7 @@ impl SCell {
 
         color_eyre::eyre::ensure!(
             links.len() >= 2,
-            "It must be at least two links in the target graph"
+            "It must be at least two links in the target chain"
         );
 
         Ok(Self(super::SCellInner {
@@ -107,7 +107,7 @@ impl SCell {
         let mut config = None;
 
         loop {
-            // Use only the most recent 'shell` and 'hang' statements from the targets graph.
+            // Use only the most recent 'shell` and 'hang' statements from the targets chain.
             if shell.is_none() {
                 shell = walk_target.shell;
             }

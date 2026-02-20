@@ -6,14 +6,14 @@
 Here is a minimal functional example:
 ```yml
 main:
-  from: debian:bookworm
+  from_image: debian:bookworm
   workspace: workdir
   shell: /bin/bash
   hang: while true; do sleep 3600; done
 ```
 
 **Shell-Cell** follows a strict logic when building your image.
-It parses your target definitions into a *Directed Linear Graph*,
+It parses your target definitions into a *chain*,
 moving from your entry point (`main`) down to the base "bottom" target.
 
 The actual image building process, on contrary, happens backwards.
@@ -39,26 +39,50 @@ A valid target name must start with a lowercase letter and contain only lowercas
 Inside each target, during the **Shell-Cell** image building process,
 the instructions are executed in a specific, strict order:
 1. `workspace`
-2. `from`
+2. `from` / `from_image` / `from_docker`
 3. `env`
 4. `copy`
 5. `build`
 
-### `from`
+### `from`, `from_image`, `from_docker`
 
 Similar to the Dockerfile [`FROM`](https://docs.docker.com/reference/dockerfile/#from) instruction,
-it specifies the base of the **Shell-Cell** image.
+these statements specify the base of the **Shell-Cell** layer.
 
-It could be either a plain image, or reference to other [**Shell-Cell** target](#shell-cell-target)
+Only one of these statements must be present in the **Shell-Cell** target definition.
 
-- Image with tag
+Either `from_image` or `from_docker` is required somewhere in the target chain — without one of them
+there is no way to specify the basis of the image. `from` on its own only delegates to another target
+and must eventually resolve to a `from_image` or `from_docker`.
+
+#### `from_image`
+
+Uses a Docker registry image as the base layer.
+
 ```yml
-from: <image>:<tag>
+from_image: <image>:<tag>
 ```
 
-- **Shell-Cell** target reference
+#### `from_docker`
+
+Uses a Dockerfile on the filesystem as the base layer.
+The path is resolved relative to the `scell.yml` file.
+
 ```yml
-from: path/to/file+<target_name>
+from_docker: path/to/Dockerfile
+```
+
+#### `from`
+
+References another [**Shell-Cell** target](#shell-cell-target), resolved recursively.
+Use `+<target_name>` to reference a target in the same file, or `path/to/dir+<target_name>`
+to reference a target in another `scell.yml`.
+
+```yml
+from: +<target_name>
+```
+```yml
+from: path/to/dir+<target_name>
 ```
 
 ### `shell`
@@ -67,7 +91,7 @@ A location to the shell, which would be available in the build image and running
 
 Such shell would be used for a **Shell-Cell** session.
 
-Only the first `shell` statement encountered in the target graph (starting from the entry point) is used.
+Only the first `shell` statement encountered in the target chain (starting from the entry point) is used.
 
 ```yml
 shell: /bin/bash
@@ -77,7 +101,7 @@ shell: /bin/bash
 
 This instruction ensures your container stays active and doesn't exit immediately after it starts. This effectively transforms your **Shell-Cell** container into a persistent "shell server" that remains ready for you to jump in at any time.
 
-Only the first `hang` statement encountered in the target graph (starting from the entry point) is used.
+Only the first `hang` statement encountered in the target chain (starting from the entry point) is used.
 
 To work correctly, you must specify a command that keeps the container running indefinitely.
 The most recommended approach is a simple infinite loop:
@@ -142,7 +166,7 @@ Unlike `build`, `copy`, and `workspace`, which affect the image building process
 
 All `config` statements are optional.
 
-Only the first `config` statement encountered in the target graph (starting from the entry point) is used.
+Only the first `config` statement encountered in the target chain (starting from the entry point) is used.
 
 ```yml
 config:

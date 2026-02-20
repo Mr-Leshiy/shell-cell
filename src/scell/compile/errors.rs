@@ -20,7 +20,7 @@ pub struct MissingTarget(pub TargetName, pub PathBuf);
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 #[error(
-    "A circular dependency was identified within the target graph. While processing 'from' statement for '{0}' at '{1}'"
+    "A circular dependency was identified within the target chain. While processing 'from' statement for '{0}' at '{1}'"
 )]
 pub struct CircularTargets(pub TargetName, pub PathBuf);
 
@@ -35,11 +35,11 @@ pub struct MountHostDirNotFound(pub PathBuf, pub TargetName, pub PathBuf);
 pub struct MissingEntrypoint(pub PathBuf, pub TargetName);
 
 #[derive(Debug, PartialEq, thiserror::Error)]
-#[error("Shell-Cell must have at least one 'shell' statement in the target graph")]
+#[error("Shell-Cell must have at least one 'shell' statement in the target chain")]
 pub struct MissingShellStmt;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
-#[error("Shell-Cell must have at least one 'hang' statement in the target graph")]
+#[error("Shell-Cell must have at least one 'hang' statement in the target chain")]
 pub struct MissingHangStmt;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
