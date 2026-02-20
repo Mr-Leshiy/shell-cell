@@ -8,7 +8,8 @@ It could be really handy, when you want to have secure, isolated place for your 
 ## 🏛️ Architecture concepts
 
 1. **The Blueprint (`scell.yml`)**.<br>
-    Everything starts with the configuration file. It defines your **Shell-Cell** targets (the environment layers).
+    Everything starts with the configuration file.
+    It describes how your environment should be built, how it should behave at runtime and what data or resources you are exposing to it.
 
 2. **Shell-Cell targets.**<br>
     Think of *targets* as named functions — instead of one giant, monolithic `Dockerfile`,
