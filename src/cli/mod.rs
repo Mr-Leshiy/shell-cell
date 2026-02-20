@@ -1,6 +1,7 @@
 //! Command Line Interface implementation
 
 mod cleanup;
+mod init;
 mod ls;
 mod progress;
 mod run;
@@ -34,6 +35,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Create a minimal `scell.yml` blueprint in the target directory
+    Init,
     /// List all existing Shell-Cell containers
     Ls,
     /// Stop all running Shell-Cell containers
@@ -65,6 +68,7 @@ impl Cli {
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
             None => self.run().await?,
+            Some(Commands::Init) => self.init()?,
             Some(Commands::Ls) => self.ls().await?,
             Some(Commands::Stop) => self.stop().await?,
             Some(Commands::Cleanup) => self.cleanup().await?,
