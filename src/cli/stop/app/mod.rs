@@ -56,7 +56,7 @@ impl App {
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 
-            app.handle_key_event()?;
+            app = app.handle_key_event()?;
         }
     }
 
@@ -102,17 +102,17 @@ impl App {
         App::Stopping(StoppingState::new(containers, rx))
     }
 
-    fn handle_key_event(&mut self) -> color_eyre::Result<()> {
+    fn handle_key_event(mut self) -> color_eyre::Result<Self> {
         if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
             && let KeyCode::Char('c' | 'd') = key.code
             && key.modifiers.contains(event::KeyModifiers::CONTROL)
         {
-            *self = App::Exit;
+            self = App::Exit;
         }
 
-        Ok(())
+        Ok(self)
     }
 }
 

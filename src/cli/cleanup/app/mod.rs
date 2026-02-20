@@ -23,42 +23,44 @@ pub enum App {
 
 impl App {
     pub fn run<B: ratatui::backend::Backend>(
-        mut self,
+        buildkit: &BuildKitD,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
+        // First step
+        let mut app = Self::loading(buildkit.clone());
         loop {
             // Check for state transitions
             if let App::Loading {
                 ref rx,
                 ref buildkit,
-            } = self
+            } = app
                 && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
                 let containers = result?;
-                self = Self::cleaning(containers, buildkit.clone());
+                app = Self::cleaning(containers, buildkit.clone());
             }
 
-            if let App::Cleaning(ref mut state) = self
+            if let App::Cleaning(ref mut state) = app
                 && state.try_update()
             {
-                self = App::Exit;
+                app = App::Exit;
             }
 
-            if matches!(self, App::Exit) {
+            if matches!(app, App::Exit) {
                 return Ok(());
             }
 
             terminal
                 .draw(|f| {
-                    f.render_widget(&self, f.area());
+                    f.render_widget(&app, f.area());
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 
-            self.handle_key_event()?;
+            app = app.handle_key_event()?;
         }
     }
 
-    pub fn loading(buildkit: BuildKitD) -> Self {
+    fn loading(buildkit: BuildKitD) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
         // Spawn async task to fetch containers for stop
@@ -101,17 +103,17 @@ impl App {
         App::Cleaning(CleaningState::new(containers, rx))
     }
 
-    fn handle_key_event(&mut self) -> color_eyre::Result<()> {
+    fn handle_key_event(mut self) -> color_eyre::Result<Self> {
         if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
             && let KeyCode::Char('c' | 'd') = key.code
             && key.modifiers.contains(event::KeyModifiers::CONTROL)
         {
-            *self = App::Exit;
+            self = App::Exit;
         }
 
-        Ok(())
+        Ok(self)
     }
 }
 

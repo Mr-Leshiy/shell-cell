@@ -7,8 +7,7 @@ impl Cli {
     pub async fn cleanup(self) -> color_eyre::Result<()> {
         let buildkit = BuildKitD::start().await?;
         let mut terminal = ratatui::try_init()?;
-        let app = App::loading(buildkit);
-        let res = app.run(&mut terminal);
+        let res = App::run(&buildkit, &mut terminal);
         ratatui::try_restore()?;
         res
     }
