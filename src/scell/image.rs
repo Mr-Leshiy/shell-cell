@@ -14,7 +14,10 @@ use super::{
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
-use crate::scell::{link::RootNode, types::target::{env::EnvStmt, hang::HangStmt}};
+use crate::scell::{
+    link::RootNode,
+    types::target::{env::EnvStmt, hang::HangStmt},
+};
 
 pub struct SCellImage(Dockerfile);
 

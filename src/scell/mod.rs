@@ -21,7 +21,9 @@ use crate::scell::{
     link::Link,
     name::SCellName,
     types::target::{
-        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt}, hang::HangStmt, shell::ShellStmt
+        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
+        hang::HangStmt,
+        shell::ShellStmt,
     },
 };
 
@@ -67,15 +69,16 @@ impl SCell {
         SCellName::new(self)
     }
 
+    pub fn image(&self) -> color_eyre::Result<SCellImage> {
+        SCellImage::new(self)
+    }
+
     /// Calculates a fast, non-cryptographic 'metrohash' hash value.
     /// Returns a hex string value.
     fn hex_hash(&self) -> color_eyre::Result<String> {
         let mut hasher = metrohash::MetroHash64::new();
         self.0.hash(&mut hasher);
-
-        let image = SCellImage::new(self)?;
-        image.dump_to_string()?.hash(&mut hasher);
-
+        self.image()?.dump_to_string()?.hash(&mut hasher);
         Ok(hasher.finish().to_be_bytes().encode_hex())
     }
 }

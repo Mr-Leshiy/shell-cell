@@ -16,7 +16,7 @@ use terminput_crossterm::to_terminput;
 use crate::{
     buildkit::BuildKitD,
     cli::MIN_FPS,
-    error::{UserError, WrapUserError},
+    error::UserError,
     pty::Pty,
     scell::{SCell, types::name::TargetName},
 };
@@ -153,8 +153,7 @@ impl App {
                     .build_image(&scell, |msg| {
                         drop(logs_tx.send((msg, LogType::SubLog)));
                     })
-                    .await
-                    .mark_as_user_err()?;
+                    .await?;
 
                 drop(logs_tx.send((
                     "📦 Starting 'Shell-Cell' container".to_string(),

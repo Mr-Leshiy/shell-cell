@@ -3,9 +3,9 @@ pub mod config;
 pub mod copy;
 pub mod env;
 pub mod from;
+pub mod hang;
 pub mod shell;
 pub mod workspace;
-pub mod hang;
 
 use self::{
     build::BuildStmt, config::ConfigStmt, copy::CopyStmt, from::FromStmt, shell::ShellStmt,

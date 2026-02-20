@@ -23,7 +23,12 @@ use crate::{
             SCellFile,
             name::TargetName,
             target::{
-                TargetStmt, config::ConfigStmt, copy::CopyStmt, from::{FromStmt, target_ref::TargetRef}, hang::HangStmt, shell::ShellStmt
+                TargetStmt,
+                config::ConfigStmt,
+                copy::CopyStmt,
+                from::{FromStmt, target_ref::TargetRef},
+                hang::HangStmt,
+                shell::ShellStmt,
             },
         },
     },
