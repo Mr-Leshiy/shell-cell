@@ -8,9 +8,10 @@ use bollard::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder, RemoveContainerOptionsBuilder, RemoveImageOptionsBuilder,
     },
-    secret::{BuildInfo, ContainerCreateBody, ContainerSummary, ExecConfig},
+    secret::{ContainerCreateBody, ContainerSummary, ExecConfig},
 };
 use bytes::Bytes;
+use color_eyre::eyre::ContextCompat;
 use futures::{Stream, StreamExt};
 use tokio::io::AsyncWrite;
 
@@ -20,8 +21,8 @@ pub async fn build_image(
     tag: &str,
     dockerfile_path: &str,
     tar_bytes: Bytes,
-    log_fn: impl Fn(BuildInfo),
-) -> color_eyre::Result<()> {
+    log_fn: impl Fn(String),
+) -> color_eyre::Result<String> {
     let options = BuildImageOptionsBuilder::new()
         .dockerfile(dockerfile_path)
         .t(&format!("{image_name}:{tag}"))
@@ -31,11 +32,22 @@ pub async fn build_image(
 
     let mut stream = docker.build_image(options, None, Some(body_full(tar_bytes)));
 
+    let mut image_id = None;
     while let Some(build_info) = stream.next().await {
-        log_fn(build_info?);
+        let build_info = build_info?;
+        if let Some(status) = build_info.status {
+            log_fn(status);
+        }
+        if let Some(stream) = build_info.stream {
+            log_fn(stream);
+        }
+        if let Some(aux) = build_info.aux
+            && let Some(id) = aux.id
+        {
+            image_id = Some(id);
+        }
     }
-
-    Ok(())
+    image_id.context("If image was built sucessfully, it must has an ID")
 }
 
 pub async fn pull_image(
@@ -126,7 +138,7 @@ pub async fn remove_image(
     docker: &Docker,
     image_name: &str,
 ) -> color_eyre::Result<()> {
-    let conifg = RemoveImageOptionsBuilder::default().build();
+    let conifg = RemoveImageOptionsBuilder::default().force(true).build();
     docker.remove_image(image_name, Some(conifg), None).await?;
     Ok(())
 }

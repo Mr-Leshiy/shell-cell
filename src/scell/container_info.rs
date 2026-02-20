@@ -15,6 +15,8 @@ pub struct SCellContainerInfo {
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub created_at: Option<DateTime<Utc>>,
+    // An image id, not a 'scell-*' name
+    pub image_id: String,
 }
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -70,6 +72,7 @@ impl SCellContainerInfo {
         target: Option<TargetName>,
         location: Option<PathBuf>,
         created_at: Option<DateTime<Utc>>,
+        image_id: String,
     ) -> Self {
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
@@ -92,6 +95,7 @@ impl SCellContainerInfo {
             location,
             target,
             created_at,
+            image_id,
         }
     }
 }
@@ -137,8 +141,14 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .as_ref()
             .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from));
 
+        let image_id = value
+            .image_id
+            .context("'Shell-Cell' container must have a corresponding image ID")?;
+
         let name = container_name.parse()?;
 
-        Ok(Self::new(name, status, target, location, created_at))
+        Ok(Self::new(
+            name, status, target, location, created_at, image_id,
+        ))
     }
 }

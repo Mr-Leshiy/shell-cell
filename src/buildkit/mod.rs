@@ -20,6 +20,8 @@ use crate::{
     scell::{SCell, container_info::SCellContainerInfo, image::SCellImage},
 };
 
+pub type ImageId = String;
+
 #[derive(Clone)]
 pub struct BuildKitD {
     docker: Docker,
@@ -45,26 +47,25 @@ impl BuildKitD {
         &self,
         scell: &SCell,
         log_fn: impl Fn(String),
-    ) -> color_eyre::Result<()> {
+    ) -> color_eyre::Result<ImageId> {
         let image = SCellImage::new(scell)?;
         let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
-        build_image(
+
+        let scell_name = scell.name()?.to_string();
+
+        let image_id = build_image(
             &self.docker,
-            &scell.name()?.to_string(),
+            &scell_name,
             "latest",
             dockerfile_path,
             tar,
             |info| {
-                if let Some(stream) = info.stream {
-                    log_fn(stream);
-                }
-                if let Some(status) = info.status {
-                    log_fn(status);
-                }
+                log_fn(info);
             },
         )
         .await?;
-        Ok(())
+
+        Ok(image_id)
     }
 
     pub async fn start_container(
@@ -115,26 +116,18 @@ impl BuildKitD {
 
     pub async fn stop_container(
         &self,
-        scell: &SCell,
+        container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
-        stop_container(&self.docker, &scell.name()?.to_string()).await?;
+        stop_container(&self.docker, container.name.as_str()).await?;
         Ok(())
     }
 
-    pub async fn stop_container_by_name(
+    pub async fn cleanup_container(
         &self,
-        container_name: &str,
+        container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
-        stop_container(&self.docker, container_name).await?;
-        Ok(())
-    }
-
-    pub async fn cleanup_container_by_name(
-        &self,
-        name: &str,
-    ) -> color_eyre::Result<()> {
-        remove_container(&self.docker, name).await?;
-        remove_image(&self.docker, &format!("{name}:latest")).await?;
+        remove_container(&self.docker, container.name.as_str()).await?;
+        remove_image(&self.docker, &container.image_id).await?;
         Ok(())
     }
 

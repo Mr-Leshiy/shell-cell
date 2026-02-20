@@ -19,7 +19,9 @@ impl Widget for &App {
             App::Loading { .. } => render_loading(area, buf),
             App::Ls(ls_state) => render_ls(ls_state, area, buf),
             App::Stopping(state) => render_stopping(&state.container_name, area, buf),
-            App::ConfirmRemove(state) => render_confirm_remove(&state.container_name, area, buf),
+            App::ConfirmRemove(state) => {
+                render_confirm_remove(state.selected_to_remove.name.as_str(), area, buf);
+            },
             App::Removing(state) => render_removing(&state.container_name, area, buf),
             App::Exit => {},
         }
