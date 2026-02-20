@@ -91,7 +91,7 @@ impl App {
             let containers = containers.clone();
             async move {
                 for c in containers {
-                    let res = buildkit.stop_container_by_name(&c.name.to_string()).await;
+                    let res = buildkit.stop_container(&c).await;
                     tokio::time::sleep(std::time::Duration::from_millis(300)).await;
                     drop(tx.send((c, res)));
                 }

@@ -253,11 +253,11 @@ impl LsState {
         let buildkit = self.buildkit.clone();
 
         let (tx, rx) = std::sync::mpsc::channel();
-        let container_name = container.name.to_string();
 
         tokio::spawn({
+            let container = container.clone();
             async move {
-                let res = buildkit.stop_container_by_name(&container_name).await;
+                let res = buildkit.stop_container(&container).await;
                 let res = match res {
                     Ok(()) => buildkit.list_containers().await,
                     Err(e) => Err(e),
@@ -280,7 +280,7 @@ impl LsState {
         let container = self.containers.get(selected)?;
 
         Some(ConfirmRemoveState {
-            container_name: container.name.to_string(),
+            selected_to_remove: container.clone(),
             containers: self.containers.clone(),
             buildkit: self.buildkit.clone(),
         })
@@ -292,7 +292,7 @@ impl LsState {
 /// Displays a warning that all container state will be lost and waits for
 /// the user to press 'y' (confirm) or 'n'/'Esc' (cancel).
 pub struct ConfirmRemoveState {
-    container_name: String,
+    selected_to_remove: SCellContainerInfo,
     containers: Vec<SCellContainerInfo>,
     buildkit: BuildKitD,
 }
@@ -301,11 +301,11 @@ impl ConfirmRemoveState {
     /// User confirmed removal - initiate the removal process.
     fn confirm(self) -> RemovingState {
         let (tx, rx) = std::sync::mpsc::channel();
-        let container_name = self.container_name.clone();
         let buildkit = self.buildkit;
+        let container_name = self.selected_to_remove.name.to_string();
         tokio::spawn({
             async move {
-                let res = buildkit.cleanup_container_by_name(&container_name).await;
+                let res = buildkit.cleanup_container(&self.selected_to_remove).await;
                 let res = match res {
                     Ok(()) => buildkit.list_containers().await,
                     Err(e) => Err(e),
@@ -314,10 +314,7 @@ impl ConfirmRemoveState {
             }
         });
 
-        RemovingState {
-            container_name: self.container_name,
-            rx,
-        }
+        RemovingState { container_name, rx }
     }
 
     /// User cancelled removal - return to the list view.

@@ -13,6 +13,10 @@ impl SCellName {
     pub fn new(scell: &SCell) -> color_eyre::Result<Self> {
         Ok(Self(format!("{NAME_PREFIX}{}", scell.hex_hash()?)))
     }
+
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
 }
 
 impl Display for SCellName {
