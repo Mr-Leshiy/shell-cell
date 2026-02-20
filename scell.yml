@@ -1,5 +1,5 @@
 main:
-  from: rust:1.93-trixie
+  from_image: rust:1.93-trixie
   env:
     # claude code instalation path 
     - PATH="/root/.local/bin:$PATH"
