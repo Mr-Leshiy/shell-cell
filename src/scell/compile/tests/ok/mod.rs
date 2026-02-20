@@ -17,6 +17,7 @@ use crate::scell::{
             copy::{CopyStmt, CopyStmtEntry},
             env::{EnvStmt, EnvStmtItem},
             shell::ShellStmt,
+            hang::HangStmt,
             workspace::WorkspaceStmt,
         },
     },
@@ -37,7 +38,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "default target"
@@ -57,7 +58,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "other target"
@@ -85,7 +86,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "few targets"
@@ -121,7 +122,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "ref other files"
@@ -141,7 +142,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "workspace statement"
@@ -166,7 +167,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "copy statement"
@@ -189,7 +190,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "build statement"
@@ -212,7 +213,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "env statement"
@@ -243,7 +244,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "all statements"
@@ -263,7 +264,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Some(ConfigStmt {
             ports: PortsStmt(vec![
                 PortItem { host_ip: None, host_port: "8080".to_string(), container_port: "80".to_string(), protocol: PortProtocol::Tcp },
@@ -290,7 +291,7 @@ use crate::scell::{
             Link::Root(RootNode::Image("from".parse().unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Some(ConfigStmt {
             mounts: MountsStmt(vec![
                 MountItem {host: std::fs::canonicalize("src/scell/compile/tests/ok/mounts_config").unwrap(), container: PathBuf::from("/dst")},
@@ -315,7 +316,7 @@ use crate::scell::{
             Link::Root(RootNode::Dockerfile(std::fs::canonicalize("src/scell/compile/tests/ok/from_docker/Dockerfile").unwrap()))
         ],
         shell: ShellStmt("shell".to_string()),
-        hang: "hang".to_string(),
+        hang: HangStmt("hang".to_string()),
         config: Option::default(),
     })
     ; "from docker"

@@ -21,8 +21,7 @@ use crate::scell::{
     link::Link,
     name::SCellName,
     types::target::{
-        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
-        shell::ShellStmt,
+        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt}, hang::HangStmt, shell::ShellStmt
     },
 };
 
@@ -37,7 +36,7 @@ pub struct SCell(SCellInner);
 struct SCellInner {
     links: Vec<Link>,
     shell: ShellStmt,
-    hang: String,
+    hang: HangStmt,
     config: Option<ConfigStmt>,
 }
 

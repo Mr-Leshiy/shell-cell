@@ -1,4 +1,4 @@
-//! `BuildKit` daemon client implementation.
+//! daemon client implementation for orchestrating containers and images.
 
 mod docker;
 
