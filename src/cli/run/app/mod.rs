@@ -69,17 +69,17 @@ impl App {
                 })
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
 
-            app.handle_key_event()?;
+            app = app.handle_key_event()?;
         }
     }
 
-    fn handle_key_event(&mut self) -> color_eyre::Result<()> {
+    fn handle_key_event(mut self) -> color_eyre::Result<Self> {
         if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
         {
             // For `RunningPty` - forward all key events to PTY stdin
-            if let Self::RunningPty(state) = self
+            if let Self::RunningPty(ref state) = self
                 && let Ok(event) = to_terminput(Event::Key(key))
             {
                 // Convert crossterm event to terminput and encode as stdin bytes
@@ -92,16 +92,16 @@ impl App {
                 // Handles every other app state
             } else if matches!(self, App::Finished) {
                 // Exit on any key if finished
-                *self = App::Exit;
+                self = App::Exit;
             } else if let KeyCode::Char('c' | 'd') = key.code
                 && key.modifiers.contains(event::KeyModifiers::CONTROL)
             {
                 // Exit on Ctrl-C or Ctrl-D for other states
-                *self = App::Exit;
+                self = App::Exit;
             }
         }
 
-        Ok(())
+        Ok(self)
     }
 
     fn preparing<P: AsRef<Path> + Send + 'static>(
