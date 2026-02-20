@@ -18,3 +18,11 @@ It could be really handy, when you want to have secure, isolated place for your 
     Unlike a standard container that runs a single task and exits, a **Shell-Cell** is designed to hang.
     By using the `hang` instruction, the container stays alive in the background, acting as a persistent server.
     This allows you to attach multiple **Shell-Cell** sessions to a warm, ready-to-use environment instantly and preserving the container's state across different sessions.
+
+```mermaid
+graph TD
+    C["🐳 Shell-Cell Container"]
+    C --> S1["💻 Session 1"]
+    C --> S2["💻 Session 2"]
+    C --> S3["💻 Session N"]
+```
