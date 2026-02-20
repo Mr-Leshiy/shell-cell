@@ -6,7 +6,7 @@
 Here is a minimal functional example:
 ```yml
 main:
-  from: debian:bookworm
+  from_image: debian:bookworm
   workspace: workdir
   shell: /bin/bash
   hang: while true; do sleep 3600; done
@@ -39,26 +39,48 @@ A valid target name must start with a lowercase letter and contain only lowercas
 Inside each target, during the **Shell-Cell** image building process,
 the instructions are executed in a specific, strict order:
 1. `workspace`
-2. `from`
+2. `from_image` / `from_docker` / `from`
 3. `env`
 4. `copy`
 5. `build`
 
-### `from`
+### `from_image`, `from_docker`, `from`
 
 Similar to the Dockerfile [`FROM`](https://docs.docker.com/reference/dockerfile/#from) instruction,
-it specifies the base of the **Shell-Cell** image.
+these statements specify the base of the **Shell-Cell** image.
 
-It could be either a plain image, or reference to other [**Shell-Cell** target](#shell-cell-target)
+Either `from_image` or `from_docker` is required somewhere in the target chain — without one of them
+there is no way to specify the basis of the image. `from` on its own only delegates to another target
+and must eventually resolve to a `from_image` or `from_docker`.
 
-- Image with tag
+#### `from_image`
+
+Uses a Docker registry image as the base layer.
+
 ```yml
-from: <image>:<tag>
+from_image: <image>:<tag>
 ```
 
-- **Shell-Cell** target reference
+#### `from_docker`
+
+Uses a Dockerfile on the filesystem as the base layer.
+The path is resolved relative to the `scell.yml` file.
+
 ```yml
-from: path/to/file+<target_name>
+from_docker: path/to/Dockerfile
+```
+
+#### `from`
+
+References another [**Shell-Cell** target](#shell-cell-target), resolved recursively.
+Use `+<target_name>` to reference a target in the same file, or `path/to/dir+<target_name>`
+to reference a target in another `scell.yml`.
+
+```yml
+from: +<target_name>
+```
+```yml
+from: path/to/dir+<target_name>
 ```
 
 ### `shell`

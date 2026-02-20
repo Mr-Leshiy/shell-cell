@@ -42,7 +42,7 @@ Place a `scell.yml` file in your project directory (see the full [Blueprint Refe
 
 ```yml
 main:
-  from: debian:bookworm
+  from_image: debian:bookworm
   workspace: /app
   shell: /bin/bash
   hang: while true; do sleep 3600; done
