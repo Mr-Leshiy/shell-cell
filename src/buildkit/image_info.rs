@@ -11,6 +11,7 @@ use crate::scell::{
 pub struct SCellImageInfo {
     pub name: SCellName,
     pub orphan: bool,
+    pub in_use: bool,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub created_at: Option<DateTime<Utc>>,
@@ -21,6 +22,7 @@ pub struct SCellImageInfo {
 impl SCellImageInfo {
     pub fn new(
         name: SCellName,
+        in_use: bool,
         target: Option<TargetName>,
         location: Option<PathBuf>,
         created_at: Option<DateTime<Utc>>,
@@ -42,6 +44,7 @@ impl SCellImageInfo {
 
         Self {
             name,
+            in_use,
             orphan,
             location,
             target,
@@ -55,12 +58,17 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
     type Error = color_eyre::eyre::Error;
 
     fn try_from(value: bollard::secret::ImageSummary) -> Result<Self, Self::Error> {
-        let [image_name] = value.repo_tags.as_slice() else {
-            color_eyre::eyre::bail!("'Shell-Cell' image must have only one tag/name");
+        let [image_tag] = value.repo_tags.as_slice() else {
+            color_eyre::eyre::bail!("'Shell-Cell' image must have only one tag");
+        };
+        let Some((image_name, "latest")) = image_tag.split_once(':') else {
+            color_eyre::eyre::bail!("'Shell-Cell' image tag must be '<scell_name>:latest'");
         };
 
-        let created_at = DateTime::from_timestamp_secs(value.created)
-            .context("'Shell-Cell' image must have a valid 'created_at' timestamp")?;
+        let in_use = value.containers > 0;
+
+        let created_at = Some(DateTime::from_timestamp_secs(value.created)
+            .context("'Shell-Cell' image must have a valid 'created_at' timestamp")?);
 
         let target = value
             .labels
@@ -74,12 +82,27 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         let name = image_name.parse()?;
 
-        Ok(Self::new(
+                let orphan = if let Some(ref location) = location
+            && let Some(ref target) = target
+        {
+            // Determine if the container is orphaned by comparing the container name
+            // with the expected SCell name
+            SCell::compile(location, Some(target.clone()))
+                .and_then(|scell| Ok(scell.name()? != name))
+                // If compilation fails, consider it orphaned
+                .unwrap_or(true)
+        } else {
+            true
+        };
+
+        Ok(Self {
             name,
-            target,
+            in_use,
+            orphan,
             location,
-            Some(created_at),
+            target,
+            created_at,
             image_id,
-        ))
+        })
     }
 }

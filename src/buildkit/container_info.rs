@@ -66,41 +66,6 @@ impl From<&ContainerSummaryStateEnum> for Status {
     }
 }
 
-impl SCellContainerInfo {
-    pub fn new(
-        name: SCellName,
-        status: Status,
-        target: Option<TargetName>,
-        location: Option<PathBuf>,
-        created_at: Option<DateTime<Utc>>,
-        image_id: String,
-    ) -> Self {
-        let orphan = if let Some(ref location) = location
-            && let Some(ref target) = target
-            && created_at.is_some()
-        {
-            // Determine if the container is orphaned by comparing the container name
-            // with the expected SCell name
-            SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.name()? != name))
-                // If compilation fails, consider it orphaned
-                .unwrap_or(true)
-        } else {
-            true
-        };
-
-        Self {
-            name,
-            orphan,
-            status,
-            location,
-            target,
-            created_at,
-            image_id,
-        }
-    }
-}
-
 impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
     type Error = color_eyre::eyre::Error;
 
@@ -147,9 +112,30 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .context("'Shell-Cell' container must have a corresponding image ID")?;
 
         let name = container_name.parse()?;
+        
+        
+        let orphan = if let Some(ref location) = location
+            && let Some(ref target) = target
+            && created_at.is_some()
+        {
+            // Determine if the container is orphaned by comparing the container name
+            // with the expected SCell name
+            SCell::compile(location, Some(target.clone()))
+                .and_then(|scell| Ok(scell.name()? != name))
+                // If compilation fails, consider it orphaned
+                .unwrap_or(true)
+        } else {
+            true
+        };
 
-        Ok(Self::new(
-            name, status, target, location, created_at, image_id,
-        ))
+        Ok(Self {
+            name,
+            orphan,
+            status,
+            location,
+            target,
+            created_at,
+            image_id,
+        })
     }
 }
