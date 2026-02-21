@@ -67,8 +67,10 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         let in_use = value.containers > 0;
 
-        let created_at = Some(DateTime::from_timestamp_secs(value.created)
-            .context("'Shell-Cell' image must have a valid 'created_at' timestamp")?);
+        let created_at = Some(
+            DateTime::from_timestamp_secs(value.created)
+                .context("'Shell-Cell' image must have a valid 'created_at' timestamp")?,
+        );
 
         let target = value
             .labels
@@ -82,7 +84,7 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         let name = image_name.parse()?;
 
-                let orphan = if let Some(ref location) = location
+        let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
         {
             // Determine if the container is orphaned by comparing the container name

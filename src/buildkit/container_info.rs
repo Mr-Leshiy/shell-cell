@@ -112,8 +112,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .context("'Shell-Cell' container must have a corresponding image ID")?;
 
         let name = container_name.parse()?;
-        
-        
+
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
             && created_at.is_some()

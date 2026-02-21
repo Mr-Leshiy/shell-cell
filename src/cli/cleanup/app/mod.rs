@@ -11,17 +11,22 @@ use ratatui::{
 };
 
 use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo},
+    buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::MIN_FPS,
 };
 
 pub enum App {
     Loading {
-        rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+        rx: Receiver<color_eyre::Result<ForRemoval>>,
         buildkit: BuildKitD,
     },
     CleaningContainers(CleaningContainersState),
     Exit,
+}
+
+pub struct ForRemoval {
+    containers: Vec<SCellContainerInfo>,
+    images: Vec<SCellImageInfo>,
 }
 
 impl App {
@@ -39,8 +44,8 @@ impl App {
             } = app
                 && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
-                let containers = result?;
-                app = Self::cleaning_containers(containers, buildkit.clone());
+                let for_removal = result?;
+                app = Self::cleaning_containers(for_removal.containers, buildkit.clone());
             }
 
             if let App::CleaningContainers(ref mut state) = app
@@ -70,14 +75,20 @@ impl App {
         tokio::spawn({
             let buildkit = buildkit.clone();
             async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
+                let for_removal_fn = async || {
+                    let containers = buildkit.list_containers().await?;
+                    let images = buildkit.list_images().await?;
                     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    // consider only orphan Shell-Cell containers
-                    res.map(|v| v.into_iter().filter(|c| c.orphan).collect::<Vec<_>>())
-                }
-                .await;
-                drop(tx.send(result));
+                    // consider only orphan Shell-Cell containers and images
+                    let containers = containers
+                        .into_iter()
+                        .filter(|c| c.orphan)
+                        .collect::<Vec<_>>();
+                    let images = images.into_iter().filter(|c| c.orphan).collect::<Vec<_>>();
+
+                    color_eyre::eyre::Ok(ForRemoval { containers, images })
+                };
+                drop(tx.send(for_removal_fn().await));
             }
         });
 
