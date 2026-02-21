@@ -1,18 +1,13 @@
 name: E2E Nightly
 
-# on:
-#   schedule:
-#     # Runs every day at 00:00
-#     - cron: '0 0 * * *'
-#   push:
-#     tags:
-#       - '**[0-9]+.[0-9]+.[0-9]+*'
-
 on:
+  schedule:
+    # Runs every day at 00:00
+    - cron: '0 0 * * *'
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - '**[0-9]+.[0-9]+.[0-9]+*'
+
 
 env:
   CARGO_TERM_COLOR: always
