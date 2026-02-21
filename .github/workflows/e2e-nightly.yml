@@ -4,6 +4,9 @@ name: E2E Nightly
 #   schedule:
 #     # Runs every day at 00:00
 #     - cron: '0 0 * * *'
+#   push:
+#     tags:
+#       - '**[0-9]+.[0-9]+.[0-9]+*'
 
 on:
   push:
