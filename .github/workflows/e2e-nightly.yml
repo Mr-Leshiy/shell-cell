@@ -63,11 +63,6 @@ jobs:
         {
           echo "description<<EOF"
           echo "**[View job]($JOB_URL)**"
-          echo ""
-          echo "''```"
-          echo "$OUTPUT"
-          echo "```||"
-          echo "EOF"
         } >> "$GITHUB_OUTPUT"
 
     - name: Notify Discord
