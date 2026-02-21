@@ -5,11 +5,10 @@
 # **Shell-Cell**
 
 Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
+</div>
 
 > [!WARNING]
 > Under heavy development, backwards compatibility is not guaranteed, and future versions may introduce breaking changes.
-
-</div>
 
 ## 💡 How It Works
 
