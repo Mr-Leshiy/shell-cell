@@ -2,7 +2,7 @@ main:
   # Base Docker registry image to build on top of
   from_image: debian:bookworm
   # Working directory inside the image
-  workspace: /workdir
+  workspace: /my_project
   # Shell binary used for interactive sessions
   shell: /bin/bash
   # Keeps the container alive as a persistent background server
