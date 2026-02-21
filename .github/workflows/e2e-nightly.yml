@@ -45,7 +45,7 @@ jobs:
         if [ "${{ steps.e2e.outcome }}" = "success" ]; then
           echo "title=✅ E2E Nightly — Passed" >> "$GITHUB_OUTPUT"
         else
-          echo "title=❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
+          echo "title=@admin ❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
         fi
 
         JOB_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
