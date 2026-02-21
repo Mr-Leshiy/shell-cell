@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
-use super::{App, CleaningState};
+use super::{App, CleaningContainersState};
 
 impl Widget for &App {
     fn render(
@@ -18,8 +18,8 @@ impl Widget for &App {
         if let App::Loading { .. } = self {
             render_loading(area, buf);
         }
-        if let App::Cleaning(state) = self {
-            render_cleaning(state, area, buf);
+        if let App::CleaningContainers(state) = self {
+            render_cleaning_containers(state, area, buf);
         }
     }
 }
@@ -76,8 +76,8 @@ fn render_loading(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_cleaning(
-    state: &CleaningState,
+fn render_cleaning_containers(
+    state: &CleaningContainersState,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -92,14 +92,14 @@ fn render_cleaning(
 
     // Create header with progress
     let progress_text = if is_done {
-        Line::from("✓ All cleaned").style(
+        Line::from("✓ All containers cleaned").style(
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         )
     } else {
         Line::from(format!(
-            "⟳ Cleaning 'Shell-Cell' containers and images... [{completed}/{total}]"
+            "⟳ Cleaning 'Shell-Cell' containers... [{completed}/{total}]"
         ))
         .style(
             Style::default()

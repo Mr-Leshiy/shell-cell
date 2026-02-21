@@ -17,7 +17,7 @@ pub enum App {
         rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
         buildkit: BuildKitD,
     },
-    Cleaning(CleaningState),
+    CleaningContainers(CleaningContainersState),
     Exit,
 }
 
@@ -37,10 +37,10 @@ impl App {
                 && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
                 let containers = result?;
-                app = Self::cleaning(containers, buildkit.clone());
+                app = Self::cleaning_containers(containers, buildkit.clone());
             }
 
-            if let App::Cleaning(ref mut state) = app
+            if let App::CleaningContainers(ref mut state) = app
                 && state.try_update()
             {
                 app = App::Exit;
@@ -81,7 +81,7 @@ impl App {
         App::Loading { rx, buildkit }
     }
 
-    fn cleaning(
+    fn cleaning_containers(
         containers: Vec<SCellContainerInfo>,
         buildkit: BuildKitD,
     ) -> Self {
@@ -100,7 +100,7 @@ impl App {
             }
         });
 
-        App::Cleaning(CleaningState::new(containers, rx))
+        App::CleaningContainers(CleaningContainersState::new(containers, rx))
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
@@ -117,12 +117,12 @@ impl App {
     }
 }
 
-pub struct CleaningState {
+pub struct CleaningContainersState {
     containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
     rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
 }
 
-impl CleaningState {
+impl CleaningContainersState {
     pub fn new(
         containers: Vec<SCellContainerInfo>,
         rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
