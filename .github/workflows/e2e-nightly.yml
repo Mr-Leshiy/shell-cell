@@ -45,12 +45,10 @@ jobs:
         if [ "${{ steps.e2e.outcome }}" = "success" ]; then
           echo "title=✅ E2E Nightly — Passed" >> "$GITHUB_OUTPUT"
         else
-          echo "title=@admin ❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
+          echo "title=❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
+          echo "description=@autho" >> "$GITHUB_OUTPUT"
         fi
-
-        JOB_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        echo "description=**[View job]($JOB_URL)**" >> "$GITHUB_OUTPUT"
-
+        echo "job_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
 
     - name: Notify Discord
       if: always()
@@ -59,3 +57,4 @@ jobs:
         webhook-url: ${{ secrets.DISCORD_WEBHOOK_E2E_NIGHTLY }}
         embed-title: ${{ steps.discord-message.outputs.title }}
         embed-description: ${{ steps.discord-message.outputs.description }}
+        embed-url: ${{ steps.discord-message.outputs.job_url }}
