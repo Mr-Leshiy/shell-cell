@@ -38,7 +38,13 @@ For socket configuration and other setup details, see the [Install and Configure
 
 ### Create a Blueprint
 
-Place a `scell.yml` file in your project directory (see the full [Blueprint Reference](https://mr-leshiy.github.io/shell-cell/blueprint) for all available instructions):
+Run `scell init` to generate a minimal `scell.yml` in your project directory:
+
+```shell
+scell init
+```
+
+Or write one by hand (see the full [Blueprint Reference](https://mr-leshiy.github.io/shell-cell/blueprint) for all available instructions):
 
 ```yml
 main:

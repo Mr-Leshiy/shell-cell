@@ -3,18 +3,17 @@
 
 Now that you’ve [installed and configured](./install.md) **Shell-Cell**, you’re ready to launch your very first session!
 
-To get started, create a blueprint `scell.yml` file in your project directory.
+To get started, you need a blueprint `scell.yml` file in your project directory.
 This file defines the environment your shell will live in.
 (For a deep dive into the blueprint specification, check out the [Blueprint Guide](./blueprint.md)).
 
-**Example `scell.yml`:**
-```yml
-main:
-  from: debian:bookworm
-  workspace: workdir
-  shell: /bin/bash
-  hang: while true; do sleep 3600; done
+The quickest way to get one is to let **Shell-Cell** generate it for you:
+```shell
+scell init
 ```
+
+This creates a minimal, ready-to-use `scell.yml` in the current directory.
+You can then open and adjust it to your needs.
 
 Once your file is ready, simply open your terminal in that directory and run:
 ```shell
@@ -39,6 +38,19 @@ scell ./path/to/the/blueprint/directory
 ```
 
 ## Commands
+
+### `init` — Create a Blueprint
+
+```shell
+scell init
+```
+
+Creates a minimal, functional `scell.yml` blueprint in the current directory (or in the directory passed as an argument).
+Returns an error if a `scell.yml` already exists at that location.
+
+```shell
+scell init ./path/to/directory
+```
 
 ### `ls` — List Shell-Cell Containers
 

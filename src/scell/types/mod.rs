@@ -16,7 +16,7 @@ use self::{
 };
 use crate::error::WrapUserError;
 
-const SCELL_FILE_NAME: &str = "scell.yml";
+pub const SCELL_FILE_NAME: &str = "scell.yml";
 
 #[derive(Debug)]
 pub struct SCellFile {
