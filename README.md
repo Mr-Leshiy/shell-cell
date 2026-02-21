@@ -6,7 +6,8 @@
 
 Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
 
-> ⚠️ Under heavy development, backwards compatibility is not guaranteed, and future versions may introduce breaking changes.
+> [!WARNING]
+> Under heavy development, backwards compatibility is not guaranteed, and future versions may introduce breaking changes.
 
 </div>
 
