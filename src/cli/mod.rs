@@ -71,11 +71,11 @@ impl Cli {
 
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
-            None => self.run().await?,
+            None => run::run(self.scell_path, self.target).await?,
             Some(Commands::Init { path }) => init::init(path)?,
-            Some(Commands::Ls) => self.ls().await?,
-            Some(Commands::Stop) => self.stop().await?,
-            Some(Commands::Cleanup) => self.cleanup().await?,
+            Some(Commands::Ls) => ls::ls().await?,
+            Some(Commands::Stop) => stop::stop().await?,
+            Some(Commands::Cleanup) => cleanup::cleanup().await?,
         }
         Ok(())
     }
