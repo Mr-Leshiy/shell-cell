@@ -1,9 +1,15 @@
 name: E2E Nightly
 
+# on:
+#   schedule:
+#     # Runs every day at 00:00
+#     - cron: '0 0 * * *'
+
 on:
-  schedule:
-    # Runs every day at 00:00
-    - cron: '0 0 * * *'
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -26,7 +32,49 @@ jobs:
         python-version: '3.13'
     - uses: astral-sh/setup-uv@v5
     - name: Run e2e tests
+      id: e2e
       working-directory: e2e-tests
       env:
         SCELL_BIN: ${{ github.workspace }}/target/debug/scell
-      run: uv run pytest
+      run: |
+        set -o pipefail
+        uv run pytest 2>&1 | tee ${{ github.workspace }}/e2e-output.txt
+
+    - name: Prepare Discord message
+      if: always()
+      id: discord-message
+      run: |
+        if [ "${{ steps.e2e.outcome }}" = "success" ]; then
+          echo "title=✅ E2E Nightly — Passed" >> "$GITHUB_OUTPUT"
+          echo "color=3066993" >> "$GITHUB_OUTPUT"
+        else
+          echo "title=❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
+          echo "color=15158332" >> "$GITHUB_OUTPUT"
+        fi
+
+        JOB_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+        if [ -f "${{ github.workspace }}/e2e-output.txt" ]; then
+          OUTPUT=$(cat ${{ github.workspace }}/e2e-output.txt)
+        else
+          OUTPUT="No test output available"
+        fi
+
+        {
+          echo "description<<EOF"
+          echo "**[View job]($JOB_URL)**"
+          echo ""
+          echo "''```"
+          echo "$OUTPUT"
+          echo "```||"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Notify Discord
+      if: always()
+      uses: tsickert/discord-webhook@v7.0.0
+      with:
+        webhook-url: ${{ secrets.DISCORD_WEBHOOK_E2E_NIGHTLY }}
+        embed-title: ${{ steps.discord-message.outputs.title }}
+        embed-description: ${{ steps.discord-message.outputs.description }}
+        embed-color: ${{ steps.discord-message.outputs.color }}

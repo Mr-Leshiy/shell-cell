@@ -391,5 +391,5 @@ jobs:
       - name: Send Discord Announcement
         uses: tsickert/discord-webhook@v7.0.0
         with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_ANNOUNCEMENTS }}
           content: ${{ steps.message.outputs.content }}
