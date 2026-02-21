@@ -9,7 +9,10 @@ use ratatui::{
     widgets::TableState,
 };
 
-use crate::{buildkit::BuildKitD, cli::MIN_FPS, scell::container_info::SCellContainerInfo};
+use crate::{
+    buildkit::{BuildKitD, container_info::SCellContainerInfo},
+    cli::MIN_FPS,
+};
 
 /// State machine for the `ls` interactive TUI.
 ///

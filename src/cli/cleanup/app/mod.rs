@@ -2,6 +2,7 @@ mod ui;
 
 use std::{
     collections::HashMap,
+    hash::Hash,
     sync::mpsc::{Receiver, RecvTimeoutError},
 };
 
@@ -10,14 +11,18 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
 };
 
-use crate::{buildkit::BuildKitD, cli::MIN_FPS, scell::container_info::SCellContainerInfo};
+use crate::{
+    buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
+    cli::MIN_FPS,
+};
 
 pub enum App {
     Loading {
-        rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+        rx: Receiver<color_eyre::Result<(Vec<SCellContainerInfo>, Vec<SCellImageInfo>)>>,
         buildkit: BuildKitD,
     },
-    Cleaning(CleaningState),
+    CleaningContainers(CleaningState<SCellContainerInfo>),
+    CleaningImages(CleaningState<SCellImageInfo>),
     Exit,
 }
 
@@ -28,6 +33,7 @@ impl App {
     ) -> color_eyre::Result<()> {
         // First step
         let mut app = Self::loading(buildkit.clone());
+        let mut images_for_removal = Vec::new();
         loop {
             // Check for state transitions
             if let App::Loading {
@@ -36,11 +42,19 @@ impl App {
             } = app
                 && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
-                let containers = result?;
-                app = Self::cleaning(containers, buildkit.clone());
+                let (containers_for_removal, images_for_removal_res) = result?;
+                images_for_removal = images_for_removal_res;
+                app = Self::cleaning_containers(containers_for_removal, buildkit.clone());
             }
 
-            if let App::Cleaning(ref mut state) = app
+            if let App::CleaningContainers(ref mut state) = app
+                && state.try_update()
+            {
+                let images_for_removal = std::mem::take(&mut images_for_removal);
+                app = Self::cleaning_images(images_for_removal, buildkit.clone());
+            }
+
+            if let App::CleaningImages(ref mut state) = app
                 && state.try_update()
             {
                 app = App::Exit;
@@ -67,29 +81,38 @@ impl App {
         tokio::spawn({
             let buildkit = buildkit.clone();
             async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
+                let for_removal_fn = async || {
+                    let containers = buildkit.list_containers().await?;
+                    let images = buildkit.list_images().await?;
                     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    // consider only orphan Shell-Cell containers
-                    res.map(|v| v.into_iter().filter(|c| c.orphan).collect::<Vec<_>>())
-                }
-                .await;
-                drop(tx.send(result));
+                    // consider only orphan Shell-Cell containers and images
+                    let containers = containers
+                        .into_iter()
+                        .filter(|c| c.orphan)
+                        .collect::<Vec<_>>();
+                    let images = images
+                        .into_iter()
+                        .filter(|c| c.orphan && !c.in_use)
+                        .collect::<Vec<_>>();
+
+                    color_eyre::eyre::Ok((containers, images))
+                };
+                drop(tx.send(for_removal_fn().await));
             }
         });
 
         App::Loading { rx, buildkit }
     }
 
-    fn cleaning(
-        containers: Vec<SCellContainerInfo>,
+    fn cleaning_containers(
+        for_removal: Vec<SCellContainerInfo>,
         buildkit: BuildKitD,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
-        // Spawn async task to cleanup orphan containers and images
+        // Spawn async task to cleanup orphan containers and their corresponding images
         tokio::spawn({
-            let containers = containers.clone();
+            let containers = for_removal.clone();
             async move {
                 for c in containers {
                     let res = buildkit.cleanup_container(&c).await;
@@ -100,7 +123,29 @@ impl App {
             }
         });
 
-        App::Cleaning(CleaningState::new(containers, rx))
+        App::CleaningContainers(CleaningState::new(for_removal, rx))
+    }
+
+    fn cleaning_images(
+        for_removal: Vec<SCellImageInfo>,
+        buildkit: BuildKitD,
+    ) -> Self {
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        // Spawn async task to cleanup orphan images
+        tokio::spawn({
+            let images = for_removal.clone();
+            async move {
+                for c in images {
+                    let res = buildkit.cleanup_image(&c).await;
+                    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                    drop(tx.send((c, res)));
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            }
+        });
+
+        App::CleaningImages(CleaningState::new(for_removal, rx))
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
@@ -117,18 +162,18 @@ impl App {
     }
 }
 
-pub struct CleaningState {
-    containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
-    rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
+pub struct CleaningState<Item> {
+    removing_results: HashMap<Item, Option<color_eyre::Result<()>>>,
+    rx: Receiver<(Item, color_eyre::Result<()>)>,
 }
 
-impl CleaningState {
+impl<Item: Clone + PartialEq + Eq + Hash> CleaningState<Item> {
     pub fn new(
-        containers: Vec<SCellContainerInfo>,
-        rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
+        for_removal: Vec<Item>,
+        rx: Receiver<(Item, color_eyre::Result<()>)>,
     ) -> Self {
         Self {
-            containers: containers.into_iter().map(|c| (c, None)).collect(),
+            removing_results: for_removal.into_iter().map(|c| (c, None)).collect(),
             rx,
         }
     }
@@ -137,7 +182,7 @@ impl CleaningState {
     fn try_update(&mut self) -> bool {
         match self.rx.recv_timeout(MIN_FPS) {
             Ok(update) => {
-                self.containers.insert(update.0, Some(update.1));
+                self.removing_results.insert(update.0, Some(update.1));
                 false
             },
             Err(RecvTimeoutError::Timeout) => false,

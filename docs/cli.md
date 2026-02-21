@@ -76,7 +76,9 @@ Press `Ctrl-C` or `Ctrl-D` to abort early.
 scell cleanup
 ```
 
-Cleans up **orphan** **Shell-Cell** containers and corresponding images. A container is considered an orphan when it is no longer associated with any existing `scell.yml` blueprint file (e.g., the blueprint was deleted or moved, or the blueprint contents changed so the container hash no longer matches).
+Cleans up **orphan** **Shell-Cell** containers with their corresponding images and just images.
+An item is considered an orphan when it is no longer associated with any existing `scell.yml` blueprint file
+(e.g., the blueprint was deleted or moved, or the blueprint contents changed so the container hash no longer matches).
 
 
 ## ❓ Need more help ?

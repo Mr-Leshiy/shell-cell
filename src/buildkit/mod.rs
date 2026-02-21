@@ -1,6 +1,8 @@
 //! daemon client implementation for orchestrating containers and images.
 
+pub mod container_info;
 mod docker;
+pub mod image_info;
 
 use std::collections::HashMap;
 
@@ -9,15 +11,19 @@ use bollard::{
     secret::{ContainerCreateBody, HostConfig, PortBinding},
 };
 
-use self::docker::{build_image, start_container};
 use crate::{
-    buildkit::docker::{
-        container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
-        remove_container, remove_image, stop_container,
+    buildkit::{
+        container_info::SCellContainerInfo,
+        docker::{
+            build_image, container_iteractive_exec, container_resize_exec, list_all_containers,
+            list_all_images, pull_image, remove_container, remove_image, start_container,
+            stop_container,
+        },
+        image_info::SCellImageInfo,
     },
     error::WrapUserError,
     pty::Pty,
-    scell::{SCell, container_info::SCellContainerInfo},
+    scell::SCell,
 };
 
 pub type ImageId = String;
@@ -133,11 +139,27 @@ impl BuildKitD {
         Ok(())
     }
 
+    pub async fn cleanup_image(
+        &self,
+        image: &SCellImageInfo,
+    ) -> color_eyre::Result<()> {
+        remove_image(&self.docker, &image.image_id).await?;
+        Ok(())
+    }
+
     pub async fn list_containers(&self) -> color_eyre::Result<Vec<SCellContainerInfo>> {
         Ok(list_all_containers(&self.docker)
             .await?
             .into_iter()
             .filter_map(|v| SCellContainerInfo::try_from(v).ok())
+            .collect())
+    }
+
+    pub async fn list_images(&self) -> color_eyre::Result<Vec<SCellImageInfo>> {
+        Ok(list_all_images(&self.docker)
+            .await?
+            .into_iter()
+            .filter_map(|v| SCellImageInfo::try_from(v).ok())
             .collect())
     }
 

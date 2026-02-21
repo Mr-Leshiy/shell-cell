@@ -6,9 +6,10 @@ use bollard::{
     exec::{ResizeExecOptions, StartExecOptions, StartExecResults},
     query_parameters::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
-        ListContainersOptionsBuilder, RemoveContainerOptionsBuilder, RemoveImageOptionsBuilder,
+        ListContainersOptionsBuilder, ListImagesOptionsBuilder, RemoveContainerOptionsBuilder,
+        RemoveImageOptionsBuilder,
     },
-    secret::{ContainerCreateBody, ContainerSummary, ExecConfig},
+    secret::{ContainerCreateBody, ContainerSummary, ExecConfig, ImageSummary},
 };
 use bytes::Bytes;
 use color_eyre::eyre::ContextCompat;
@@ -146,6 +147,13 @@ pub async fn remove_image(
 pub async fn list_all_containers(docker: &Docker) -> color_eyre::Result<Vec<ContainerSummary>> {
     let res = docker
         .list_containers(Some(ListContainersOptionsBuilder::new().all(true).build()))
+        .await?;
+    Ok(res)
+}
+
+pub async fn list_all_images(docker: &Docker) -> color_eyre::Result<Vec<ImageSummary>> {
+    let res = docker
+        .list_images(Some(ListImagesOptionsBuilder::new().all(true).build()))
         .await?;
     Ok(res)
 }

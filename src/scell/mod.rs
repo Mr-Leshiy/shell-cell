@@ -6,10 +6,9 @@
 //! "base" for entire Shell-Cell.
 
 mod compile;
-pub mod container_info;
 pub mod image;
 mod link;
-mod name;
+pub mod name;
 pub mod types;
 
 use std::hash::{Hash, Hasher};
@@ -27,9 +26,9 @@ use crate::scell::{
     },
 };
 
-const NAME_PREFIX: &str = "scell-";
-const METADATA_TARGET_KEY: &str = "scell-target";
-const METADATA_LOCATION_KEY: &str = "scell-location";
+pub const NAME_PREFIX: &str = "scell-";
+pub const METADATA_TARGET_KEY: &str = "scell-target";
+pub const METADATA_LOCATION_KEY: &str = "scell-location";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCell(SCellInner);
