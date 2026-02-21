@@ -4,6 +4,10 @@ on:
   schedule:
     # Runs every day at 00:00
     - cron: '0 0 * * *'
+  push:
+    tags:
+      - '**[0-9]+.[0-9]+.[0-9]+*'
+
 
 env:
   CARGO_TERM_COLOR: always
@@ -26,7 +30,29 @@ jobs:
         python-version: '3.13'
     - uses: astral-sh/setup-uv@v5
     - name: Run e2e tests
+      id: e2e
       working-directory: e2e-tests
       env:
         SCELL_BIN: ${{ github.workspace }}/target/debug/scell
       run: uv run pytest
+
+    - name: Prepare Discord message
+      if: always()
+      id: discord-message
+      run: |
+        if [ "${{ steps.e2e.outcome }}" = "success" ]; then
+          echo "title=✅ E2E Nightly — Passed" >> "$GITHUB_OUTPUT"
+        else
+          echo "title=❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
+          echo "content=<@&${{ secrets.DISCORD_ADMIN_ROLE_ID }}>" >> "$GITHUB_OUTPUT"
+        fi
+        echo "job_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+
+    - name: Notify Discord
+      if: always()
+      uses: tsickert/discord-webhook@v7.0.0
+      with:
+        webhook-url: ${{ secrets.DISCORD_WEBHOOK_E2E_NIGHTLY }}
+        embed-title: ${{ steps.discord-message.outputs.title }}
+        embed-url: ${{ steps.discord-message.outputs.job_url }}
+        content: ${{ steps.discord-message.outputs.content }}
