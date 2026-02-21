@@ -46,7 +46,7 @@ jobs:
           echo "title=✅ E2E Nightly — Passed" >> "$GITHUB_OUTPUT"
         else
           echo "title=❌ E2E Nightly — Failed" >> "$GITHUB_OUTPUT"
-          echo "content=@author" >> "$GITHUB_OUTPUT"
+          echo "content=<@&author>" >> "$GITHUB_OUTPUT"
         fi
         echo "job_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
 
