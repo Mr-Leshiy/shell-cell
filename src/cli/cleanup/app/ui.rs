@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
-use super::{App, CleaningContainersState};
+use crate::cli::cleanup::app::{CleaningContainersState, CleaningImagesState, App};
 
 impl Widget for &App {
     fn render(
@@ -20,6 +20,9 @@ impl Widget for &App {
         }
         if let App::CleaningContainers(state) = self {
             render_cleaning_containers(state, area, buf);
+        }
+        if let App::CleaningImages(state) = self {
+            render_cleaning_images(state, area, buf);
         }
     }
 }
@@ -86,8 +89,12 @@ fn render_cleaning_containers(
     Widget::render(block, area, buf);
 
     // Calculate progress
-    let total = state.containers.len();
-    let completed = state.containers.values().filter(|v| v.is_some()).count();
+    let total = state.removing_results.len();
+    let completed = state
+        .removing_results
+        .values()
+        .filter(|v| v.is_some())
+        .count();
     let is_done = completed == total;
 
     // Create header with progress
@@ -122,7 +129,103 @@ fn render_cleaning_containers(
 
     // Create list items for each container
     let list_items: Vec<ListItem> = state
-        .containers
+        .removing_results
+        .iter()
+        .map(|(info, status)| {
+            let (icon, style) = match status {
+                None => ("◌", Style::default().fg(Color::Gray)),
+                Some(Ok(())) => ("✓", Style::default().fg(Color::Green)),
+                Some(Err(_)) => ("✗", Style::default().fg(Color::Red)),
+            };
+
+            let mut lines = vec![Line::from(vec![
+                Span::styled(
+                    format!("{icon} {}", info.name),
+                    style.add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    format!(
+                        " ({}+{})",
+                        info.location
+                            .as_ref()
+                            .map_or_else(|| "<empty>".to_string(), |l| l.display().to_string()),
+                        info.target
+                            .as_ref()
+                            .map_or_else(|| "<empty>".to_string(), ToString::to_string)
+                    ),
+                    Style::default().fg(Color::DarkGray),
+                ),
+            ])];
+
+            // Add error message if there's an error
+            if let Some(Err(err)) = status {
+                lines.push(
+                    Line::from(format!("  └─ Error: {err}"))
+                        .set_style(Style::default().fg(Color::Red)),
+                );
+            }
+
+            ListItem::new(lines)
+        })
+        .collect();
+
+    let list = List::new(list_items);
+
+    Widget::render(list, layout[1], buf);
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_cleaning_images(
+    state: &CleaningImagesState,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let block = main_block();
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
+    // Calculate progress
+    let total = state.removing_results.len();
+    let completed = state
+        .removing_results
+        .values()
+        .filter(|v| v.is_some())
+        .count();
+    let is_done = completed == total;
+
+    // Create header with progress
+    let progress_text = if is_done {
+        Line::from("✓ All images cleaned").style(
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )
+    } else {
+        Line::from(format!(
+            "⟳ Cleaning 'Shell-Cell' images... [{completed}/{total}]"
+        ))
+        .style(
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
+    };
+
+    let layout = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(inner);
+
+    // Render progress header
+    let progress_paragraph = Paragraph::new(progress_text)
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::BOTTOM)
+                .border_style(Style::default().light_magenta()),
+        );
+    Widget::render(progress_paragraph, layout[0], buf);
+
+    // Create list items for each container
+    let list_items: Vec<ListItem> = state
+        .removing_results
         .iter()
         .map(|(info, status)| {
             let (icon, style) = match status {

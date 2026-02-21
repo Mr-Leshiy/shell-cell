@@ -139,6 +139,14 @@ impl BuildKitD {
         Ok(())
     }
 
+    pub async fn cleanup_image(
+        &self,
+        image: &SCellImageInfo,
+    ) -> color_eyre::Result<()> {
+        remove_image(&self.docker, &image.image_id).await?;
+        Ok(())
+    }
+
     pub async fn list_containers(&self) -> color_eyre::Result<Vec<SCellContainerInfo>> {
         Ok(list_all_containers(&self.docker)
             .await?
