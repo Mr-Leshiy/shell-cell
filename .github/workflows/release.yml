@@ -51,7 +51,7 @@ jobs:
   # Verify the pushed tag matches the crate version before proceeding
   verify:
     runs-on: "ubuntu-22.04"
-    if: ${{ github.event_name == 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
+    if: ${{ github.event_name == 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
