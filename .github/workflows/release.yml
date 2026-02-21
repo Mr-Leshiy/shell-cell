@@ -45,7 +45,7 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_run:
-    workflows: ["Rust", "E2E Nightly"]
+    workflows: ["Rust"]
     types:
       - completed
 
