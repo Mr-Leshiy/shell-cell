@@ -2,6 +2,7 @@ mod ui;
 
 use std::{
     collections::HashMap,
+    hash::Hash,
     sync::mpsc::{Receiver, RecvTimeoutError},
 };
 
@@ -20,8 +21,8 @@ pub enum App {
         rx: Receiver<color_eyre::Result<(Vec<SCellContainerInfo>, Vec<SCellImageInfo>)>>,
         buildkit: BuildKitD,
     },
-    CleaningContainers(CleaningContainersState),
-    CleaningImages(CleaningImagesState),
+    CleaningContainers(CleaningState<SCellContainerInfo>),
+    CleaningImages(CleaningState<SCellImageInfo>),
     Exit,
 }
 
@@ -122,7 +123,7 @@ impl App {
             }
         });
 
-        App::CleaningContainers(CleaningContainersState::new(for_removal, rx))
+        App::CleaningContainers(CleaningState::new(for_removal, rx))
     }
 
     fn cleaning_images(
@@ -144,7 +145,7 @@ impl App {
             }
         });
 
-        App::CleaningImages(CleaningImagesState::new(for_removal, rx))
+        App::CleaningImages(CleaningState::new(for_removal, rx))
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
@@ -161,55 +162,18 @@ impl App {
     }
 }
 
-pub struct CleaningContainersState {
-    removing_results: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
-    rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
+pub struct CleaningState<Item> {
+    removing_results: HashMap<Item, Option<color_eyre::Result<()>>>,
+    rx: Receiver<(Item, color_eyre::Result<()>)>,
 }
 
-impl CleaningContainersState {
+impl<Item: Clone + PartialEq + Eq + Hash> CleaningState<Item> {
     pub fn new(
-        for_removal: Vec<SCellContainerInfo>,
-        rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
+        for_removal: Vec<Item>,
+        rx: Receiver<(Item, color_eyre::Result<()>)>,
     ) -> Self {
         Self {
-            removing_results: for_removal
-                .clone()
-                .into_iter()
-                .map(|c| (c, None))
-                .collect(),
-            rx,
-        }
-    }
-
-    /// Returns boolean flag, if the udelrying channel was closed or not
-    fn try_update(&mut self) -> bool {
-        match self.rx.recv_timeout(MIN_FPS) {
-            Ok(update) => {
-                self.removing_results.insert(update.0, Some(update.1));
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        }
-    }
-}
-
-pub struct CleaningImagesState {
-    removing_results: HashMap<SCellImageInfo, Option<color_eyre::Result<()>>>,
-    rx: Receiver<(SCellImageInfo, color_eyre::Result<()>)>,
-}
-
-impl CleaningImagesState {
-    pub fn new(
-        for_removal: Vec<SCellImageInfo>,
-        rx: Receiver<(SCellImageInfo, color_eyre::Result<()>)>,
-    ) -> Self {
-        Self {
-            removing_results: for_removal
-                .clone()
-                .into_iter()
-                .map(|c| (c, None))
-                .collect(),
+            removing_results: for_removal.into_iter().map(|c| (c, None)).collect(),
             rx,
         }
     }

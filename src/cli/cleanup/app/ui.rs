@@ -5,7 +5,10 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
-use crate::cli::cleanup::app::{CleaningContainersState, CleaningImagesState, App};
+use crate::{
+    buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
+    cli::cleanup::app::{App, CleaningState},
+};
 
 impl Widget for &App {
     fn render(
@@ -80,7 +83,7 @@ fn render_loading(
 
 #[allow(clippy::indexing_slicing)]
 fn render_cleaning_containers(
-    state: &CleaningContainersState,
+    state: &CleaningState<SCellContainerInfo>,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -176,7 +179,7 @@ fn render_cleaning_containers(
 
 #[allow(clippy::indexing_slicing)]
 fn render_cleaning_images(
-    state: &CleaningImagesState,
+    state: &CleaningState<SCellImageInfo>,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {

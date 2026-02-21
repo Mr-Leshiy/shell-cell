@@ -19,41 +19,6 @@ pub struct SCellImageInfo {
     pub image_id: String,
 }
 
-impl SCellImageInfo {
-    pub fn new(
-        name: SCellName,
-        in_use: bool,
-        target: Option<TargetName>,
-        location: Option<PathBuf>,
-        created_at: Option<DateTime<Utc>>,
-        image_id: String,
-    ) -> Self {
-        let orphan = if let Some(ref location) = location
-            && let Some(ref target) = target
-            && created_at.is_some()
-        {
-            // Determine if the container is orphaned by comparing the container name
-            // with the expected SCell name
-            SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.name()? != name))
-                // If compilation fails, consider it orphaned
-                .unwrap_or(true)
-        } else {
-            true
-        };
-
-        Self {
-            name,
-            in_use,
-            orphan,
-            location,
-            target,
-            created_at,
-            image_id,
-        }
-    }
-}
-
 impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
     type Error = color_eyre::eyre::Error;
 
@@ -99,8 +64,8 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         Ok(Self {
             name,
-            in_use,
             orphan,
+            in_use,
             location,
             target,
             created_at,
