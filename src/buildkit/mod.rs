@@ -2,6 +2,7 @@
 
 pub mod container_info;
 mod docker;
+pub mod image_info;
 
 use std::collections::HashMap;
 
@@ -15,8 +16,10 @@ use crate::{
         container_info::SCellContainerInfo,
         docker::{
             build_image, container_iteractive_exec, container_resize_exec, list_all_containers,
-            pull_image, remove_container, remove_image, start_container, stop_container,
+            list_all_images, pull_image, remove_container, remove_image, start_container,
+            stop_container,
         },
+        image_info::SCellImageInfo,
     },
     error::WrapUserError,
     pty::Pty,
@@ -144,13 +147,13 @@ impl BuildKitD {
             .collect())
     }
 
-    // pub async fn list_images(&self) -> color_eyre::Result<Vec<ImageId>> {
-    //     Ok(list_all_containers(&self.docker)
-    //         .await?
-    //         .into_iter()
-    //         .filter_map(|v| SCellContainerInfo::try_from(v).ok())
-    //         .collect())
-    // }
+    pub async fn list_images(&self) -> color_eyre::Result<Vec<SCellImageInfo>> {
+        Ok(list_all_images(&self.docker)
+            .await?
+            .into_iter()
+            .filter_map(|v| SCellImageInfo::try_from(v).ok())
+            .collect())
+    }
 
     pub async fn attach_to_shell(
         &self,
