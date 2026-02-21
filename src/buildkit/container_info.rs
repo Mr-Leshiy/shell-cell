@@ -4,8 +4,9 @@ use bollard::secret::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use super::{METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, types::name::TargetName};
-use crate::scell::name::SCellName;
+use crate::scell::{
+    METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, name::SCellName, types::name::TargetName,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {

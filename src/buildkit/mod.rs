@@ -1,5 +1,6 @@
 //! daemon client implementation for orchestrating containers and images.
 
+pub mod container_info;
 mod docker;
 
 use std::collections::HashMap;
@@ -9,15 +10,17 @@ use bollard::{
     secret::{ContainerCreateBody, HostConfig, PortBinding},
 };
 
-use self::docker::{build_image, start_container};
 use crate::{
-    buildkit::docker::{
-        container_iteractive_exec, container_resize_exec, list_all_containers, pull_image,
-        remove_container, remove_image, stop_container,
+    buildkit::{
+        container_info::SCellContainerInfo,
+        docker::{
+            build_image, container_iteractive_exec, container_resize_exec, list_all_containers,
+            pull_image, remove_container, remove_image, start_container, stop_container,
+        },
     },
     error::WrapUserError,
     pty::Pty,
-    scell::{SCell, container_info::SCellContainerInfo},
+    scell::SCell,
 };
 
 pub type ImageId = String;
@@ -140,6 +143,14 @@ impl BuildKitD {
             .filter_map(|v| SCellContainerInfo::try_from(v).ok())
             .collect())
     }
+
+    // pub async fn list_images(&self) -> color_eyre::Result<Vec<ImageId>> {
+    //     Ok(list_all_containers(&self.docker)
+    //         .await?
+    //         .into_iter()
+    //         .filter_map(|v| SCellContainerInfo::try_from(v).ok())
+    //         .collect())
+    // }
 
     pub async fn attach_to_shell(
         &self,
