@@ -45,8 +45,9 @@ pub enum Commands {
     Ls,
     /// Stop all running Shell-Cell containers
     Stop,
-    /// Clean up all orphan Shell-Cell containers with their corresponding images and just single images (those no
-    /// longer associated with any existing Shell-Cell blueprint files).
+    /// Clean up all orphan Shell-Cell containers with their corresponding images and just
+    /// single images (those no longer associated with any existing Shell-Cell
+    /// blueprint files).
     Cleanup,
 }
 
