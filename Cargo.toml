@@ -5,7 +5,7 @@ edition = "2024"
 description = "Shell-Cell. CLI app to spawn and manage containerized shell environments"
 repository = "https://github.com/Mr-Leshiy/shell-cell"
 authors = [
-    "Alex Pozhylenkov (Mr-Leshiy) <leshiy12345678@gmail.com>"
+    "Oleksii Pozhylenkov (Mr-Leshiy) <leshiy12345678@gmail.com>"
 ]
 license = "MIT OR Apache-2.0"
 
