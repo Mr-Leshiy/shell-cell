@@ -1,13 +1,12 @@
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget},
 };
 
-use crate::buildkit::container_info::SCellContainerInfo;
-
 use super::{App, LsState};
+use crate::buildkit::container_info::SCellContainerInfo;
 
 impl Widget for &App {
     fn render(
@@ -141,8 +140,7 @@ fn render_stopping(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Yellow))
-                .bg(Color::Black),
+                .border_style(Style::default().fg(Color::Yellow)),
         )
         .centered();
 
@@ -227,8 +225,7 @@ fn render_confirm_remove(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red))
-                .bg(Color::Black),
+                .border_style(Style::default().fg(Color::Red)),
         )
         .centered();
 
@@ -280,8 +277,7 @@ fn render_removing(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red))
-                .bg(Color::Black),
+                .border_style(Style::default().fg(Color::Red)),
         )
         .centered();
 
@@ -445,17 +441,14 @@ fn render_help_overlay(
 
     Widget::render(Clear, horizontal[1], buf);
 
-    let paragraph = Paragraph::new(help_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Help ")
-                .title_bottom("h / Esc: close this window")
-                .title_alignment(HorizontalAlignment::Center)
-                .border_style(Style::default().fg(Color::Cyan))
-                .bg(Color::Black),
-        )
-        .centered();
+    let paragraph = Paragraph::new(help_text).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" Help ")
+            .title_bottom("h / Esc: close this window")
+            .title_alignment(HorizontalAlignment::Center)
+            .border_style(Style::default().fg(Color::Cyan)),
+    );
 
     paragraph.render(horizontal[1], buf);
 }

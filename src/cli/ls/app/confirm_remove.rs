@@ -3,13 +3,13 @@ use crate::{
     cli::ls::app::{ls::LsState, removing::RemovingState},
 };
 
-/// Holds the state while waiting for user confirmation to remove a container.
+/// Holds the state while waiting for user confirmation to remove an item.
 ///
-/// Displays a warning that all container state will be lost and waits for
+/// Displays a warning that all item's state will be lost and waits for
 /// the user to press 'y' (confirm) or 'n'/'Esc' (cancel).
 pub struct ConfirmRemoveState {
     pub selected_to_remove: SCellContainerInfo,
-    pub ls_state: LsState,
+    pub ls_state: LsState<SCellContainerInfo>,
 }
 
 impl ConfirmRemoveState {
@@ -37,7 +37,7 @@ impl ConfirmRemoveState {
     }
 
     /// User cancelled removal - return to the list view.
-    pub fn cancel(self) -> LsState {
+    pub fn cancel(self) -> LsState<SCellContainerInfo> {
         self.ls_state
     }
 }
