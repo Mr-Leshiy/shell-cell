@@ -105,7 +105,7 @@ impl App {
                 {
                     self = App::Exit;
                 },
-                KeyCode::Char('i') => {
+                KeyCode::Char('h') => {
                     if let App::Ls(ref mut ls_state) = self {
                         ls_state.show_help = !ls_state.show_help;
                     }

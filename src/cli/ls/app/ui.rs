@@ -1,6 +1,6 @@
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, StatefulWidget, Table, Widget},
 };
@@ -426,10 +426,10 @@ fn render_help_overlay(
     let paragraph = Paragraph::new(help_text).block(
         Block::default()
             .borders(Borders::ALL)
-            .title(" Info ")
-            .title_bottom("i / Esc: close this window")
+            .title(" Help ")
+            .title_bottom("h / Esc: close this window")
             .title_alignment(HorizontalAlignment::Center)
-            .border_style(Style::default().fg(Color::Cyan)),
+            .border_style(Style::default().fg(Color::Cyan)).bg(Color::Black),
     );
 
     paragraph.render(horizontal[1], buf);
@@ -439,6 +439,6 @@ fn main_block() -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
         .title("'Shell-Cell' Containers")
-        .title_bottom("i: Info")
+        .title_bottom("h: Help")
         .border_style(Style::new().light_magenta())
 }
