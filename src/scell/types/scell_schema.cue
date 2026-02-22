@@ -100,5 +100,7 @@
 
 // defining the final contraint 
 {
-  [string]: #Target
+    // TargetName enforces the naming rules: must start with a lowercase letter and
+    // contain only lowercase letters, digits, hyphens, and underscores.
+    [=~"^[a-z][a-z0-9_-]*$"]: #Target
 }
