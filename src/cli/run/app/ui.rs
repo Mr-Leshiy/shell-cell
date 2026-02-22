@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use ratatui::{
     layout::{Alignment, Constraint, Layout},
     style::{Modifier, Style},
@@ -29,10 +30,29 @@ impl Widget for &mut App {
             let inner = block.inner(area);
             Widget::render(block, area, buf);
 
+            let area_width = inner.width as usize;
+
             let logs = state
                 .logs
                 .iter()
-                .flat_map(|log| log.0.lines().map(|line| (line.to_string(), log.1)))
+                .flat_map(|log| {
+                    log.0
+                        .lines()
+                        .flat_map(|line| {
+                            // Splitting each line to lines, if they exceed the `area_width`.
+                            // Adding some extra identation, so the text would always fits, even
+                            // while adding some extra prefixes/suffixes etc. for different
+                            // `LogType`s
+                            let area_width = area_width.saturating_sub(5);
+
+                            line.chars()
+                                .chunks(area_width)
+                                .into_iter()
+                                .map(|chunk| (chunk.collect::<String>(), log.1))
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<_>>()
+                })
                 .collect::<Vec<_>>();
             let logs_len = logs.len();
             // Calculate how many log items can fit in the available height
