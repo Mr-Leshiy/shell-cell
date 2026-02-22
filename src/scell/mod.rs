@@ -33,11 +33,12 @@ pub const METADATA_LOCATION_KEY: &str = "scell-location";
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCell(SCellInner);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 struct SCellInner {
     links: Vec<Link>,
     shell: ShellStmt,
     hang: HangStmt,
+    #[serde(skip_serializing_if = "Option::is_none")]
     config: Option<ConfigStmt>,
 }
 

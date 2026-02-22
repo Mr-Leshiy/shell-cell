@@ -2,7 +2,7 @@ use std::{fmt::Display, hash::Hash, str::FromStr};
 
 const ENV_DELIMETER: char = '=';
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct EnvStmt(pub Vec<EnvStmtItem>);
 
 impl Hash for EnvStmt {
@@ -16,7 +16,7 @@ impl Hash for EnvStmt {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct EnvStmtItem {
     pub key: String,
     pub value: String,
