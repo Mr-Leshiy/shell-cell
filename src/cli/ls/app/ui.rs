@@ -24,7 +24,7 @@ impl Widget for &App {
             },
             App::Stopping(state) => {
                 render_ls(&state.ls_state, area, buf);
-                render_stopping(&state.container_name, area, buf)
+                render_stopping(&state.container_name, area, buf);
             },
             App::ConfirmRemove(state) => {
                 render_ls(&state.ls_state, area, buf);
