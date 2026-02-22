@@ -1,6 +1,6 @@
 use std::{hash::Hash, str::FromStr};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize)]
 pub struct PortsStmt(pub Vec<PortItem>);
 
 impl Hash for PortsStmt {
@@ -22,7 +22,7 @@ impl<'de> serde::Deserialize<'de> for PortsStmt {
 }
 
 /// The network protocol for a port binding.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Serialize)]
 pub enum PortProtocol {
     #[default]
     Tcp,
@@ -44,8 +44,9 @@ impl PortProtocol {
 /// - `HOST_PORT:CONTAINER_PORT`
 /// - `HOST_IP:HOST_PORT:CONTAINER_PORT`
 /// - Any of the above with `/tcp` or `/udp` suffix
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct PortItem {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub host_ip: Option<String>,
     pub host_port: String,
     pub container_port: String,

@@ -9,6 +9,7 @@ pub struct ImageDefParsingError(String);
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct ImageDef {
     pub image: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
 }
 

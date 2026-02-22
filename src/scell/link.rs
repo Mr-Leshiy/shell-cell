@@ -15,6 +15,7 @@ pub enum Link {
     Node {
         name: TargetName,
         location: PathBuf,
+        #[serde(skip_serializing_if = "WorkspaceStmt::is_none")]
         workspace: WorkspaceStmt,
         env: EnvStmt,
         copy: CopyStmt,

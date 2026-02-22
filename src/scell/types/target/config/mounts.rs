@@ -2,7 +2,7 @@ use std::{hash::Hash, path::PathBuf, str::FromStr};
 
 const MOUNT_DELIMETER: char = ':';
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct MountsStmt(pub Vec<MountItem>);
 
 impl Hash for MountsStmt {
@@ -16,7 +16,7 @@ impl Hash for MountsStmt {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct MountItem {
     pub host: PathBuf,
     pub container: PathBuf,

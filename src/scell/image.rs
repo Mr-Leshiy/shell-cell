@@ -8,7 +8,7 @@ use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
-    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
+    Link, METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCellInner, SCell,
     types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
@@ -52,7 +52,12 @@ impl SCellImage {
                     // The last item
                     if links_iter.peek().is_none() {
                         // Adding metadata
-                        prepare_metadata_stmt(&mut dockerfile_instructions, name, location)?;
+                        prepare_metadata_stmt(
+                            &mut dockerfile_instructions,
+                            name,
+                            location,
+                            &scell.0,
+                        )?;
                     }
                 },
             }
@@ -201,11 +206,13 @@ fn prepare_metadata_stmt(
     dockerfile_instructions: &mut Vec<Instruction>,
     name: &TargetName,
     location: &Path,
+    scell_inner: &SCellInner,
 ) -> color_eyre::Result<()> {
     color_eyre::eyre::ensure!(
         location.is_absolute(),
         "prepare_metadata_stmt, path be absolute"
     );
+    let definition = toml::to_string(scell_inner)?;
     dockerfile_instructions.push(Instruction::Label(
         [
             (METADATA_TARGET_KEY.to_string(), name.to_string()),
@@ -213,6 +220,7 @@ fn prepare_metadata_stmt(
                 METADATA_LOCATION_KEY.to_string(),
                 format!("{}", location.display()),
             ),
+            (METADATA_DEFINITION_KEY.to_string(), definition),
         ]
         .into_iter()
         .collect(),
