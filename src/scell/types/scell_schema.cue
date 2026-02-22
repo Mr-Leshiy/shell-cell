@@ -18,12 +18,12 @@
     // Use "+<target_name>" to reference a target in the same blueprint file,
     // or "path/to/dir+<target_name>" to reference a target in another blueprint file.
     // Must eventually resolve to a target that has from_image or from_docker.
-    from: string
+    from: =~"^[^+]*(\\+[a-z][a-z0-9_-]*)+$"
 } | {
     // Specifies a Docker registry image as the base layer for this target.
     // Format: "<image>:<tag>" (e.g. "debian:bookworm", "ubuntu:22.04").
     // Equivalent to the Dockerfile FROM instruction.
-    from_image: string
+    from_image: =~"^[^:]+(:[^:]+)?$"
 } | {
     // Specifies a path to a local Dockerfile to use as the base layer.
     // The path is resolved relative to the blueprint's file location.
