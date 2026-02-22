@@ -7,23 +7,23 @@ use crate::{
 };
 
 /// Holds the data for the interactive container table view.
-pub struct LsState {
-    pub containers: Vec<SCellContainerInfo>,
+pub struct LsState<Item> {
+    pub items: Vec<Item>,
     pub table_state: TableState,
     pub buildkit: BuildKitD,
 }
 
-impl LsState {
+impl<Item> LsState<Item> {
     pub fn new(
-        containers: Vec<SCellContainerInfo>,
+        items: Vec<Item>,
         buildkit: BuildKitD,
     ) -> Self {
         let mut table_state = TableState::default();
-        if !containers.is_empty() {
+        if !items.is_empty() {
             table_state.select(Some(0));
         }
         Self {
-            containers,
+            items,
             table_state,
             buildkit,
         }
@@ -31,11 +31,11 @@ impl LsState {
 
     /// Moves the table selection to the next row, wrapping to the top.
     pub fn next(&mut self) {
-        if self.containers.is_empty() {
+        if self.items.is_empty() {
             return;
         }
         let i = match self.table_state.selected() {
-            Some(i) if i != self.containers.len().saturating_sub(1) => i.saturating_add(1),
+            Some(i) if i != self.items.len().saturating_sub(1) => i.saturating_add(1),
             _ => 0,
         };
         self.table_state.select(Some(i));
@@ -43,16 +43,18 @@ impl LsState {
 
     /// Moves the table selection to the previous row, wrapping to the bottom.
     pub fn previous(&mut self) {
-        if self.containers.is_empty() {
+        if self.items.is_empty() {
             return;
         }
         let i = match self.table_state.selected() {
             Some(i) if i != 0 => i.saturating_sub(1),
-            _ => self.containers.len().saturating_sub(1),
+            _ => self.items.len().saturating_sub(1),
         };
         self.table_state.select(Some(i));
     }
+}
 
+impl LsState<SCellContainerInfo> {
     /// Initiates stopping of the currently selected container.
     ///
     /// Spawns an async task that stops the container and then re-fetches
@@ -63,7 +65,7 @@ impl LsState {
             .selected()
             .context("Some item in the list must be selected")?;
         let container = self
-            .containers
+            .items
             .get(selected)
             .context("Selected item must be present in the list")?;
         let buildkit = self.buildkit.clone();
@@ -96,7 +98,7 @@ impl LsState {
             .selected()
             .context("Some item in the list must be selected")?;
         let container = self
-            .containers
+            .items
             .get(selected)
             .context("Selected item must be present in the list")?;
 

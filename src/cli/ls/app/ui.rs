@@ -5,6 +5,8 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget},
 };
 
+use crate::buildkit::container_info::SCellContainerInfo;
+
 use super::{App, LsState};
 
 impl Widget for &App {
@@ -17,21 +19,21 @@ impl Widget for &App {
     {
         match self {
             App::Loading { .. } => render_loading(area, buf),
-            App::Ls(ls_state) => render_ls(ls_state, area, buf),
+            App::Ls(ls_state) => render_ls_containers(ls_state, area, buf),
             App::Help(ls_state) => {
-                render_ls(ls_state, area, buf);
+                render_ls_containers(ls_state, area, buf);
                 render_help_overlay(area, buf);
             },
             App::Stopping(state) => {
-                render_ls(&state.ls_state, area, buf);
+                render_ls_containers(&state.ls_state, area, buf);
                 render_stopping(&state.container_name, area, buf);
             },
             App::ConfirmRemove(state) => {
-                render_ls(&state.ls_state, area, buf);
+                render_ls_containers(&state.ls_state, area, buf);
                 render_confirm_remove(state.selected_to_remove.name.as_str(), area, buf);
             },
             App::Removing(state) => {
-                render_ls(&state.ls_state, area, buf);
+                render_ls_containers(&state.ls_state, area, buf);
                 render_removing(&state.container_name, area, buf);
             },
             App::Exit => {},
@@ -287,8 +289,8 @@ fn render_removing(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_ls(
-    state: &LsState,
+fn render_ls_containers(
+    state: &LsState<SCellContainerInfo>,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -309,7 +311,7 @@ fn render_ls(
         .style(Style::default().add_modifier(Modifier::BOLD))
         .height(1);
 
-    let rows = state.containers.iter().map(|c| {
+    let rows = state.items.iter().map(|c| {
         let cells = vec![
             Cell::from(if c.orphan {
                 format!("{} (orphan)", c.name)

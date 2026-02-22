@@ -11,7 +11,7 @@ use crate::{
 /// container list, sending the result back over the channel.
 pub struct StoppingState {
     pub container_name: String,
-    pub ls_state: LsState,
+    pub ls_state: LsState<SCellContainerInfo>,
     pub rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }
 

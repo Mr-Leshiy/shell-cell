@@ -37,9 +37,9 @@ pub enum App {
         buildkit: BuildKitD,
     },
     /// Displaying the interactive container table.
-    Ls(LsState),
+    Ls(LsState<SCellContainerInfo>),
     /// Displaying the help overlay over the container table.
-    Help(LsState),
+    Help(LsState<SCellContainerInfo>),
     /// Stopping a selected container and refreshing the list.
     Stopping(StoppingState),
     /// Confirming removal of a selected container.

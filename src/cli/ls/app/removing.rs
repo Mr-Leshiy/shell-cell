@@ -12,7 +12,7 @@ use crate::{
 pub struct RemovingState {
     /// Name of the container being removed (used for UI display).
     pub container_name: String,
-    pub ls_state: LsState,
+    pub ls_state: LsState<SCellContainerInfo>,
     pub rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }
 
