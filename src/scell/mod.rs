@@ -29,6 +29,7 @@ use crate::scell::{
 pub const NAME_PREFIX: &str = "scell-";
 pub const METADATA_TARGET_KEY: &str = "scell-target";
 pub const METADATA_LOCATION_KEY: &str = "scell-location";
+pub const METADATA_DEFINITION_KEY: &str = "scell-definition";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCell(SCellInner);

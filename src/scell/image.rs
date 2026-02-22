@@ -212,7 +212,7 @@ fn prepare_metadata_stmt(
         location.is_absolute(),
         "prepare_metadata_stmt, path be absolute"
     );
-    let definition = toml::to_string(scell_inner)?;
+    let definition = yaml_serde::to_string(scell_inner)?;
     dockerfile_instructions.push(Instruction::Label(
         [
             (METADATA_TARGET_KEY.to_string(), name.to_string()),

@@ -85,7 +85,6 @@ reqwest = { version = "0.13.2", features = ["json"] }
 semver = { version = "1.0.24", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
 tar = "0.4.44"
-toml = "0.8"
 test-case = "3.3.1"
 thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
