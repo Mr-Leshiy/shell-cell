@@ -20,20 +20,20 @@ impl Widget for &App {
     {
         match self {
             App::Loading { .. } => render_loading(area, buf),
-            App::Ls(ls_state) => render_ls_containers(ls_state, area, buf),
-            App::Help(ls_state) => {
+            App::LsContainers(ls_state) => render_ls_containers(ls_state, area, buf),
+            App::HelpContainers(ls_state) => {
                 render_ls_containers(ls_state, area, buf);
                 render_help_overlay(area, buf);
             },
-            App::Stopping(state) => {
+            App::StoppingContainers(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_stopping(&state.for_stop.name, area, buf);
             },
-            App::ConfirmRemove(state) => {
+            App::ConfirmRemoveContainer(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_confirm_remove(&state.selected_to_remove, area, buf);
             },
-            App::Removing(state) => {
+            App::RemovingContainer(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_removing(&state.for_removal.name, area, buf);
             },

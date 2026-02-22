@@ -37,15 +37,15 @@ pub enum App {
         buildkit: BuildKitD,
     },
     /// Displaying the interactive container table.
-    Ls(LsState<SCellContainerInfo>),
+    LsContainers(LsState<SCellContainerInfo>),
     /// Displaying the help overlay over the container table.
-    Help(LsState<SCellContainerInfo>),
+    HelpContainers(LsState<SCellContainerInfo>),
     /// Stopping a selected container and refreshing the list.
-    Stopping(StoppingState<SCellContainerInfo>),
+    StoppingContainers(StoppingState<SCellContainerInfo>),
     /// Confirming removal of a selected container.
-    ConfirmRemove(ConfirmRemoveState<SCellContainerInfo>),
+    ConfirmRemoveContainer(ConfirmRemoveState<SCellContainerInfo>),
     /// Removing a selected container and refreshing the list.
-    Removing(RemovingState<SCellContainerInfo>),
+    RemovingContainer(RemovingState<SCellContainerInfo>),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -68,21 +68,21 @@ impl App {
                 && let Ok(result) = rx.try_recv()
             {
                 let containers = result?;
-                app = App::Ls(LsState::new(containers, buildkit.clone()));
+                app = App::LsContainers(LsState::new(containers, buildkit.clone()));
             }
 
             // Stopping → Ls: stop finished and refreshed list is available
-            if let App::Stopping(ref mut state) = app
+            if let App::StoppingContainers(ref mut state) = app
                 && let Some(containers) = state.try_recv()?
             {
-                app = App::Ls(LsState::new(containers, buildkit.clone()));
+                app = App::LsContainers(LsState::new(containers, buildkit.clone()));
             }
 
             // Removing → Ls: remove finished and refreshed list is available
-            if let App::Removing(ref mut state) = app
+            if let App::RemovingContainer(ref mut state) = app
                 && let Some(containers) = state.try_recv()?
             {
-                app = App::Ls(LsState::new(containers, buildkit.clone()));
+                app = App::LsContainers(LsState::new(containers, buildkit.clone()));
             }
 
             if matches!(app, App::Exit) {
@@ -114,46 +114,46 @@ impl App {
                 },
                 KeyCode::Char('h') => {
                     match self {
-                        App::Ls(ls_state) => self = App::Help(ls_state),
-                        App::Help(ls_state) => self = App::Ls(ls_state),
+                        App::LsContainers(ls_state) => self = App::HelpContainers(ls_state),
+                        App::HelpContainers(ls_state) => self = App::LsContainers(ls_state),
                         _ => {},
                     }
                 },
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if let App::Ls(ref mut ls_state) = self {
+                    if let App::LsContainers(ref mut ls_state) = self {
                         ls_state.next();
                     }
                 },
                 KeyCode::Up | KeyCode::Char('k') => {
-                    if let App::Ls(ref mut ls_state) = self {
+                    if let App::LsContainers(ref mut ls_state) = self {
                         ls_state.previous();
                     }
                 },
                 KeyCode::Char('s') => {
-                    if let App::Ls(ls_state) = self {
-                        self = App::Stopping(ls_state.stop_selected()?);
+                    if let App::LsContainers(ls_state) = self {
+                        self = App::StoppingContainers(ls_state.stop_selected()?);
                     }
                 },
                 KeyCode::Char('r') => {
-                    if let App::Ls(ls_state) = self {
-                        self = App::ConfirmRemove(ls_state.confirm_remove()?);
+                    if let App::LsContainers(ls_state) = self {
+                        self = App::ConfirmRemoveContainer(ls_state.confirm_remove()?);
                     }
                 },
                 KeyCode::Char('y') => {
-                    if let App::ConfirmRemove(confirm_state) = self {
-                        self = App::Removing(confirm_state.confirm());
+                    if let App::ConfirmRemoveContainer(confirm_state) = self {
+                        self = App::RemovingContainer(confirm_state.confirm());
                     }
                 },
                 KeyCode::Char('n') => {
-                    if let App::ConfirmRemove(confirm_state) = self {
-                        self = App::Ls(confirm_state.cancel());
+                    if let App::ConfirmRemoveContainer(confirm_state) = self {
+                        self = App::LsContainers(confirm_state.cancel());
                     }
                 },
                 KeyCode::Esc => {
                     match self {
-                        App::Help(ls_state) => self = App::Ls(ls_state),
-                        App::ConfirmRemove(confirm_state) => {
-                            self = App::Ls(confirm_state.cancel());
+                        App::HelpContainers(ls_state) => self = App::LsContainers(ls_state),
+                        App::ConfirmRemoveContainer(confirm_state) => {
+                            self = App::LsContainers(confirm_state.cancel());
                         },
                         _ => {},
                     }
