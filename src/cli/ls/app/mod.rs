@@ -33,6 +33,8 @@ pub enum App {
     },
     /// Displaying the interactive container table.
     Ls(LsState),
+    /// Displaying the help overlay over the container table.
+    Help(LsState),
     /// Stopping a selected container and refreshing the list.
     Stopping(StoppingState),
     /// Confirming removal of a selected container.
@@ -106,31 +108,25 @@ impl App {
                     self = App::Exit;
                 },
                 KeyCode::Char('h') => {
-                    if let App::Ls(ref mut ls_state) = self {
-                        ls_state.show_help = !ls_state.show_help;
+                    match self {
+                        App::Ls(ls_state) => self = App::Help(ls_state),
+                        App::Help(ls_state) => self = App::Ls(ls_state),
+                        _ => {},
                     }
                 },
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if let App::Ls(ref mut ls_state) = self
-                        && !ls_state.show_help
-                    {
+                    if let App::Ls(ref mut ls_state) = self {
                         ls_state.next();
                     }
                 },
                 KeyCode::Up | KeyCode::Char('k') => {
-                    if let App::Ls(ref mut ls_state) = self
-                        && !ls_state.show_help
-                    {
+                    if let App::Ls(ref mut ls_state) = self {
                         ls_state.previous();
                     }
                 },
                 KeyCode::Char('s') => {
                     if let App::Ls(ls_state) = self {
-                        if ls_state.show_help {
-                            self = App::Ls(ls_state);
-                        } else {
-                            self = App::Stopping(ls_state.stop_selected()?);
-                        }
+                        self = App::Stopping(ls_state.stop_selected()?);
                     }
                 },
                 KeyCode::Char('r') => {
@@ -150,9 +146,7 @@ impl App {
                 },
                 KeyCode::Esc => {
                     match self {
-                        App::Ls(ref mut ls_state) if ls_state.show_help => {
-                            ls_state.show_help = false;
-                        },
+                        App::Help(ls_state) => self = App::Ls(ls_state),
                         App::ConfirmRemove(confirm_state) => {
                             self = App::Ls(confirm_state.cancel());
                         },
@@ -193,7 +187,6 @@ pub struct LsState {
     containers: Vec<SCellContainerInfo>,
     table_state: TableState,
     buildkit: BuildKitD,
-    show_help: bool,
 }
 
 impl LsState {
@@ -209,7 +202,6 @@ impl LsState {
             containers,
             table_state,
             buildkit,
-            show_help: false,
         }
     }
 
@@ -268,6 +260,7 @@ impl LsState {
 
         Ok(StoppingState {
             container_name: container.name.to_string(),
+            ls_state: self,
             rx,
         })
     }
@@ -285,8 +278,7 @@ impl LsState {
 
         Ok(ConfirmRemoveState {
             selected_to_remove: container.clone(),
-            containers: self.containers,
-            buildkit: self.buildkit,
+            ls_state: self,
         })
     }
 }
@@ -297,15 +289,14 @@ impl LsState {
 /// the user to press 'y' (confirm) or 'n'/'Esc' (cancel).
 pub struct ConfirmRemoveState {
     selected_to_remove: SCellContainerInfo,
-    containers: Vec<SCellContainerInfo>,
-    buildkit: BuildKitD,
+    ls_state: LsState,
 }
 
 impl ConfirmRemoveState {
     /// User confirmed removal - initiate the removal process.
     fn confirm(self) -> RemovingState {
         let (tx, rx) = std::sync::mpsc::channel();
-        let buildkit = self.buildkit;
+        let buildkit = self.ls_state.buildkit.clone();
         let container_name = self.selected_to_remove.name.to_string();
         tokio::spawn({
             async move {
@@ -318,12 +309,16 @@ impl ConfirmRemoveState {
             }
         });
 
-        RemovingState { container_name, rx }
+        RemovingState {
+            container_name,
+            ls_state: self.ls_state,
+            rx,
+        }
     }
 
     /// User cancelled removal - return to the list view.
     fn cancel(self) -> LsState {
-        LsState::new(self.containers, self.buildkit)
+        self.ls_state
     }
 }
 
@@ -333,6 +328,7 @@ impl ConfirmRemoveState {
 /// container list, sending the result back over the channel.
 pub struct StoppingState {
     container_name: String,
+    ls_state: LsState,
     rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }
 
@@ -361,6 +357,7 @@ impl StoppingState {
 pub struct RemovingState {
     /// Name of the container being removed (used for UI display).
     container_name: String,
+    ls_state: LsState,
     rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }
 

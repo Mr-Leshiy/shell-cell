@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, StatefulWidget, Table, Widget},
+    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget},
 };
 
 use super::{App, LsState};
@@ -18,11 +18,22 @@ impl Widget for &App {
         match self {
             App::Loading { .. } => render_loading(area, buf),
             App::Ls(ls_state) => render_ls(ls_state, area, buf),
-            App::Stopping(state) => render_stopping(&state.container_name, area, buf),
+            App::Help(ls_state) => {
+                render_ls(ls_state, area, buf);
+                render_help_overlay(area, buf);
+            },
+            App::Stopping(state) => {
+                render_ls(&state.ls_state, area, buf);
+                render_stopping(&state.container_name, area, buf)
+            },
             App::ConfirmRemove(state) => {
+                render_ls(&state.ls_state, area, buf);
                 render_confirm_remove(state.selected_to_remove.name.as_str(), area, buf);
             },
-            App::Removing(state) => render_removing(&state.container_name, area, buf),
+            App::Removing(state) => {
+                render_ls(&state.ls_state, area, buf);
+                render_removing(&state.container_name, area, buf);
+            },
             App::Exit => {},
         }
     }
@@ -67,6 +78,8 @@ fn render_loading(
             Style::default().fg(Color::Gray),
         )),
     ];
+
+    Widget::render(Clear, horizontal[1], buf);
 
     let paragraph = Paragraph::new(loading_text)
         .block(
@@ -120,11 +133,14 @@ fn render_stopping(
         )),
     ];
 
+    Widget::render(Clear, horizontal[1], buf);
+
     let paragraph = Paragraph::new(stopping_text)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Yellow)),
+                .border_style(Style::default().fg(Color::Yellow))
+                .bg(Color::Black),
         )
         .centered();
 
@@ -203,11 +219,14 @@ fn render_confirm_remove(
         ]),
     ];
 
+    Widget::render(Clear, horizontal[1], buf);
+
     let paragraph = Paragraph::new(confirm_text)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red)),
+                .border_style(Style::default().fg(Color::Red))
+                .bg(Color::Black),
         )
         .centered();
 
@@ -253,11 +272,14 @@ fn render_removing(
         )),
     ];
 
+    Widget::render(Clear, horizontal[1], buf);
+
     let paragraph = Paragraph::new(removing_text)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red)),
+                .border_style(Style::default().fg(Color::Red))
+                .bg(Color::Black),
         )
         .centered();
 
@@ -331,10 +353,6 @@ fn render_ls(
         .highlight_symbol(">> ");
 
     StatefulWidget::render(table, inner, buf, &mut state.table_state.clone());
-
-    if state.show_help {
-        render_help_overlay(area, buf);
-    }
 }
 
 #[allow(clippy::indexing_slicing)]
@@ -423,14 +441,19 @@ fn render_help_overlay(
         ]),
     ];
 
-    let paragraph = Paragraph::new(help_text).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(" Help ")
-            .title_bottom("h / Esc: close this window")
-            .title_alignment(HorizontalAlignment::Center)
-            .border_style(Style::default().fg(Color::Cyan)).bg(Color::Black),
-    );
+    Widget::render(Clear, horizontal[1], buf);
+
+    let paragraph = Paragraph::new(help_text)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Help ")
+                .title_bottom("h / Esc: close this window")
+                .title_alignment(HorizontalAlignment::Center)
+                .border_style(Style::default().fg(Color::Cyan))
+                .bg(Color::Black),
+        )
+        .centered();
 
     paragraph.render(horizontal[1], buf);
 }
