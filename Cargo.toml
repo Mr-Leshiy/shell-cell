@@ -65,6 +65,9 @@ arithmetic_side_effects = "deny"
 
 
 [dependencies]
+# TODO: specify the particular version instead of latest main
+cue-rs = { version = "0.1.0", git = "https://github.com/Mr-Leshiy/cue-rs" }
+
 async-channel = "2.5.0"
 bollard = "0.20.0"
 bytes = "1.11.0"

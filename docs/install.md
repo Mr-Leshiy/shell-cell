@@ -13,6 +13,8 @@ curl -fsSL https://github.com/Mr-Leshiy/shell-cell/releases/latest/download/shel
 <!-- cspell: enable -->
 
 - Build from source (any platform)
+
+  **Prerequisites**: `Go 1.24+` — the Go toolchain is required.
 ```shell
 cargo install shell-cell --locked
 ```

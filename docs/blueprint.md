@@ -3,6 +3,9 @@
 **Shell-Cell** builds your environment by reading a set of instructions from a `scell.yml` files.
 
 `scell.yml` - is a [YAML](https://yaml.org) formatted file that contains everything needed to configure your session.
+
+> The full formal definition of the blueprint schema is available at [`src/scell/types/scell_schema.cue`](../src/scell/types/scell_schema.cue).
+
 Here is a minimal functional example:
 ```yml
 main:
