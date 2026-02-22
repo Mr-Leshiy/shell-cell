@@ -5,7 +5,8 @@ use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
-    METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, name::SCellName, types::name::TargetName,
+    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, name::SCellName,
+    types::name::TargetName,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -15,6 +16,7 @@ pub struct SCellContainerInfo {
     pub status: Status,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
+    pub definition: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
     // An image id, not a 'scell-*' name
     pub image_id: String,
@@ -107,6 +109,15 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .as_ref()
             .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from));
 
+        let definition = value
+            .labels
+            .as_ref()
+            .and_then(|v| {
+                v.get(METADATA_DEFINITION_KEY)
+                    .map(|s| yaml_serde::from_str(s))
+            })
+            .transpose()?;
+
         let image_id = value
             .image_id
             .context("'Shell-Cell' container must have a corresponding image ID")?;
@@ -133,6 +144,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             status,
             location,
             target,
+            definition,
             created_at,
             image_id,
         })

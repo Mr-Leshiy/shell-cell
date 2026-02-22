@@ -8,7 +8,7 @@ use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
-    Link, METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCellInner, SCell,
+    Link, METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, SCellInner,
     types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},

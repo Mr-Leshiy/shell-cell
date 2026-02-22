@@ -44,6 +44,10 @@ impl Widget for &AppInner<SCellContainerInfo> {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_error_overlay(&state.message, area, buf);
             },
+            AppInner::ShowDefinition(state) => {
+                render_ls_containers(&state.ls_state, area, buf);
+                render_definition_overlay(&state.definition, area, buf);
+            },
             AppInner::Exit => {},
         }
     }
@@ -79,6 +83,10 @@ impl Widget for &AppInner<SCellImageInfo> {
             AppInner::Error(state) => {
                 render_ls_images(&state.ls_state, area, buf);
                 render_error_overlay(&state.message, area, buf);
+            },
+            AppInner::ShowDefinition(state) => {
+                render_ls_images(&state.ls_state, area, buf);
+                render_definition_overlay(&state.definition, area, buf);
             },
             AppInner::Exit => {},
         }
@@ -811,6 +819,59 @@ fn render_error_overlay(
                 .title_bottom("Esc: dismiss")
                 .title_alignment(HorizontalAlignment::Center)
                 .border_style(Style::default().fg(Color::Red)),
+        )
+        .wrap(Wrap { trim: false });
+
+    paragraph.render(overlay_area, buf);
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_definition_overlay(
+    definition: &Option<String>,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let vertical = Layout::vertical([
+        Constraint::Percentage(10),
+        Constraint::Percentage(80),
+        Constraint::Percentage(10),
+    ])
+    .split(area);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(10),
+        Constraint::Percentage(80),
+        Constraint::Percentage(10),
+    ])
+    .split(vertical[1]);
+
+    let overlay_area = horizontal[1];
+
+    let content = definition
+        .as_ref()
+        .map(|v| v.as_str())
+        .unwrap_or_else(|| "No definition available");
+
+    let lines: Vec<Line> = content
+        .lines()
+        .map(|l| {
+            Line::from(Span::styled(
+                l.to_string(),
+                Style::default().fg(Color::White),
+            ))
+        })
+        .collect();
+
+    Widget::render(Clear, overlay_area, buf);
+
+    let paragraph = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Definition ")
+                .title_bottom("i / Esc: close this window")
+                .title_alignment(HorizontalAlignment::Center)
+                .border_style(Style::default().fg(Color::Green)),
         )
         .wrap(Wrap { trim: false });
 

@@ -2,6 +2,7 @@ mod confirm_remove;
 mod error_state;
 mod ls;
 mod removing;
+mod show_definition;
 mod stopping;
 mod ui;
 
@@ -18,7 +19,7 @@ use crate::{
         MIN_FPS,
         ls::app::{
             confirm_remove::ConfirmRemoveState, error_state::ErrorState, ls::LsState,
-            removing::RemovingState, stopping::StoppingState,
+            removing::RemovingState, show_definition::ShowDefinitionState, stopping::StoppingState,
         },
     },
 };
@@ -30,6 +31,7 @@ use crate::{
 /// - `Ls` → `Stopping` (user presses `s` on a selected container)
 /// - `Ls` → `ConfirmRemove` (user presses `r` on a selected container)
 /// - `Ls` → `Help` (user presses `h`)
+/// - `Ls` → `ShowDefinition` (user presses `i` on a selected item)
 /// - `ConfirmRemove` → `Removing` (user confirms with `y`)
 /// - `ConfirmRemove` → `Ls` (user cancels with `n` or `Esc`)
 /// - `Stopping` → `Ls` (once the item is stopped and the list is refreshed)
@@ -37,6 +39,7 @@ use crate::{
 /// - `Removing` → `Ls` (once the item is removed and the list is refreshed)
 /// - `Removing` → `Error` (remove operation fails)
 /// - `Error` → `Ls` (user presses `Esc`)
+/// - `ShowDefinition` → `Ls` (user presses `i` or `Esc`)
 /// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
     Containers(AppInner<SCellContainerInfo>),
@@ -61,6 +64,8 @@ pub enum AppInner<Item> {
     Removing(RemovingState<Item>),
     /// Displaying an error that occurred during a background operation.
     Error(ErrorState<Item>),
+    /// Displaying the definition overlay for the selected item.
+    ShowDefinition(ShowDefinitionState<Item>),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -220,6 +225,15 @@ impl AppInner<SCellContainerInfo> {
                     _ => {},
                 }
             },
+            KeyCode::Char('i') => {
+                match self {
+                    Self::Ls(ls_state) => {
+                        self = Self::ShowDefinition(ls_state.show_definition()?);
+                    },
+                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
+                    _ => {},
+                }
+            },
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Self::Ls(ref mut ls_state) = self {
                     ls_state.next();
@@ -254,6 +268,7 @@ impl AppInner<SCellContainerInfo> {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
                     Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },
@@ -312,6 +327,15 @@ impl AppInner<SCellImageInfo> {
                     _ => {},
                 }
             },
+            KeyCode::Char('i') => {
+                match self {
+                    Self::Ls(ls_state) => {
+                        self = Self::ShowDefinition(ls_state.show_definition()?);
+                    },
+                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
+                    _ => {},
+                }
+            },
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Self::Ls(ref mut ls_state) = self {
                     ls_state.next();
@@ -341,6 +365,7 @@ impl AppInner<SCellImageInfo> {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
                     Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },
