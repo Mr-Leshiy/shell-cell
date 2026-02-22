@@ -1,7 +1,3 @@
-
-
-#Blueprint: [string]: #Target
-
 // Target is a single named build unit in the blueprint.
 // Targets are chained via the `from` field to compose layered environments.
 //
@@ -79,11 +75,11 @@
     // Unlike build/copy/workspace, these settings affect how the container runs,
     // not how the image is built.
     // Only the first config block encountered in the target chain is used.
-    config?: Config
+    config?: #Config
 }
 
 // Config defines runtime behaviour of the **Shell-Cell** container.
-Config: {
+#Config: {
     // mounts is a list of bind-mount declarations for the running container.
     // Each item follows the format "<host_path>:<container_absolute_path>".
     // The host path may be relative (resolved relative to scell.yml) or absolute.
@@ -100,4 +96,9 @@ Config: {
     //   "HOST_IP::CONTAINER_PORT"                 — random host port on a given IP
     // Examples: "8080:80", "127.0.0.1:9000:9000", "6060:6060/udp"
     ports?: [...string]
+}
+
+// defining the final contraint 
+{
+  [string]: #Target
 }
