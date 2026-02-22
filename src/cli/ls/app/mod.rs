@@ -41,11 +41,11 @@ pub enum App {
     /// Displaying the help overlay over the container table.
     Help(LsState<SCellContainerInfo>),
     /// Stopping a selected container and refreshing the list.
-    Stopping(StoppingState),
+    Stopping(StoppingState<SCellContainerInfo>),
     /// Confirming removal of a selected container.
-    ConfirmRemove(ConfirmRemoveState),
+    ConfirmRemove(ConfirmRemoveState<SCellContainerInfo>),
     /// Removing a selected container and refreshing the list.
-    Removing(RemovingState),
+    Removing(RemovingState<SCellContainerInfo>),
     /// Terminal state — the event loop exits.
     Exit,
 }

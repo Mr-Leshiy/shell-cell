@@ -1,26 +1,23 @@
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 
-use crate::{
-    buildkit::container_info::SCellContainerInfo,
-    cli::{MIN_FPS, ls::app::ls::LsState},
-};
+use crate::cli::{MIN_FPS, ls::app::ls::LsState};
 
-/// Holds the state while a container is being removed in the background.
+/// Holds the state while a item is being removed in the background.
 ///
-/// The spawned task removes the container (and its image) and then re-fetches
-/// the full container list, sending the result back over the channel.
-pub struct RemovingState {
-    pub for_removal: SCellContainerInfo,
-    pub ls_state: LsState<SCellContainerInfo>,
-    pub rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+/// The spawned task removes the item and then re-fetches
+/// the full item's list, sending the result back over the channel.
+pub struct RemovingState<Item> {
+    pub for_removal: Item,
+    pub ls_state: LsState<Item>,
+    pub rx: Receiver<color_eyre::Result<Vec<Item>>>,
 }
 
-impl RemovingState {
+impl<Item> RemovingState<Item> {
     /// Polls the background remove task for completion.
     ///
     /// Returns `Some((containers, buildkit))` with the refreshed container
     /// list when the operation is done, or `None` if still in progress.
-    pub fn try_recv(&mut self) -> color_eyre::Result<Option<Vec<SCellContainerInfo>>> {
+    pub fn try_recv(&mut self) -> color_eyre::Result<Option<Vec<Item>>> {
         match self.rx.recv_timeout(MIN_FPS) {
             Ok(result) => result.map(Some),
             Err(RecvTimeoutError::Timeout) => Ok(None),

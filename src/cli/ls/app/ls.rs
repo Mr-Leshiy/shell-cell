@@ -13,7 +13,7 @@ pub struct LsState<Item> {
     pub buildkit: BuildKitD,
 }
 
-impl<Item> LsState<Item> {
+impl<Item: Clone> LsState<Item> {
     pub fn new(
         items: Vec<Item>,
         buildkit: BuildKitD,
@@ -52,6 +52,23 @@ impl<Item> LsState<Item> {
         };
         self.table_state.select(Some(i));
     }
+
+    /// Shows confirmation dialog for removing the currently selected container.
+    pub fn confirm_remove(self) -> color_eyre::Result<ConfirmRemoveState<Item>> {
+        let selected = self
+            .table_state
+            .selected()
+            .context("Some item in the list must be selected")?;
+        let selected_to_remove = self
+            .items
+            .get(selected)
+            .context("Selected item must be present in the list")?;
+
+        Ok(ConfirmRemoveState {
+            selected_to_remove: selected_to_remove.clone(),
+            ls_state: self,
+        })
+    }
 }
 
 impl LsState<SCellContainerInfo> {
@@ -59,7 +76,7 @@ impl LsState<SCellContainerInfo> {
     ///
     /// Spawns an async task that stops the container and then re-fetches
     /// the full container list.
-    pub fn stop_selected(self) -> color_eyre::Result<StoppingState> {
+    pub fn stop_selected(self) -> color_eyre::Result<StoppingState<SCellContainerInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -88,23 +105,6 @@ impl LsState<SCellContainerInfo> {
             for_stop: container.clone(),
             ls_state: self,
             rx,
-        })
-    }
-
-    /// Shows confirmation dialog for removing the currently selected container.
-    pub fn confirm_remove(self) -> color_eyre::Result<ConfirmRemoveState> {
-        let selected = self
-            .table_state
-            .selected()
-            .context("Some item in the list must be selected")?;
-        let container = self
-            .items
-            .get(selected)
-            .context("Selected item must be present in the list")?;
-
-        Ok(ConfirmRemoveState {
-            selected_to_remove: container.clone(),
-            ls_state: self,
         })
     }
 }
