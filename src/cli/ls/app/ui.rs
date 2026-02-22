@@ -626,6 +626,15 @@ fn render_containers_help_overlay(
         ]),
         Line::from(vec![
             Span::styled(
+                "  i                 ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("Show container defintion", Style::default().fg(Color::White)),
+        ]),
+        Line::from(vec![
+            Span::styled(
                 "  s                 ",
                 Style::default()
                     .fg(Color::Yellow)
@@ -735,6 +744,15 @@ fn render_images_help_overlay(
                 "Switch to the containers view",
                 Style::default().fg(Color::White),
             ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                "  i                 ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("Show image defintion", Style::default().fg(Color::White)),
         ]),
         Line::from(vec![
             Span::styled(
