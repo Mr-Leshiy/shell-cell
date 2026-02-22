@@ -36,6 +36,7 @@ use crate::{
 /// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
     Containers(AppInner<SCellContainerInfo>),
+    Images(AppInner<SCellImageInfo>),
 }
 
 pub enum AppInner<Item> {
@@ -70,6 +71,7 @@ impl App {
         loop {
             let new_app = match app {
                 Self::Containers(app) => app.run_one_turn(buildkit)?.map(Self::Containers),
+                Self::Images(app) => app.run_one_turn(buildkit)?.map(Self::Images),
             };
 
             let Some(new_app) = new_app else {
@@ -86,21 +88,46 @@ impl App {
                         })
                         .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
                 },
+                Self::Images(app) => {
+                    terminal
+                        .draw(|f| {
+                            f.render_widget(app, f.area());
+                        })
+                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+                },
             }
 
-            app = app.handle_key_event()?;
+            app = app.handle_key_event(buildkit)?;
         }
     }
 
     /// Handles a single key event, dispatching navigation and actions
     /// based on the current state.
-    fn handle_key_event(mut self) -> color_eyre::Result<Self> {
+    fn handle_key_event(
+        mut self,
+        buildkit: &BuildKitD,
+    ) -> color_eyre::Result<Self> {
         if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
         {
             match self {
-                Self::Containers(app) => self = Self::Containers(app.handle_key_event(key)?),
+                Self::Containers(app) => {
+                    self = app.handle_key_event(key)?.map_or_else(
+                        || Self::Images(AppInner::<SCellImageInfo>::loading(buildkit.clone())),
+                        Self::Containers,
+                    );
+                },
+                Self::Images(app) => {
+                    self = app.handle_key_event(key)?.map_or_else(
+                        || {
+                            Self::Containers(AppInner::<SCellContainerInfo>::loading(
+                                buildkit.clone(),
+                            ))
+                        },
+                        Self::Images,
+                    );
+                },
             }
         }
 
@@ -175,8 +202,14 @@ impl AppInner<SCellContainerInfo> {
     fn handle_key_event(
         mut self,
         key: KeyEvent,
-    ) -> color_eyre::Result<Self> {
+    ) -> color_eyre::Result<Option<Self>> {
         match key.code {
+            KeyCode::Char('q') => {
+                if let Self::Ls(_) = self {
+                    // switching to images
+                    return Ok(None);
+                }
+            },
             KeyCode::Char('c' | 'd') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
                 self = Self::Exit;
             },
@@ -229,7 +262,7 @@ impl AppInner<SCellContainerInfo> {
             _ => {},
         }
 
-        Ok(self)
+        Ok(Some(self))
     }
 }
 
@@ -253,5 +286,68 @@ impl AppInner<SCellImageInfo> {
         });
 
         Self::Loading { rx, buildkit }
+    }
+
+    /// Handles a single key event, dispatching navigation and actions
+    /// based on the current state.
+    fn handle_key_event(
+        mut self,
+        key: KeyEvent,
+    ) -> color_eyre::Result<Option<Self>> {
+        match key.code {
+            KeyCode::Char('q') => {
+                if let Self::Ls(_) = self {
+                    // switching to containers
+                    return Ok(None);
+                }
+            },
+            KeyCode::Char('c' | 'd') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                self = Self::Exit;
+            },
+            KeyCode::Char('h') => {
+                match self {
+                    Self::Ls(ls_state) => self = Self::Help(ls_state),
+                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    _ => {},
+                }
+            },
+            KeyCode::Down | KeyCode::Char('j') => {
+                if let Self::Ls(ref mut ls_state) = self {
+                    ls_state.next();
+                }
+            },
+            KeyCode::Up | KeyCode::Char('k') => {
+                if let Self::Ls(ref mut ls_state) = self {
+                    ls_state.previous();
+                }
+            },
+            KeyCode::Char('r') => {
+                if let Self::Ls(ls_state) = self {
+                    self = Self::ConfirmRemove(ls_state.confirm_remove()?);
+                }
+            },
+            KeyCode::Char('y') => {
+                if let Self::ConfirmRemove(confirm_state) = self {
+                    self = Self::Removing(confirm_state.confirm());
+                }
+            },
+            KeyCode::Char('n') => {
+                if let Self::ConfirmRemove(confirm_state) = self {
+                    self = Self::Ls(confirm_state.cancel());
+                }
+            },
+            KeyCode::Esc => {
+                match self {
+                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::ConfirmRemove(confirm_state) => {
+                        self = Self::Ls(confirm_state.cancel());
+                    },
+                    _ => {},
+                }
+            },
+            _ => {},
+        }
+
+        Ok(Some(self))
     }
 }

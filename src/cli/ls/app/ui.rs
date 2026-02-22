@@ -8,7 +8,10 @@ use ratatui::{
 };
 
 use super::{AppInner, LsState};
-use crate::buildkit::container_info::SCellContainerInfo;
+use crate::buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo};
+
+const IMAGES_TITLE: &str = "Images";
+const CONTAINERS_TITLE: &str = "Containers";
 
 impl Widget for &AppInner<SCellContainerInfo> {
     fn render(
@@ -19,23 +22,55 @@ impl Widget for &AppInner<SCellContainerInfo> {
         Self: Sized,
     {
         match self {
-            AppInner::Loading { .. } => render_loading(area, buf),
+            AppInner::Loading { .. } => render_loading(CONTAINERS_TITLE, area, buf),
             AppInner::Ls(ls_state) => render_ls_containers(ls_state, area, buf),
             AppInner::Help(ls_state) => {
                 render_ls_containers(ls_state, area, buf);
-                render_help_overlay(area, buf);
+                render_containers_help_overlay(area, buf);
             },
             AppInner::Stopping(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
-                render_stopping(&state.for_stop.name, area, buf);
+                render_stopping(CONTAINERS_TITLE, &state.for_stop.name, area, buf);
             },
             AppInner::ConfirmRemove(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
-                render_confirm_remove(&state.selected_to_remove, area, buf);
+                render_container_confirm_remove(&state.selected_to_remove, area, buf);
             },
             AppInner::Removing(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
-                render_removing(&state.for_removal.name, area, buf);
+                render_removing(CONTAINERS_TITLE, &state.for_removal.name, area, buf);
+            },
+            AppInner::Exit => {},
+        }
+    }
+}
+
+impl Widget for &AppInner<SCellImageInfo> {
+    fn render(
+        self,
+        area: ratatui::prelude::Rect,
+        buf: &mut ratatui::prelude::Buffer,
+    ) where
+        Self: Sized,
+    {
+        match self {
+            AppInner::Loading { .. } => render_loading(IMAGES_TITLE, area, buf),
+            AppInner::Ls(ls_state) => render_ls_images(ls_state, area, buf),
+            AppInner::Help(ls_state) => {
+                render_ls_images(ls_state, area, buf);
+                render_containers_help_overlay(area, buf);
+            },
+            AppInner::Stopping(state) => {
+                render_ls_images(&state.ls_state, area, buf);
+                render_stopping(IMAGES_TITLE, &state.for_stop.name, area, buf);
+            },
+            AppInner::ConfirmRemove(state) => {
+                render_ls_images(&state.ls_state, area, buf);
+                render_image_confirm_remove(&state.selected_to_remove, area, buf);
+            },
+            AppInner::Removing(state) => {
+                render_ls_images(&state.ls_state, area, buf);
+                render_removing(IMAGES_TITLE, &state.for_removal.name, area, buf);
             },
             AppInner::Exit => {},
         }
@@ -44,10 +79,11 @@ impl Widget for &AppInner<SCellContainerInfo> {
 
 #[allow(clippy::indexing_slicing)]
 fn render_loading(
+    item_title: impl Display,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = main_block();
+    let block = main_block(item_title);
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
@@ -96,12 +132,13 @@ fn render_loading(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_stopping<D: Display>(
-    item: D,
+fn render_stopping(
+    item_title: impl Display,
+    item: impl Display,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = main_block();
+    let block = main_block(item_title);
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
@@ -150,12 +187,12 @@ fn render_stopping<D: Display>(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_confirm_remove(
+fn render_container_confirm_remove(
     container: &SCellContainerInfo,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = main_block();
+    let block = main_block(CONTAINERS_TITLE);
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
@@ -235,12 +272,94 @@ fn render_confirm_remove(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_removing<D: Display>(
-    item: &D,
+fn render_image_confirm_remove(
+    image: &SCellImageInfo,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = main_block();
+    let block = main_block(IMAGES_TITLE);
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
+    let vertical = Layout::vertical([
+        Constraint::Percentage(30),
+        Constraint::Percentage(40),
+        Constraint::Percentage(30),
+    ])
+    .split(inner);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(15),
+        Constraint::Percentage(70),
+        Constraint::Percentage(15),
+    ])
+    .split(vertical[1]);
+
+    let confirm_text = vec![
+        Line::from(vec![Span::styled(
+            "⚠ WARNING",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(Span::styled(
+            format!("Remove image '{}'?", image.name),
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            "This will permanently delete:",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from(Span::styled(
+            "  • The image and all its state",
+            Style::default().fg(Color::Gray),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("Press ", Style::default().fg(Color::Gray)),
+            Span::styled(
+                "y",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" to confirm, ", Style::default().fg(Color::Gray)),
+            Span::styled(
+                "n",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" or ", Style::default().fg(Color::Gray)),
+            Span::styled(
+                "Esc",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" to cancel", Style::default().fg(Color::Gray)),
+        ]),
+    ];
+
+    Widget::render(Clear, horizontal[1], buf);
+
+    let paragraph = Paragraph::new(confirm_text)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Red)),
+        )
+        .centered();
+
+    paragraph.render(horizontal[1], buf);
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_removing(
+    item_title: impl Display,
+    item: impl Display,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let block = main_block(item_title);
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
@@ -292,7 +411,7 @@ fn render_ls_containers(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = main_block();
+    let block = main_block(CONTAINERS_TITLE);
     let inner = block.inner(area);
     Widget::render(block, area, buf);
 
@@ -356,7 +475,80 @@ fn render_ls_containers(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_help_overlay(
+fn render_ls_images(
+    state: &LsState<SCellImageInfo>,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let block = main_block(IMAGES_TITLE);
+    let inner = block.inner(area);
+    Widget::render(block, area, buf);
+
+    let header_cells = [
+        "Name",
+        "Target",
+        "Blueprint Location",
+        "Created At",
+        "Status",
+    ]
+    .iter()
+    .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+    let header = Row::new(header_cells)
+        .style(Style::default().add_modifier(Modifier::BOLD))
+        .height(1);
+
+    let rows = state.items.iter().map(|c| {
+        let cells = vec![
+            Cell::from(if c.orphan {
+                format!("{} (orphan)", c.name)
+            } else {
+                c.name.to_string()
+            }),
+            Cell::from(
+                c.target
+                    .as_ref()
+                    .map_or_else(|| "<empty>".to_string(), ToString::to_string),
+            ),
+            Cell::from(
+                c.location
+                    .as_ref()
+                    .map_or_else(|| "<empty>".to_string(), |l| l.display().to_string()),
+            ),
+            Cell::from(c.created_at.map_or_else(
+                || "<empty>".to_string(),
+                |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
+            )),
+            Cell::from(if c.in_use {
+                "in use".to_string()
+            } else {
+                String::new()
+            }),
+        ];
+        Row::new(cells).height(1)
+    });
+
+    let widths = [
+        Constraint::Percentage(25),
+        Constraint::Percentage(5),
+        Constraint::Percentage(40),
+        Constraint::Percentage(20),
+        Constraint::Percentage(10),
+    ];
+
+    let table = Table::new(rows, widths)
+        .header(header)
+        .row_highlight_style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol(">> ");
+
+    StatefulWidget::render(table, inner, buf, &mut state.table_state.clone());
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_containers_help_overlay(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -455,10 +647,10 @@ fn render_help_overlay(
     paragraph.render(horizontal[1], buf);
 }
 
-fn main_block() -> Block<'static> {
+fn main_block(items_title: impl Display) -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
-        .title("'Shell-Cell' Containers")
+        .title(format!("'Shell-Cell' {items_title}"))
         .title_bottom("h: Help")
         .border_style(Style::new().light_magenta())
 }
