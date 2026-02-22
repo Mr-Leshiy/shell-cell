@@ -631,7 +631,10 @@ fn render_containers_help_overlay(
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled("Show container defintion", Style::default().fg(Color::White)),
+            Span::styled(
+                "Show container defintion",
+                Style::default().fg(Color::White),
+            ),
         ]),
         Line::from(vec![
             Span::styled(

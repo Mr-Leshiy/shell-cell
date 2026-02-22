@@ -220,7 +220,7 @@ fn prepare_metadata_stmt(
                 METADATA_LOCATION_KEY.to_string(),
                 format!("{}", location.display()),
             ),
-            (METADATA_DEFINITION_KEY.to_string(), definition),
+            (METADATA_DEFINITION_KEY.to_string(), format!("\"{definition:#?}\""))
         ]
         .into_iter()
         .collect(),
