@@ -7,10 +7,10 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget},
 };
 
-use super::{App, LsState};
+use super::{AppInner, LsState};
 use crate::buildkit::container_info::SCellContainerInfo;
 
-impl Widget for &App {
+impl Widget for &AppInner<SCellContainerInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -19,25 +19,25 @@ impl Widget for &App {
         Self: Sized,
     {
         match self {
-            App::Loading { .. } => render_loading(area, buf),
-            App::LsContainers(ls_state) => render_ls_containers(ls_state, area, buf),
-            App::HelpContainers(ls_state) => {
+            AppInner::Loading { .. } => render_loading(area, buf),
+            AppInner::Ls(ls_state) => render_ls_containers(ls_state, area, buf),
+            AppInner::Help(ls_state) => {
                 render_ls_containers(ls_state, area, buf);
                 render_help_overlay(area, buf);
             },
-            App::StoppingContainers(state) => {
+            AppInner::Stopping(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_stopping(&state.for_stop.name, area, buf);
             },
-            App::ConfirmRemoveContainer(state) => {
+            AppInner::ConfirmRemove(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_confirm_remove(&state.selected_to_remove, area, buf);
             },
-            App::RemovingContainer(state) => {
+            AppInner::Removing(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_removing(&state.for_removal.name, area, buf);
             },
-            App::Exit => {},
+            AppInner::Exit => {},
         }
     }
 }
