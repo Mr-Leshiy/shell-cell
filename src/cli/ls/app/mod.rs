@@ -1,17 +1,26 @@
+mod confirm_remove;
+mod error_state;
+mod ls;
+mod removing;
+mod stopping;
 mod ui;
 
-use std::sync::mpsc::{Receiver, RecvTimeoutError};
+use std::sync::mpsc::Receiver;
 
-use color_eyre::eyre::ContextCompat;
 use ratatui::{
     Terminal,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    widgets::TableState,
+    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
 };
 
 use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo},
-    cli::MIN_FPS,
+    buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
+    cli::{
+        MIN_FPS,
+        ls::app::{
+            confirm_remove::ConfirmRemoveState, error_state::ErrorState, ls::LsState,
+            removing::RemovingState, stopping::StoppingState,
+        },
+    },
 };
 
 /// State machine for the `ls` interactive TUI.
@@ -20,25 +29,38 @@ use crate::{
 /// - `Loading` → `Ls` (once container list is fetched)
 /// - `Ls` → `Stopping` (user presses `s` on a selected container)
 /// - `Ls` → `ConfirmRemove` (user presses `r` on a selected container)
+/// - `Ls` → `Help` (user presses `h`)
 /// - `ConfirmRemove` → `Removing` (user confirms with `y`)
 /// - `ConfirmRemove` → `Ls` (user cancels with `n` or `Esc`)
-/// - `Stopping` → `Ls` (once the container is stopped and the list is refreshed)
-/// - `Removing` → `Ls` (once the container is removed and the list is refreshed)
+/// - `Stopping` → `Ls` (once the item is stopped and the list is refreshed)
+/// - `Stopping` → `Error` (stop operation fails)
+/// - `Removing` → `Ls` (once the item is removed and the list is refreshed)
+/// - `Removing` → `Error` (remove operation fails)
+/// - `Error` → `Ls` (user presses `Esc`)
 /// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
-    /// Fetching the container list from Docker in the background.
+    Containers(AppInner<SCellContainerInfo>),
+    Images(AppInner<SCellImageInfo>),
+}
+
+pub enum AppInner<Item> {
+    /// Fetching the item list from Docker in the background.
     Loading {
-        rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
+        rx: Receiver<color_eyre::Result<Vec<Item>>>,
         buildkit: BuildKitD,
     },
-    /// Displaying the interactive container table.
-    Ls(LsState),
-    /// Stopping a selected container and refreshing the list.
-    Stopping(StoppingState),
-    /// Confirming removal of a selected container.
-    ConfirmRemove(ConfirmRemoveState),
-    /// Removing a selected container and refreshing the list.
-    Removing(RemovingState),
+    /// Displaying the interactive item table.
+    Ls(LsState<Item>),
+    /// Displaying the help overlay over the item table.
+    Help(LsState<Item>),
+    /// Stopping a selected item and refreshing the list.
+    Stopping(StoppingState<Item>),
+    /// Confirming removal of a selected item.
+    ConfirmRemove(ConfirmRemoveState<Item>),
+    /// Removing a selected item and refreshing the list.
+    Removing(RemovingState<Item>),
+    /// Displaying an error that occurred during a background operation.
+    Error(ErrorState<Item>),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -50,122 +72,110 @@ impl App {
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::loading(buildkit.clone());
+        let mut app = Self::Containers(AppInner::<SCellContainerInfo>::loading(buildkit.clone()));
 
         loop {
-            // Loading → Ls: container list is ready
-            if let App::Loading {
-                ref rx,
-                ref buildkit,
-            } = app
-                && let Ok(result) = rx.try_recv()
-            {
-                let containers = result?;
-                app = App::Ls(LsState::new(containers, buildkit.clone()));
-            }
+            let new_app = match app {
+                Self::Containers(app) => app.run_one_turn(buildkit)?.map(Self::Containers),
+                Self::Images(app) => app.run_one_turn(buildkit)?.map(Self::Images),
+            };
 
-            // Stopping → Ls: stop finished and refreshed list is available
-            if let App::Stopping(ref mut state) = app
-                && let Some(containers) = state.try_recv()?
-            {
-                app = App::Ls(LsState::new(containers, buildkit.clone()));
-            }
-
-            // Removing → Ls: remove finished and refreshed list is available
-            if let App::Removing(ref mut state) = app
-                && let Some(containers) = state.try_recv()?
-            {
-                app = App::Ls(LsState::new(containers, buildkit.clone()));
-            }
-
-            if matches!(app, App::Exit) {
+            let Some(new_app) = new_app else {
+                // Exit
                 return Ok(());
+            };
+            app = new_app;
+
+            match &app {
+                Self::Containers(app) => {
+                    terminal
+                        .draw(|f| {
+                            f.render_widget(app, f.area());
+                        })
+                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+                },
+                Self::Images(app) => {
+                    terminal
+                        .draw(|f| {
+                            f.render_widget(app, f.area());
+                        })
+                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+                },
             }
 
-            terminal
-                .draw(|f| {
-                    f.render_widget(&app, f.area());
-                })
-                .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
-
-            app = app.handle_key_event()?;
+            app = app.handle_key_event(buildkit)?;
         }
     }
 
     /// Handles a single key event, dispatching navigation and actions
     /// based on the current state.
-    fn handle_key_event(mut self) -> color_eyre::Result<Self> {
-        if event::poll(std::time::Duration::from_millis(100))?
+    fn handle_key_event(
+        mut self,
+        buildkit: &BuildKitD,
+    ) -> color_eyre::Result<Self> {
+        if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
         {
-            match key.code {
-                KeyCode::Char('c' | 'd')
-                    if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                {
-                    self = App::Exit;
+            match self {
+                Self::Containers(app) => {
+                    self = app.handle_key_event(key)?.map_or_else(
+                        || Self::Images(AppInner::<SCellImageInfo>::loading(buildkit.clone())),
+                        Self::Containers,
+                    );
                 },
-                KeyCode::Char('i') => {
-                    if let App::Ls(ref mut ls_state) = self {
-                        ls_state.show_help = !ls_state.show_help;
-                    }
-                },
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if let App::Ls(ref mut ls_state) = self
-                        && !ls_state.show_help
-                    {
-                        ls_state.next();
-                    }
-                },
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if let App::Ls(ref mut ls_state) = self
-                        && !ls_state.show_help
-                    {
-                        ls_state.previous();
-                    }
-                },
-                KeyCode::Char('s') => {
-                    if let App::Ls(ls_state) = self {
-                        if ls_state.show_help {
-                            self = App::Ls(ls_state);
-                        } else {
-                            self = App::Stopping(ls_state.stop_selected()?);
-                        }
-                    }
-                },
-                KeyCode::Char('r') => {
-                    if let App::Ls(ls_state) = self {
-                        self = App::ConfirmRemove(ls_state.confirm_remove()?);
-                    }
-                },
-                KeyCode::Char('y') => {
-                    if let App::ConfirmRemove(confirm_state) = self {
-                        self = App::Removing(confirm_state.confirm());
-                    }
-                },
-                KeyCode::Char('n') => {
-                    if let App::ConfirmRemove(confirm_state) = self {
-                        self = App::Ls(confirm_state.cancel());
-                    }
-                },
-                KeyCode::Esc => {
-                    match self {
-                        App::Ls(ref mut ls_state) if ls_state.show_help => {
-                            ls_state.show_help = false;
+                Self::Images(app) => {
+                    self = app.handle_key_event(key)?.map_or_else(
+                        || {
+                            Self::Containers(AppInner::<SCellContainerInfo>::loading(
+                                buildkit.clone(),
+                            ))
                         },
-                        App::ConfirmRemove(confirm_state) => {
-                            self = App::Ls(confirm_state.cancel());
-                        },
-                        _ => {},
-                    }
+                        Self::Images,
+                    );
                 },
-                _ => {},
             }
         }
 
         Ok(self)
     }
+}
 
+impl<Item: Clone> AppInner<Item> {
+    /// Runs only ONE TUI event loop, polling for state transitions and key events.
+    /// Returns `None` if its `Exit` state.
+    fn run_one_turn(
+        mut self,
+        buildkit: &BuildKitD,
+    ) -> color_eyre::Result<Option<Self>> {
+        // Loading → Ls: container list is ready
+        if let Self::Loading {
+            ref rx,
+            ref buildkit,
+        } = self
+            && let Ok(result) = rx.try_recv()
+        {
+            let items = result?;
+            self = Self::Ls(LsState::new(items, buildkit.clone()));
+        }
+
+        if let Self::Stopping(state) = self {
+            self = state.try_recv(buildkit)?;
+        }
+
+        if let Self::Removing(state) = self {
+            self = state.try_recv(buildkit)?;
+        }
+
+        if matches!(self, Self::Exit) {
+            return Ok(None);
+        }
+
+        Ok(Some(self))
+    }
+}
+
+impl AppInner<SCellContainerInfo> {
     /// Creates a new `App` in the `Loading` state, spawning an async task
     /// that fetches the current Shell-Cell container list.
     fn loading(buildkit: BuildKitD) -> Self {
@@ -184,200 +194,162 @@ impl App {
             }
         });
 
-        App::Loading { rx, buildkit }
+        Self::Loading { rx, buildkit }
+    }
+
+    /// Handles a single key event, dispatching navigation and actions
+    /// based on the current state.
+    fn handle_key_event(
+        mut self,
+        key: KeyEvent,
+    ) -> color_eyre::Result<Option<Self>> {
+        match key.code {
+            KeyCode::Char('q') => {
+                if let Self::Ls(_) = self {
+                    // switching to images
+                    return Ok(None);
+                }
+            },
+            KeyCode::Char('c' | 'd') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                self = Self::Exit;
+            },
+            KeyCode::Char('h') => {
+                match self {
+                    Self::Ls(ls_state) => self = Self::Help(ls_state),
+                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    _ => {},
+                }
+            },
+            KeyCode::Down | KeyCode::Char('j') => {
+                if let Self::Ls(ref mut ls_state) = self {
+                    ls_state.next();
+                }
+            },
+            KeyCode::Up | KeyCode::Char('k') => {
+                if let Self::Ls(ref mut ls_state) = self {
+                    ls_state.previous();
+                }
+            },
+            KeyCode::Char('s') => {
+                if let Self::Ls(ls_state) = self {
+                    self = Self::Stopping(ls_state.stop_selected()?);
+                }
+            },
+            KeyCode::Char('r') => {
+                if let Self::Ls(ls_state) = self {
+                    self = Self::ConfirmRemove(ls_state.confirm_remove()?);
+                }
+            },
+            KeyCode::Char('y') => {
+                if let Self::ConfirmRemove(confirm_state) = self {
+                    self = Self::Removing(confirm_state.confirm());
+                }
+            },
+            KeyCode::Char('n') => {
+                if let Self::ConfirmRemove(confirm_state) = self {
+                    self = Self::Ls(confirm_state.cancel());
+                }
+            },
+            KeyCode::Esc => {
+                match self {
+                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::ConfirmRemove(confirm_state) => {
+                        self = Self::Ls(confirm_state.cancel());
+                    },
+                    _ => {},
+                }
+            },
+            _ => {},
+        }
+
+        Ok(Some(self))
     }
 }
 
-/// Holds the data for the interactive container table view.
-pub struct LsState {
-    containers: Vec<SCellContainerInfo>,
-    table_state: TableState,
-    buildkit: BuildKitD,
-    show_help: bool,
-}
-
-impl LsState {
-    pub fn new(
-        containers: Vec<SCellContainerInfo>,
-        buildkit: BuildKitD,
-    ) -> Self {
-        let mut table_state = TableState::default();
-        if !containers.is_empty() {
-            table_state.select(Some(0));
-        }
-        Self {
-            containers,
-            table_state,
-            buildkit,
-            show_help: false,
-        }
-    }
-
-    /// Moves the table selection to the next row, wrapping to the top.
-    fn next(&mut self) {
-        if self.containers.is_empty() {
-            return;
-        }
-        let i = match self.table_state.selected() {
-            Some(i) if i != self.containers.len().saturating_sub(1) => i.saturating_add(1),
-            _ => 0,
-        };
-        self.table_state.select(Some(i));
-    }
-
-    /// Moves the table selection to the previous row, wrapping to the bottom.
-    fn previous(&mut self) {
-        if self.containers.is_empty() {
-            return;
-        }
-        let i = match self.table_state.selected() {
-            Some(i) if i != 0 => i.saturating_sub(1),
-            _ => self.containers.len().saturating_sub(1),
-        };
-        self.table_state.select(Some(i));
-    }
-
-    /// Initiates stopping of the currently selected container.
-    ///
-    /// Spawns an async task that stops the container and then re-fetches
-    /// the full container list.
-    fn stop_selected(self) -> color_eyre::Result<StoppingState> {
-        let selected = self
-            .table_state
-            .selected()
-            .context("Some item in the list must be selected")?;
-        let container = self
-            .containers
-            .get(selected)
-            .context("Selected item must be present in the list")?;
-        let buildkit = self.buildkit.clone();
-
+impl AppInner<SCellImageInfo> {
+    /// Creates a new `App` in the `Loading` state, spawning an async task
+    /// that fetches the current Shell-Cell image list.
+    fn loading(buildkit: BuildKitD) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
         tokio::spawn({
-            let container = container.clone();
+            let buildkit = buildkit.clone();
             async move {
-                let res = buildkit.stop_container(&container).await;
-                let res = match res {
-                    Ok(()) => buildkit.list_containers().await,
-                    Err(e) => Err(e),
-                };
-                drop(tx.send(res));
+                let result = async {
+                    let res = buildkit.list_images().await;
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    res
+                }
+                .await;
+                drop(tx.send(result));
             }
         });
 
-        Ok(StoppingState {
-            container_name: container.name.to_string(),
-            rx,
-        })
+        Self::Loading { rx, buildkit }
     }
 
-    /// Shows confirmation dialog for removing the currently selected container.
-    fn confirm_remove(self) -> color_eyre::Result<ConfirmRemoveState> {
-        let selected = self
-            .table_state
-            .selected()
-            .context("Some item in the list must be selected")?;
-        let container = self
-            .containers
-            .get(selected)
-            .context("Selected item must be present in the list")?;
-
-        Ok(ConfirmRemoveState {
-            selected_to_remove: container.clone(),
-            containers: self.containers,
-            buildkit: self.buildkit,
-        })
-    }
-}
-
-/// Holds the state while waiting for user confirmation to remove a container.
-///
-/// Displays a warning that all container state will be lost and waits for
-/// the user to press 'y' (confirm) or 'n'/'Esc' (cancel).
-pub struct ConfirmRemoveState {
-    selected_to_remove: SCellContainerInfo,
-    containers: Vec<SCellContainerInfo>,
-    buildkit: BuildKitD,
-}
-
-impl ConfirmRemoveState {
-    /// User confirmed removal - initiate the removal process.
-    fn confirm(self) -> RemovingState {
-        let (tx, rx) = std::sync::mpsc::channel();
-        let buildkit = self.buildkit;
-        let container_name = self.selected_to_remove.name.to_string();
-        tokio::spawn({
-            async move {
-                let res = buildkit.cleanup_container(&self.selected_to_remove).await;
-                let res = match res {
-                    Ok(()) => buildkit.list_containers().await,
-                    Err(e) => Err(e),
-                };
-                drop(tx.send(res));
-            }
-        });
-
-        RemovingState { container_name, rx }
-    }
-
-    /// User cancelled removal - return to the list view.
-    fn cancel(self) -> LsState {
-        LsState::new(self.containers, self.buildkit)
-    }
-}
-
-/// Holds the state while a container is being stopped in the background.
-///
-/// The spawned task stops the container and then re-fetches the full
-/// container list, sending the result back over the channel.
-pub struct StoppingState {
-    container_name: String,
-    rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
-}
-
-impl StoppingState {
-    /// Polls the background stop task for completion.
-    ///
-    /// Returns `Some((containers, buildkit))` with the refreshed container
-    /// list when the operation is done, or `None` if still in progress.
-    fn try_recv(&mut self) -> color_eyre::Result<Option<Vec<SCellContainerInfo>>> {
-        match self.rx.recv_timeout(MIN_FPS) {
-            Ok(result) => result.map(Some),
-            Err(RecvTimeoutError::Timeout) => Ok(None),
-            Err(RecvTimeoutError::Disconnected) => {
-                color_eyre::eyre::bail!(
-                    "StoppingState channel cannot be disconnected without returning a result"
-                )
+    /// Handles a single key event, dispatching navigation and actions
+    /// based on the current state.
+    fn handle_key_event(
+        mut self,
+        key: KeyEvent,
+    ) -> color_eyre::Result<Option<Self>> {
+        match key.code {
+            KeyCode::Char('q') => {
+                if let Self::Ls(_) = self {
+                    // switching to containers
+                    return Ok(None);
+                }
             },
-        }
-    }
-}
-
-/// Holds the state while a container is being removed in the background.
-///
-/// The spawned task removes the container (and its image) and then re-fetches
-/// the full container list, sending the result back over the channel.
-pub struct RemovingState {
-    /// Name of the container being removed (used for UI display).
-    container_name: String,
-    rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
-}
-
-impl RemovingState {
-    /// Polls the background remove task for completion.
-    ///
-    /// Returns `Some((containers, buildkit))` with the refreshed container
-    /// list when the operation is done, or `None` if still in progress.
-    fn try_recv(&mut self) -> color_eyre::Result<Option<Vec<SCellContainerInfo>>> {
-        match self.rx.recv_timeout(MIN_FPS) {
-            Ok(result) => result.map(Some),
-            Err(RecvTimeoutError::Timeout) => Ok(None),
-            Err(RecvTimeoutError::Disconnected) => {
-                color_eyre::eyre::bail!(
-                    "RemovingState channel cannot be disconnected without returning a result"
-                )
+            KeyCode::Char('c' | 'd') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                self = Self::Exit;
             },
+            KeyCode::Char('h') => {
+                match self {
+                    Self::Ls(ls_state) => self = Self::Help(ls_state),
+                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    _ => {},
+                }
+            },
+            KeyCode::Down | KeyCode::Char('j') => {
+                if let Self::Ls(ref mut ls_state) = self {
+                    ls_state.next();
+                }
+            },
+            KeyCode::Up | KeyCode::Char('k') => {
+                if let Self::Ls(ref mut ls_state) = self {
+                    ls_state.previous();
+                }
+            },
+            KeyCode::Char('r') => {
+                if let Self::Ls(ls_state) = self {
+                    self = Self::ConfirmRemove(ls_state.confirm_remove()?);
+                }
+            },
+            KeyCode::Char('y') => {
+                if let Self::ConfirmRemove(confirm_state) = self {
+                    self = Self::Removing(confirm_state.confirm());
+                }
+            },
+            KeyCode::Char('n') => {
+                if let Self::ConfirmRemove(confirm_state) = self {
+                    self = Self::Ls(confirm_state.cancel());
+                }
+            },
+            KeyCode::Esc => {
+                match self {
+                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::ConfirmRemove(confirm_state) => {
+                        self = Self::Ls(confirm_state.cancel());
+                    },
+                    _ => {},
+                }
+            },
+            _ => {},
         }
+
+        Ok(Some(self))
     }
 }
