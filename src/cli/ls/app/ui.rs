@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget},
+    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget, Wrap},
 };
 
 use super::{AppInner, LsState};
@@ -40,6 +40,10 @@ impl Widget for &AppInner<SCellContainerInfo> {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_removing(CONTAINERS_TITLE, &state.for_removal.name, area, buf);
             },
+            AppInner::Error(state) => {
+                render_ls_containers(&state.ls_state, area, buf);
+                render_error_overlay(&state.message, area, buf);
+            },
             AppInner::Exit => {},
         }
     }
@@ -71,6 +75,10 @@ impl Widget for &AppInner<SCellImageInfo> {
             AppInner::Removing(state) => {
                 render_ls_images(&state.ls_state, area, buf);
                 render_removing(IMAGES_TITLE, &state.for_removal.name, area, buf);
+            },
+            AppInner::Error(state) => {
+                render_ls_images(&state.ls_state, area, buf);
+                render_error_overlay(&state.message, area, buf);
             },
             AppInner::Exit => {},
         }
@@ -596,14 +604,17 @@ fn render_containers_help_overlay(
                 .fg(Color::LightMagenta)
                 .add_modifier(Modifier::BOLD),
         )]),
-         Line::from(vec![
+        Line::from(vec![
             Span::styled(
                 "  q                 ",
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled("Switch to the images view", Style::default().fg(Color::White)),
+            Span::styled(
+                "Switch to the images view",
+                Style::default().fg(Color::White),
+            ),
         ]),
         Line::from(vec![
             Span::styled(
@@ -712,7 +723,10 @@ fn render_images_help_overlay(
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled("Switch to the containers view", Style::default().fg(Color::White)),
+            Span::styled(
+                "Switch to the containers view",
+                Style::default().fg(Color::White),
+            ),
         ]),
         Line::from(vec![
             Span::styled(
@@ -721,10 +735,7 @@ fn render_images_help_overlay(
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled(
-                "Remove selected image",
-                Style::default().fg(Color::White),
-            ),
+            Span::styled("Remove selected image", Style::default().fg(Color::White)),
         ]),
         Line::from("                    (can't remove image, which is in use)"),
         Line::from(""),
@@ -755,6 +766,55 @@ fn render_images_help_overlay(
     );
 
     paragraph.render(horizontal[1], buf);
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_error_overlay(
+    message: &str,
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let vertical = Layout::vertical([
+        Constraint::Percentage(25),
+        Constraint::Percentage(50),
+        Constraint::Percentage(25),
+    ])
+    .split(area);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(15),
+        Constraint::Percentage(70),
+        Constraint::Percentage(15),
+    ])
+    .split(vertical[1]);
+
+    let overlay_area = horizontal[1];
+
+    let mut lines = vec![Line::from(vec![Span::styled(
+        "Error",
+        Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+    )])];
+    lines.extend(message.lines().map(|l| {
+        Line::from(Span::styled(
+            l.to_string(),
+            Style::default().fg(Color::White),
+        ))
+    }));
+
+    Widget::render(Clear, overlay_area, buf);
+
+    let paragraph = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Error ")
+                .title_bottom("Esc: dismiss")
+                .title_alignment(HorizontalAlignment::Center)
+                .border_style(Style::default().fg(Color::Red)),
+        )
+        .wrap(Wrap { trim: false });
+
+    paragraph.render(overlay_area, buf);
 }
 
 fn main_block(items_title: impl Display) -> Block<'static> {

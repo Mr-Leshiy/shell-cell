@@ -1,4 +1,5 @@
 mod confirm_remove;
+mod error_state;
 mod ls;
 mod removing;
 mod stopping;
@@ -16,8 +17,8 @@ use crate::{
     cli::{
         MIN_FPS,
         ls::app::{
-            confirm_remove::ConfirmRemoveState, ls::LsState, removing::RemovingState,
-            stopping::StoppingState,
+            confirm_remove::ConfirmRemoveState, error_state::ErrorState, ls::LsState,
+            removing::RemovingState, stopping::StoppingState,
         },
     },
 };
@@ -28,11 +29,14 @@ use crate::{
 /// - `Loading` → `Ls` (once container list is fetched)
 /// - `Ls` → `Stopping` (user presses `s` on a selected container)
 /// - `Ls` → `ConfirmRemove` (user presses `r` on a selected container)
-/// - `Ls` → `Helo` (user presses `h`)
+/// - `Ls` → `Help` (user presses `h`)
 /// - `ConfirmRemove` → `Removing` (user confirms with `y`)
 /// - `ConfirmRemove` → `Ls` (user cancels with `n` or `Esc`)
-/// - `Stopping` → `Ls` (once the container is stopped and the list is refreshed)
-/// - `Removing` → `Ls` (once the container is removed and the list is refreshed)
+/// - `Stopping` → `Ls` (once the item is stopped and the list is refreshed)
+/// - `Stopping` → `Error` (stop operation fails)
+/// - `Removing` → `Ls` (once the item is removed and the list is refreshed)
+/// - `Removing` → `Error` (remove operation fails)
+/// - `Error` → `Ls` (user presses `Esc`)
 /// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
     Containers(AppInner<SCellContainerInfo>),
@@ -55,6 +59,8 @@ pub enum AppInner<Item> {
     ConfirmRemove(ConfirmRemoveState<Item>),
     /// Removing a selected item and refreshing the list.
     Removing(RemovingState<Item>),
+    /// Displaying an error that occurred during a background operation.
+    Error(ErrorState<Item>),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -153,18 +159,12 @@ impl<Item: Clone> AppInner<Item> {
             self = Self::Ls(LsState::new(items, buildkit.clone()));
         }
 
-        // Stopping → Ls: stop finished and refreshed list is available
-        if let Self::Stopping(ref mut state) = self
-            && let Some(items) = state.try_recv()?
-        {
-            self = Self::Ls(LsState::new(items, buildkit.clone()));
+        if let Self::Stopping(state) = self {
+            self = state.try_recv(buildkit)?;
         }
 
-        // Removing → Ls: remove finished and refreshed list is available
-        if let Self::Removing(ref mut state) = self
-            && let Some(items) = state.try_recv()?
-        {
-            self = Self::Ls(LsState::new(items, buildkit.clone()));
+        if let Self::Removing(state) = self {
+            self = state.try_recv(buildkit)?;
         }
 
         if matches!(self, Self::Exit) {
@@ -253,6 +253,7 @@ impl AppInner<SCellContainerInfo> {
             KeyCode::Esc => {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },
@@ -339,6 +340,7 @@ impl AppInner<SCellImageInfo> {
             KeyCode::Esc => {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },

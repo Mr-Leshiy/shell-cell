@@ -153,11 +153,7 @@ pub async fn list_all_containers(docker: &Docker) -> color_eyre::Result<Vec<Cont
 
 pub async fn list_all_images(docker: &Docker) -> color_eyre::Result<Vec<ImageSummary>> {
     let res = docker
-        .list_images(Some(
-            ListImagesOptionsBuilder::new()
-                .all(true)
-                .build(),
-        ))
+        .list_images(Some(ListImagesOptionsBuilder::new().all(true).build()))
         .await?;
     Ok(res)
 }
