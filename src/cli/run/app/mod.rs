@@ -18,7 +18,10 @@ use crate::{
     cli::MIN_FPS,
     error::UserError,
     pty::Pty,
-    scell::{SCell, types::name::TargetName},
+    scell::{
+        SCell,
+        types::{args::StartupArguments, name::TargetName},
+    },
 };
 
 pub enum App {
@@ -33,6 +36,7 @@ impl App {
         buildkit: &BuildKitD,
         scell_path: P,
         entry_target: Option<TargetName>,
+        args: StartupArguments,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()>
     where
@@ -41,7 +45,7 @@ impl App {
         P: AsRef<Path> + Send + 'static,
     {
         // First step
-        let mut app = Self::preparing(buildkit.clone(), scell_path, entry_target);
+        let mut app = Self::preparing(buildkit.clone(), scell_path, entry_target, args);
 
         loop {
             if let App::Preparing(ref mut state) = app
@@ -108,6 +112,7 @@ impl App {
         buildkit: BuildKitD,
         scell_path: P,
         entry: Option<TargetName>,
+        _args: StartupArguments,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
         let (logs_tx, logs_rx) = std::sync::mpsc::channel();

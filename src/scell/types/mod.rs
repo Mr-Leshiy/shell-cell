@@ -1,5 +1,6 @@
 //! Implements a parsing and processing of Shell-Cell '.yaml' files
 
+pub mod args;
 pub mod errors;
 pub mod name;
 pub mod target;

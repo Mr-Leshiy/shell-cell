@@ -7,7 +7,7 @@ mod progress;
 mod run;
 mod stop;
 
-use std::{path::PathBuf, time::Duration};
+use std::{collections::BTreeMap, path::PathBuf, time::Duration};
 
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
@@ -28,6 +28,10 @@ pub struct Cli {
     /// Entry point target name to execute, instead of 'main' (optional)
     #[clap(short, long)]
     target: Option<TargetName>,
+
+    /// Additional key=value arguments passed after --
+    #[clap(last = true, value_name = "KEY=VALUE")]
+    extra_args: Vec<String>,
 
     #[clap(subcommand)]
     command: Option<Commands>,
@@ -71,8 +75,22 @@ impl Cli {
     }
 
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
+        let args = self
+            .extra_args
+            .iter()
+            .map(|s| {
+                s.split_once('=')
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .ok_or_else(|| {
+                        UserError::wrap(format!(
+                            "Invalid argument '{s}', expected format: key=value"
+                        ))
+                    })
+            })
+            .collect::<Result<BTreeMap<_, _>, _>>()?;
+
         match self.command {
-            None => run::run(self.scell_path, self.target).await?,
+            None => run::run(self.scell_path, self.target, args.into()).await?,
             Some(Commands::Init { path }) => init::init(path)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop) => stop::stop().await?,
