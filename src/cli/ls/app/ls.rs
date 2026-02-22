@@ -85,7 +85,7 @@ impl LsState<SCellContainerInfo> {
         });
 
         Ok(StoppingState {
-            container_name: container.name.to_string(),
+            for_stop: container.clone(),
             ls_state: self,
             rx,
         })

@@ -10,7 +10,7 @@ use crate::{
 /// The spawned task stops the container and then re-fetches the full
 /// container list, sending the result back over the channel.
 pub struct StoppingState {
-    pub container_name: String,
+    pub for_stop: SCellContainerInfo,
     pub ls_state: LsState<SCellContainerInfo>,
     pub rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }

@@ -10,8 +10,7 @@ use crate::{
 /// The spawned task removes the container (and its image) and then re-fetches
 /// the full container list, sending the result back over the channel.
 pub struct RemovingState {
-    /// Name of the container being removed (used for UI display).
-    pub container_name: String,
+    pub for_removal: SCellContainerInfo,
     pub ls_state: LsState<SCellContainerInfo>,
     pub rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
 }

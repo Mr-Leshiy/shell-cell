@@ -17,10 +17,10 @@ impl ConfirmRemoveState {
     pub fn confirm(self) -> RemovingState {
         let (tx, rx) = std::sync::mpsc::channel();
         let buildkit = self.ls_state.buildkit.clone();
-        let container_name = self.selected_to_remove.name.to_string();
         tokio::spawn({
+            let for_removal = self.selected_to_remove.clone();
             async move {
-                let res = buildkit.cleanup_container(&self.selected_to_remove).await;
+                let res = buildkit.cleanup_container(&for_removal).await;
                 let res = match res {
                     Ok(()) => buildkit.list_containers().await,
                     Err(e) => Err(e),
@@ -30,7 +30,7 @@ impl ConfirmRemoveState {
         });
 
         RemovingState {
-            container_name,
+            for_removal: self.selected_to_remove,
             ls_state: self.ls_state,
             rx,
         }

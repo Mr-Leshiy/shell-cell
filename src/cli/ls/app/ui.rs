@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -25,15 +27,15 @@ impl Widget for &App {
             },
             App::Stopping(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
-                render_stopping(&state.container_name, area, buf);
+                render_stopping(&state.for_stop.name, area, buf);
             },
             App::ConfirmRemove(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
-                render_confirm_remove(state.selected_to_remove.name.as_str(), area, buf);
+                render_confirm_remove(&state.selected_to_remove, area, buf);
             },
             App::Removing(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
-                render_removing(&state.container_name, area, buf);
+                render_removing(&state.for_removal.name, area, buf);
             },
             App::Exit => {},
         }
@@ -75,7 +77,7 @@ fn render_loading(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            "Fetching 'Shell-Cell' containers info",
+            "Fetching 'Shell-Cell' info",
             Style::default().fg(Color::Gray),
         )),
     ];
@@ -94,8 +96,8 @@ fn render_loading(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_stopping(
-    container_name: &str,
+fn render_stopping<D: Display>(
+    item: D,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -129,7 +131,7 @@ fn render_stopping(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            format!("Stopping container '{container_name}'"),
+            format!("Stopping '{item}'"),
             Style::default().fg(Color::Gray),
         )),
     ];
@@ -149,7 +151,7 @@ fn render_stopping(
 
 #[allow(clippy::indexing_slicing)]
 fn render_confirm_remove(
-    container_name: &str,
+    container: &SCellContainerInfo,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -178,7 +180,7 @@ fn render_confirm_remove(
         )]),
         Line::from(""),
         Line::from(Span::styled(
-            format!("Remove container '{container_name}'?"),
+            format!("Remove container '{}'?", container.name),
             Style::default()
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
@@ -233,8 +235,8 @@ fn render_confirm_remove(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_removing(
-    container_name: &str,
+fn render_removing<D: Display>(
+    item: &D,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -266,7 +268,7 @@ fn render_removing(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            format!("Removing container '{container_name}'"),
+            format!("Removing '{item}'",),
             Style::default().fg(Color::Gray),
         )),
     ];
