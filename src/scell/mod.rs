@@ -36,7 +36,7 @@ pub const METADATA_DEFINITION_KEY: &str = "scell-definition";
 ///
 /// The inverse operation is [`decode_yaml_label`].
 pub fn encode_yaml_to_label(value: impl serde::Serialize) -> color_eyre::Result<String> {
-    let yaml = yaml_serde::to_string(&value).map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+    let yaml = yaml_serde::to_string(&value)?;
     Ok(format!("{yaml:#?}"))
 }
 
@@ -48,9 +48,8 @@ pub fn encode_yaml_to_label(value: impl serde::Serialize) -> color_eyre::Result<
 /// (`\n`, `\\`, `\"`, …). [`serde_json`] decodes that wrapper, then
 /// [`yaml_serde`] parses the recovered YAML text.
 pub fn decode_yaml_label(s: &str) -> color_eyre::Result<yaml_serde::Value> {
-    let yaml: String =
-        serde_json::from_str(s).map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
-    yaml_serde::from_str(&yaml).map_err(|e| color_eyre::eyre::eyre!("{e}"))
+    let yaml: String = serde_json::from_str(s)?;
+    Ok(yaml_serde::from_str(&yaml)?)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

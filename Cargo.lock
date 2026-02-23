@@ -2542,6 +2542,7 @@ dependencies = [
  "reqwest",
  "semver",
  "serde",
+ "serde_json",
  "tar",
  "terminput",
  "terminput-crossterm",

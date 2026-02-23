@@ -15,8 +15,7 @@ use super::{
     },
 };
 use crate::scell::{
-    link::RootNode,
-    types::target::{env::EnvStmt, hang::HangStmt},
+    encode_yaml_to_label, link::RootNode, types::target::{env::EnvStmt, hang::HangStmt}
 };
 
 pub struct SCellImage(Dockerfile);
@@ -212,7 +211,6 @@ fn prepare_metadata_stmt(
         location.is_absolute(),
         "prepare_metadata_stmt, path be absolute"
     );
-    let definition = yaml_serde::to_string(scell_inner)?;
     dockerfile_instructions.push(Instruction::Label(
         [
             (METADATA_TARGET_KEY.to_string(), name.to_string()),
@@ -220,7 +218,10 @@ fn prepare_metadata_stmt(
                 METADATA_LOCATION_KEY.to_string(),
                 format!("{}", location.display()),
             ),
-            (METADATA_DEFINITION_KEY.to_string(), format!("\"{definition:#?}\""))
+            (
+                METADATA_DEFINITION_KEY.to_string(),
+                encode_yaml_to_label(scell_inner)?,
+            ),
         ]
         .into_iter()
         .collect(),

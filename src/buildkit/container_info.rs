@@ -5,8 +5,7 @@ use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
-    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, name::SCellName,
-    types::name::TargetName,
+    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, decode_yaml_label, name::SCellName, types::name::TargetName
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -114,7 +113,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .as_ref()
             .and_then(|v| {
                 v.get(METADATA_DEFINITION_KEY)
-                    .map(|s| yaml_serde::from_str(s))
+                    .map(|s| decode_yaml_label(s))
             })
             .transpose()?;
 
