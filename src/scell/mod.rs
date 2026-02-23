@@ -13,6 +13,7 @@ pub mod types;
 
 use std::hash::{Hash, Hasher};
 
+use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use hex::ToHex;
 
 use crate::scell::{
@@ -30,27 +31,6 @@ pub const NAME_PREFIX: &str = "scell-";
 pub const METADATA_TARGET_KEY: &str = "scell-target";
 pub const METADATA_LOCATION_KEY: &str = "scell-location";
 pub const METADATA_DEFINITION_KEY: &str = "scell-definition";
-
-/// Serializes `value` to YAML and encodes the result as a Rust debug-formatted
-/// string so it can be stored as a single-line Docker label value.
-///
-/// The inverse operation is [`decode_yaml_label`].
-pub fn encode_yaml_to_label(value: impl serde::Serialize) -> color_eyre::Result<String> {
-    let yaml = yaml_serde::to_string(&value)?;
-    Ok(format!("{yaml:#?}"))
-}
-
-/// Decodes a Docker label value produced by [`encode_yaml_to_label`] back into
-/// a [`yaml_serde::Value`].
-///
-/// The label is stored as `format!("{yaml:#?}")` — Rust's debug representation
-/// of a `String` — which uses the same escape sequences as JSON strings
-/// (`\n`, `\\`, `\"`, …). [`serde_json`] decodes that wrapper, then
-/// [`yaml_serde`] parses the recovered YAML text.
-pub fn decode_yaml_label(s: &str) -> color_eyre::Result<yaml_serde::Value> {
-    let yaml: String = serde_json::from_str(s)?;
-    Ok(yaml_serde::from_str(&yaml)?)
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCell(SCellInner);
@@ -105,11 +85,29 @@ impl SCell {
     }
 }
 
+/// Serializes `value` JSON string and which is `BASE64_URL_SAFE_NO_PAD` encoded,
+/// so it can be stored as a single-line Docker label value.
+///
+/// The inverse operation is [`decode_object_from_label`].
+pub fn encode_object_to_label<T: serde::Serialize>(value: T) -> color_eyre::Result<String> {
+    let json = serde_json::to_string(&value)?;
+    Ok(BASE64_URL_SAFE_NO_PAD.encode(json))
+}
+
+/// Decodes a Docker label value produced by [`encode_object_to_label`] back into
+/// a [`T`].
+pub fn decode_object_from_label<T: serde::de::DeserializeOwned>(s: &str) -> color_eyre::Result<T> {
+    let json_str_bytes = BASE64_URL_SAFE_NO_PAD.decode(s)?;
+    let json_str = String::from_utf8_lossy(&json_str_bytes);
+    let json: serde_json::Value = serde_json::from_str(&json_str)?;
+    Ok(serde_json::from_value(json)?)
+}
+
 #[cfg(test)]
 mod tests {
     use test_case::test_case;
 
-    use super::{decode_yaml_label, encode_yaml_to_label};
+    use super::{decode_object_from_label, encode_object_to_label};
 
     #[test_case(yaml_serde::Value::String("hello".into()) ; "string")]
     #[test_case(yaml_serde::Value::Bool(true)              ; "bool true")]
@@ -128,8 +126,9 @@ mod tests {
         yaml_serde::Value::Mapping(m)
     } ; "mapping")]
     fn round_trip(value: yaml_serde::Value) {
-        let encoded = encode_yaml_to_label(&value).expect("encode should not fail");
-        let decoded = decode_yaml_label(&encoded).expect("decode should not fail");
+        let encoded = encode_object_to_label(&value).expect("encode should not fail");
+        let decoded: yaml_serde::Value =
+            decode_object_from_label(&encoded).expect("decode should not fail");
         assert_eq!(value, decoded);
     }
 }

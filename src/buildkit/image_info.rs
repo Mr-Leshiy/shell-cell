@@ -4,7 +4,8 @@ use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
-    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, decode_yaml_label, name::SCellName, types::name::TargetName
+    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
+    decode_object_from_label, name::SCellName, types::name::TargetName,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -49,7 +50,7 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
         let definition = value
             .labels
             .get(METADATA_DEFINITION_KEY)
-            .map(|s| decode_yaml_label(s))
+            .map(|s| decode_object_from_label(s))
             .transpose()?;
 
         let image_id = value.id;

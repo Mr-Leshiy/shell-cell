@@ -8,14 +8,16 @@ use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
-    Link, METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, SCellInner,
+    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, SCellInner,
     types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
 use crate::scell::{
-    encode_yaml_to_label, link::RootNode, types::target::{env::EnvStmt, hang::HangStmt}
+    METADATA_DEFINITION_KEY, encode_object_to_label,
+    link::RootNode,
+    types::target::{env::EnvStmt, hang::HangStmt},
 };
 
 pub struct SCellImage(Dockerfile);
@@ -220,7 +222,7 @@ fn prepare_metadata_stmt(
             ),
             (
                 METADATA_DEFINITION_KEY.to_string(),
-                encode_yaml_to_label(scell_inner)?,
+                encode_object_to_label(scell_inner)?,
             ),
         ]
         .into_iter()

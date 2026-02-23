@@ -96,6 +96,7 @@ terminput = "0.5.12"
 terminput-crossterm = "0.4.8"
 ratatui = "0.30.0"
 dockerfile-parser-rs = "3.2.2"
+base64 = "0.22.1"
 
 [dev-dependencies]
 indoc = "2.0.7"
