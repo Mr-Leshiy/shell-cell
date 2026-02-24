@@ -45,7 +45,7 @@ impl Widget for &AppInner<SCellContainerInfo> {
             AppInner::Removing(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                render_removing(CONTAINERS_TITLE, &state.for_removal.name, area, buf);
+                state.render(area, buf);
             },
             AppInner::ErrorWindow(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
@@ -94,7 +94,7 @@ impl Widget for &AppInner<SCellImageInfo> {
             AppInner::Removing(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                render_removing(IMAGES_TITLE, &state.for_removal.name, area, buf);
+                state.render(area, buf);
             },
             AppInner::ErrorWindow(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
@@ -210,57 +210,6 @@ fn render_stopping(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Yellow)),
-        )
-        .centered();
-
-    paragraph.render(horizontal[1], buf);
-}
-
-#[allow(clippy::indexing_slicing)]
-fn render_removing(
-    item_title: impl Display,
-    item: impl Display,
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let inner = render_main_block(item_title, area, buf);
-
-    let vertical = Layout::vertical([
-        Constraint::Percentage(40),
-        Constraint::Percentage(20),
-        Constraint::Percentage(40),
-    ])
-    .split(inner);
-
-    let horizontal = Layout::horizontal([
-        Constraint::Percentage(20),
-        Constraint::Percentage(60),
-        Constraint::Percentage(20),
-    ])
-    .split(vertical[1]);
-
-    let removing_text = vec![
-        Line::from(vec![
-            Span::styled(
-                "Removing",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("...", Style::default().fg(Color::Red)),
-        ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            format!("Removing '{item}'",),
-            Style::default().fg(Color::Gray),
-        )),
-    ];
-
-    Widget::render(Clear, horizontal[1], buf);
-
-    let paragraph = Paragraph::new(removing_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red)),
         )
         .centered();
 
