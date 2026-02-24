@@ -19,7 +19,7 @@ use crate::{
         MIN_FPS,
         ls::app::{
             confirm_remove::ConfirmRemoveState, error_state::ErrorState, ls::LsState,
-            removing::RemovingState, show_definition::ShowDefinitionState, stopping::StoppingState,
+            removing::RemovingState, show_definition::InspectState, stopping::StoppingState,
         },
     },
 };
@@ -65,7 +65,7 @@ pub enum AppInner<Item> {
     /// Displaying an error that occurred during a background operation.
     Error(ErrorState<Item>),
     /// Displaying the definition overlay for the selected item.
-    ShowDefinition(ShowDefinitionState<Item>),
+    ShowDefinition(InspectState<Item>),
     /// Terminal state — the event loop exits.
     Exit,
 }
