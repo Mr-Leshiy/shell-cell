@@ -98,7 +98,6 @@ ratatui = "0.30.0"
 dockerfile-parser-rs = "3.2.2"
 base64 = "0.22.1"
 tui-scrollview = "0.6.2"
-tui-scrollbar = "0.2.2"
 
 [dev-dependencies]
 indoc = "2.0.7"

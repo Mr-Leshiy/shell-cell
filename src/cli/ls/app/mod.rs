@@ -93,7 +93,7 @@ impl App {
             };
             app = new_app;
 
-            match &app {
+            match &mut app {
                 Self::Containers(app) => {
                     terminal
                         .draw(|f| {
@@ -240,10 +240,16 @@ impl AppInner<SCellContainerInfo> {
                 if let Self::Ls(ref mut ls_state) = self {
                     ls_state.next();
                 }
+                if let Self::Inspect(ref mut inspect_state) = self {
+                    inspect_state.scroll_down();
+                }
             },
             KeyCode::Up | KeyCode::Char('k') => {
                 if let Self::Ls(ref mut ls_state) = self {
                     ls_state.previous();
+                }
+                if let Self::Inspect(ref mut inspect_state) = self {
+                    inspect_state.scroll_up();
                 }
             },
             KeyCode::Char('s') => {
@@ -342,10 +348,16 @@ impl AppInner<SCellImageInfo> {
                 if let Self::Ls(ref mut ls_state) = self {
                     ls_state.next();
                 }
+                if let Self::Inspect(ref mut inspect_state) = self {
+                    inspect_state.scroll_down();
+                }
             },
             KeyCode::Up | KeyCode::Char('k') => {
                 if let Self::Ls(ref mut ls_state) = self {
                     ls_state.previous();
+                }
+                if let Self::Inspect(ref mut inspect_state) = self {
+                    inspect_state.scroll_up();
                 }
             },
             KeyCode::Char('r') => {

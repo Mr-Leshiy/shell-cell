@@ -24,4 +24,14 @@ impl<Item> InspectState<Item> {
             scroll_state: ScrollViewState::new(),
         }
     }
+
+    /// Scroll up
+    pub fn scroll_up(&mut self) {
+        self.scroll_state.scroll_up();
+    }
+
+    /// Scroll down
+    pub fn scroll_down(&mut self) {
+        self.scroll_state.scroll_down();
+    }
 }

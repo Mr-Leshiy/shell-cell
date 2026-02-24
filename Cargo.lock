@@ -2550,7 +2550,6 @@ dependencies = [
  "test-case",
  "thiserror 2.0.18",
  "tokio",
- "tui-scrollbar",
  "tui-scrollview",
  "tui-term",
  "yaml_serde",
@@ -3090,16 +3089,6 @@ name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
-
-[[package]]
-name = "tui-scrollbar"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e4267311b5c7999a996ea94939b6d2b1b44a9e5cc11e76cbbb6dcca4c281df4"
-dependencies = [
- "document-features",
- "ratatui-core",
-]
 
 [[package]]
 name = "tui-scrollview"

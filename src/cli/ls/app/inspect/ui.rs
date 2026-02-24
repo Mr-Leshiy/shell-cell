@@ -1,18 +1,17 @@
 use ratatui::{
-    layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect},
+    layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect, Size},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Widget},
 };
-use tui_scrollbar::{ScrollBar, ScrollBarArrows, ScrollLengths};
-use tui_scrollview::{ScrollView, ScrollViewState};
+use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
 use crate::{
     buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::ls::app::inspect::InspectState,
 };
 
-impl Widget for &InspectState<SCellContainerInfo> {
+impl Widget for &mut InspectState<SCellContainerInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -21,11 +20,16 @@ impl Widget for &InspectState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(self.definition.as_deref(), area, buf);
+        render_inspect_window(
+            self.definition.as_deref(),
+            &mut self.scroll_state,
+            area,
+            buf,
+        );
     }
 }
 
-impl Widget for &InspectState<SCellImageInfo> {
+impl Widget for &mut InspectState<SCellImageInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -34,13 +38,19 @@ impl Widget for &InspectState<SCellImageInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(self.definition.as_deref(), area, buf);
+        render_inspect_window(
+            self.definition.as_deref(),
+            &mut self.scroll_state,
+            area,
+            buf,
+        );
     }
 }
 
 #[allow(clippy::indexing_slicing)]
 fn render_inspect_window(
     definition: Option<&str>,
+    state: &mut ScrollViewState,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -82,30 +92,18 @@ fn render_inspect_window(
         .border_style(Style::default().fg(Color::Cyan));
 
     let inner_overlay_arrea = overlay_area.inner(Margin::new(1, 1));
-    let inner_split = Layout::horizontal([Constraint::Percentage(100), Constraint::Length(1)])
-        .split(inner_overlay_arrea);
-    let content_area = inner_split[0];
-    let scrollbar_area = inner_split[1];
 
-    let mut state = ScrollViewState::new();
-    let mut scroll_view = ScrollView::new(content_area.as_size());
+    let content_height = u16::try_from(lines.len()).unwrap_or(u16::MAX);
+    let mut scroll_view = ScrollView::new(Size::new(inner_overlay_arrea.width, content_height))
+        .vertical_scrollbar_visibility(ScrollbarVisibility::Automatic)
+        .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
 
-    let scroll_bar_lengths = ScrollLengths {
-        content_len: lines.len(),
-        viewport_len: content_area.height.into(),
-    };
     let paragraph = Paragraph::new(lines);
 
     scroll_view.render_widget(
         paragraph,
-        Rect::new(0, 0, content_area.width, content_area.height),
+        Rect::new(0, 0, inner_overlay_arrea.width, content_height),
     );
-    scroll_view.render(content_area, buf, &mut state);
-    if scroll_bar_lengths.content_len > scroll_bar_lengths.viewport_len {
-        let scroll_bar = ScrollBar::vertical(scroll_bar_lengths)
-            .arrows(ScrollBarArrows::Both)
-            .offset(state.offset().y.into());
-        scroll_bar.render(scrollbar_area, buf);
-    }
+    scroll_view.render(inner_overlay_arrea, buf, state);
     block.render(overlay_area, buf);
 }
