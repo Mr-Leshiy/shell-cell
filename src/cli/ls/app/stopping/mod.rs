@@ -1,3 +1,5 @@
+mod ui;
+
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 
 use crate::{

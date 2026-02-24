@@ -35,7 +35,7 @@ impl Widget for &AppInner<SCellContainerInfo> {
             AppInner::Stopping(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                render_stopping(CONTAINERS_TITLE, &state.for_stop.name, area, buf);
+                state.render(inner, buf);
             },
             AppInner::ConfirmRemove(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
@@ -84,7 +84,7 @@ impl Widget for &AppInner<SCellImageInfo> {
             AppInner::Stopping(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                render_stopping(IMAGES_TITLE, &state.for_stop.name, area, buf);
+                state.render(inner, buf);
             },
             AppInner::ConfirmRemove(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
@@ -157,59 +157,6 @@ fn render_loading(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Cyan)),
-        )
-        .centered();
-
-    paragraph.render(horizontal[1], buf);
-}
-
-#[allow(clippy::indexing_slicing)]
-fn render_stopping(
-    item_title: impl Display,
-    item: impl Display,
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let inner = render_main_block(item_title, area, buf);
-
-    let vertical = Layout::vertical([
-        Constraint::Percentage(40),
-        Constraint::Percentage(20),
-        Constraint::Percentage(40),
-    ])
-    .split(inner);
-
-    let horizontal = Layout::horizontal([
-        Constraint::Percentage(20),
-        Constraint::Percentage(60),
-        Constraint::Percentage(20),
-    ])
-    .split(vertical[1]);
-
-    let stopping_text = vec![
-        Line::from(vec![
-            Span::styled(
-                "Stopping",
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("...", Style::default().fg(Color::Yellow)),
-        ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            format!("Stopping '{item}'"),
-            Style::default().fg(Color::Gray),
-        )),
-    ];
-
-    Widget::render(Clear, horizontal[1], buf);
-
-    let paragraph = Paragraph::new(stopping_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Yellow)),
         )
         .centered();
 
