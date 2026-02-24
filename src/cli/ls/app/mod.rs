@@ -1,5 +1,5 @@
 mod confirm_remove;
-mod error_state;
+mod error_window;
 mod ls;
 mod removing;
 mod show_definition;
@@ -18,7 +18,7 @@ use crate::{
     cli::{
         MIN_FPS,
         ls::app::{
-            confirm_remove::ConfirmRemoveState, error_state::ErrorState, ls::LsState,
+            confirm_remove::ConfirmRemoveState, error_window::ErrorWindowState, ls::LsState,
             removing::RemovingState, show_definition::InspectState, stopping::StoppingState,
         },
     },
@@ -63,7 +63,7 @@ pub enum AppInner<Item> {
     /// Removing a selected item and refreshing the list.
     Removing(RemovingState<Item>),
     /// Displaying an error that occurred during a background operation.
-    Error(ErrorState<Item>),
+    Error(ErrorWindowState<Item>),
     /// Displaying the definition overlay for the selected item.
     Inspect(InspectState<Item>),
     /// Terminal state — the event loop exits.

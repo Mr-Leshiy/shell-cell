@@ -5,9 +5,9 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
 
-use crate::cli::ls::app::error_state::ErrorState;
+use crate::cli::ls::app::error_window::ErrorWindowState;
 
-impl<Item> Widget for &ErrorState<Item> {
+impl<Item> Widget for &ErrorWindowState<Item> {
     fn render(
         self,
         area: Rect,

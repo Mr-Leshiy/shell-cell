@@ -4,7 +4,7 @@ use crate::{
     buildkit::BuildKitD,
     cli::{
         MIN_FPS,
-        ls::app::{AppInner, error_state::ErrorState, ls::LsState},
+        ls::app::{AppInner, error_window::ErrorWindowState, ls::LsState},
     },
 };
 
@@ -31,7 +31,7 @@ impl<Item: Clone> RemovingState<Item> {
         match self.rx.recv_timeout(MIN_FPS) {
             Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, buildkit.clone()))),
             Ok(Err(e)) => {
-                Ok(AppInner::Error(ErrorState {
+                Ok(AppInner::Error(ErrorWindowState {
                     ls_state: self.ls_state,
                     message: e.to_string(),
                 }))
