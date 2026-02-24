@@ -55,11 +55,9 @@ impl BuildKitD {
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<ImageId> {
         let (tar, dockerfile_path) = scell.image().image_tar_artifact_bytes()?;
-        let scell_name = scell.image_id()?.to_string();
-
         let image_id = build_image(
             &self.docker,
-            &scell_name,
+            &scell.image_id()?.to_string(),
             "latest",
             dockerfile_path,
             tar,
@@ -114,10 +112,15 @@ impl BuildKitD {
             exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
             ..Default::default()
         };
-        let scell_name = scell.image_id()?.to_string();
-        start_container(&self.docker, &scell_name, "latest", &scell_name, config)
-            .await
-            .mark_as_user_err()?;
+        start_container(
+            &self.docker,
+            &scell.image_id()?.to_string(),
+            "latest",
+            &scell.container_id()?.to_string(),
+            config,
+        )
+        .await
+        .mark_as_user_err()?;
         Ok(())
     }
 
@@ -166,11 +169,13 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<Pty> {
-        let (session_id, output, input) =
-            container_iteractive_exec(&self.docker, &scell.image_id()?.to_string(), true, vec![
-                scell.shell().to_string(),
-            ])
-            .await?;
+        let (session_id, output, input) = container_iteractive_exec(
+            &self.docker,
+            &scell.container_id()?.to_string(),
+            true,
+            vec![scell.shell().to_string()],
+        )
+        .await?;
         Ok(Pty::new(session_id, output, input))
     }
 

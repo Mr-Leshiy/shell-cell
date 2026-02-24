@@ -29,19 +29,23 @@ pub struct SCellImage {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 struct SCellImageInner {
-    target_chain: Vec<Link>,
+    #[serde(rename = "targets-chain")]
+    chain: Vec<Link>,
     hang: HangStmt,
 }
 
 impl SCellImage {
     pub fn new(
-        links: Vec<Link>,
+        chain: Vec<Link>,
         hang: HangStmt,
     ) -> color_eyre::Result<Self> {
         let mut dockerfile_instructions = Vec::new();
 
-        let inner = SCellImageInner { target_chain: links, hang };
-        let mut links_iter = inner.target_chain.iter().rev().peekable();
+        let inner = SCellImageInner {
+            chain,
+            hang,
+        };
+        let mut links_iter = inner.chain.iter().rev().peekable();
 
         while let Some(link) = links_iter.next() {
             match link {
