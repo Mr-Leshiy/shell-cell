@@ -6,19 +6,19 @@ use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
     METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_label, name::SCellName, types::name::TargetName,
+    decode_object_from_label, name::SCellId, types::name::TargetName,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
-    pub name: SCellName,
+    pub id: SCellId,
     pub orphan: bool,
     pub status: Status,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub definition: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
-    // An image id, not a 'scell-*' name
+    // An image id, not a [`SCellId`]
     pub image_id: String,
 }
 
@@ -122,16 +122,16 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .image_id
             .context("'Shell-Cell' container must have a corresponding image ID")?;
 
-        let name = container_name.parse()?;
+        let id = container_name.parse()?;
 
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
             && created_at.is_some()
         {
             // Determine if the container is orphaned by comparing the container name
-            // with the expected SCell name
+            // with the expected SCellId
             SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.name()? != name))
+                .and_then(|scell| Ok(scell.id()? != id))
                 // If compilation fails, consider it orphaned
                 .unwrap_or(true)
         } else {
@@ -139,7 +139,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         };
 
         Ok(Self {
-            name,
+            id,
             orphan,
             status,
             location,

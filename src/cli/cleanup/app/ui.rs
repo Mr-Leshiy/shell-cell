@@ -143,7 +143,7 @@ fn render_cleaning_containers(
 
             let mut lines = vec![Line::from(vec![
                 Span::styled(
-                    format!("{icon} {}", info.name),
+                    format!("{icon} {}", info.id),
                     style.add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
@@ -239,7 +239,7 @@ fn render_cleaning_images(
 
             let mut lines = vec![Line::from(vec![
                 Span::styled(
-                    format!("{icon} {}", info.name),
+                    format!("{icon} {}", info.id),
                     style.add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(

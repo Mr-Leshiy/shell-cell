@@ -16,7 +16,7 @@ impl Widget for &LsState<SCellContainerInfo> {
         Self: Sized,
     {
         let header_cells = [
-            "Name",
+            "ID",
             "Target",
             "Blueprint Location",
             "Created At",
@@ -31,9 +31,9 @@ impl Widget for &LsState<SCellContainerInfo> {
         let rows = self.items.iter().map(|c| {
             let cells = vec![
                 Cell::from(if c.orphan {
-                    format!("{} (orphan)", c.name)
+                    format!("{} (orphan)", c.id)
                 } else {
-                    c.name.to_string()
+                    c.id.to_string()
                 }),
                 Cell::from(
                     c.target
@@ -84,7 +84,7 @@ impl Widget for &LsState<SCellImageInfo> {
         Self: Sized,
     {
         let header_cells = [
-            "Name",
+            "ID",
             "Target",
             "Blueprint Location",
             "Created At",
@@ -99,9 +99,9 @@ impl Widget for &LsState<SCellImageInfo> {
         let rows = self.items.iter().map(|c| {
             let cells = vec![
                 Cell::from(if c.orphan {
-                    format!("{} (orphan)", c.name)
+                    format!("{} (orphan)", c.id)
                 } else {
-                    c.name.to_string()
+                    c.id.to_string()
                 }),
                 Cell::from(
                     c.target

@@ -19,7 +19,7 @@ use hex::ToHex;
 use crate::scell::{
     image::SCellImage,
     link::Link,
-    name::SCellName,
+    name::SCellId,
     types::target::{
         config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
         hang::HangStmt,
@@ -66,9 +66,8 @@ impl SCell {
             .unwrap_or_default()
     }
 
-    /// Heavy operation, calculates name based on the `hex_hash` value
-    pub fn name(&self) -> color_eyre::Result<SCellName> {
-        SCellName::new(self)
+    pub fn id(&self) -> color_eyre::Result<SCellId> {
+        SCellId::new(self)
     }
 
     pub fn image(&self) -> color_eyre::Result<SCellImage> {

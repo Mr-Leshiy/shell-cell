@@ -2,16 +2,16 @@ use std::{fmt::Display, str::FromStr};
 
 use crate::scell::SCell;
 
-const NAME_PREFIX: &str = "scell-";
+const ID_PREFIX: &str = "scell-";
 
-/// A 'Shell-Cell' name, which is hex encoded hash of the corresponding 'Shell-Cell'
+/// A 'Shell-Cell' ID, which is hex encoded hash of the corresponding 'Shell-Cell'
 /// object.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SCellName(String);
+pub struct SCellId(String);
 
-impl SCellName {
+impl SCellId {
     pub fn new(scell: &SCell) -> color_eyre::Result<Self> {
-        Ok(Self(format!("{NAME_PREFIX}{}", scell.hex_hash()?)))
+        Ok(Self(format!("{ID_PREFIX}{}", scell.hex_hash()?)))
     }
 
     pub fn as_str(&self) -> &str {
@@ -19,7 +19,7 @@ impl SCellName {
     }
 }
 
-impl Display for SCellName {
+impl Display for SCellId {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -28,13 +28,13 @@ impl Display for SCellName {
     }
 }
 
-impl FromStr for SCellName {
+impl FromStr for SCellId {
     type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         color_eyre::eyre::ensure!(
-            s.contains(NAME_PREFIX),
-            "'Shell-Cell' name must have a prefix {NAME_PREFIX}"
+            s.contains(ID_PREFIX),
+            "'Shell-Cell' ID must have a prefix {ID_PREFIX}"
         );
         Ok(Self(s.to_string()))
     }

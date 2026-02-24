@@ -42,7 +42,7 @@ impl Widget for &ConfirmRemoveState<SCellContainerInfo> {
             )]),
             Line::from(""),
             Line::from(Span::styled(
-                format!("Remove container '{}'?", self.selected_to_remove.name),
+                format!("Remove container '{}'?", self.selected_to_remove.id),
                 Style::default()
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
@@ -129,7 +129,7 @@ impl Widget for &ConfirmRemoveState<SCellImageInfo> {
             )]),
             Line::from(""),
             Line::from(Span::styled(
-                format!("Remove image '{}'?", self.selected_to_remove.name),
+                format!("Remove image '{}'?", self.selected_to_remove.id),
                 Style::default()
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
