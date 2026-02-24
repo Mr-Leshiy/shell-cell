@@ -87,7 +87,7 @@ impl LsState<SCellContainerInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?;
         let definition = item
-            .image_desc
+            .container_desc
             .as_ref()
             .map(yaml_serde::to_string)
             .transpose()?

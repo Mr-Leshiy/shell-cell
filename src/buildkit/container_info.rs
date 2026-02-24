@@ -17,6 +17,7 @@ pub struct SCellContainerInfo {
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub image_desc: Option<yaml_serde::Value>,
+    pub container_desc: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
     // An image id, not a [`SCellId`]
     pub image_id: String,
@@ -145,6 +146,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             location,
             target,
             image_desc,
+            container_desc: None,
             created_at,
             image_id,
         })

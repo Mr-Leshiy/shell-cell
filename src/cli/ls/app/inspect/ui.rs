@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect, Size},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Widget},
+    widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Tabs, Widget},
 };
 use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
@@ -21,7 +21,7 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
     {
         self.ls_state.render(area, buf);
         render_inspect_window(
-            self.definition.as_deref(),
+            self.description.as_deref(),
             &mut self.scroll_state,
             area,
             buf,
@@ -39,7 +39,7 @@ impl Widget for &mut InspectState<SCellImageInfo> {
     {
         self.ls_state.render(area, buf);
         render_inspect_window(
-            self.definition.as_deref(),
+            self.description.as_deref(),
             &mut self.scroll_state,
             area,
             buf,
@@ -84,14 +84,16 @@ fn render_inspect_window(
 
     Clear.render(overlay_area, buf);
 
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Definition ")
-        .title_bottom("i / Esc: close this window")
-        .title_alignment(HorizontalAlignment::Center)
-        .border_style(Style::default().fg(Color::Cyan));
+    let tabs_block = Tabs::new(["Container", "Image"]).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" Definition ")
+            .title_bottom("i / Esc: close this window")
+            .title_alignment(HorizontalAlignment::Center)
+            .border_style(Style::default().fg(Color::Cyan)),
+    );
 
-    let inner_overlay_arrea = overlay_area.inner(Margin::new(1, 1));
+    let inner_overlay_arrea = overlay_area.inner(Margin::new(1, 2));
 
     let content_height = u16::try_from(lines.len()).unwrap_or(u16::MAX);
     let mut scroll_view = ScrollView::new(Size::new(inner_overlay_arrea.width, content_height))
@@ -105,5 +107,5 @@ fn render_inspect_window(
         Rect::new(0, 0, inner_overlay_arrea.width, content_height),
     );
     scroll_view.render(inner_overlay_arrea, buf, state);
-    block.render(overlay_area, buf);
+    tabs_block.render(overlay_area, buf);
 }

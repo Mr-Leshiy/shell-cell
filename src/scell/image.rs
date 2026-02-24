@@ -41,10 +41,7 @@ impl SCellImage {
     ) -> color_eyre::Result<Self> {
         let mut dockerfile_instructions = Vec::new();
 
-        let inner = SCellImageInner {
-            chain,
-            hang,
-        };
+        let inner = SCellImageInner { chain, hang };
         let mut links_iter = inner.chain.iter().rev().peekable();
 
         while let Some(link) = links_iter.next() {
