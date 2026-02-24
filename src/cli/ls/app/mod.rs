@@ -63,7 +63,7 @@ pub enum AppInner<Item> {
     /// Removing a selected item and refreshing the list.
     Removing(RemovingState<Item>),
     /// Displaying an error that occurred during a background operation.
-    Error(ErrorWindowState<Item>),
+    ErrorWindow(ErrorWindowState<Item>),
     /// Displaying the definition overlay for the selected item.
     Inspect(InspectState<Item>),
     /// Terminal state — the event loop exits.
@@ -267,7 +267,7 @@ impl AppInner<SCellContainerInfo> {
             KeyCode::Esc => {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
-                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
@@ -364,7 +364,7 @@ impl AppInner<SCellImageInfo> {
             KeyCode::Esc => {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
-                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());

@@ -31,7 +31,7 @@ impl<Item: Clone> StoppingState<Item> {
         match self.rx.recv_timeout(MIN_FPS) {
             Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, buildkit.clone()))),
             Ok(Err(e)) => {
-                Ok(AppInner::Error(ErrorWindowState {
+                Ok(AppInner::ErrorWindow(ErrorWindowState {
                     ls_state: self.ls_state,
                     message: e.to_string(),
                 }))
