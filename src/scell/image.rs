@@ -8,13 +8,14 @@ use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
-    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
+    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, SCellInner,
     types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
 use crate::scell::{
+    METADATA_DEFINITION_KEY, encode_object_to_label,
     link::RootNode,
     types::target::{env::EnvStmt, hang::HangStmt},
 };
@@ -52,7 +53,12 @@ impl SCellImage {
                     // The last item
                     if links_iter.peek().is_none() {
                         // Adding metadata
-                        prepare_metadata_stmt(&mut dockerfile_instructions, name, location)?;
+                        prepare_metadata_stmt(
+                            &mut dockerfile_instructions,
+                            name,
+                            location,
+                            &scell.0,
+                        )?;
                     }
                 },
             }
@@ -201,6 +207,7 @@ fn prepare_metadata_stmt(
     dockerfile_instructions: &mut Vec<Instruction>,
     name: &TargetName,
     location: &Path,
+    scell_inner: &SCellInner,
 ) -> color_eyre::Result<()> {
     color_eyre::eyre::ensure!(
         location.is_absolute(),
@@ -212,6 +219,10 @@ fn prepare_metadata_stmt(
             (
                 METADATA_LOCATION_KEY.to_string(),
                 format!("{}", location.display()),
+            ),
+            (
+                METADATA_DEFINITION_KEY.to_string(),
+                encode_object_to_label(scell_inner)?,
             ),
         ]
         .into_iter()

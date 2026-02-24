@@ -8,12 +8,14 @@ use crate::scell::types::{
     },
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
+#[serde(untagged)]
 pub enum Link {
     Root(RootNode),
     Node {
         name: TargetName,
         location: PathBuf,
+        #[serde(skip_serializing_if = "WorkspaceStmt::is_none")]
         workspace: WorkspaceStmt,
         env: EnvStmt,
         copy: CopyStmt,
@@ -21,7 +23,8 @@ pub enum Link {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
+#[serde(untagged)]
 pub enum RootNode {
     Image(ImageDef),
     Dockerfile(PathBuf),

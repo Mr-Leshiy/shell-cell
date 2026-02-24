@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct BuildStmt(pub Vec<String>);
 
 impl Hash for BuildStmt {

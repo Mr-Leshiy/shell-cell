@@ -1,3 +1,5 @@
+mod ui;
+
 use crate::{
     buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::ls::app::{ls::LsState, removing::RemovingState},

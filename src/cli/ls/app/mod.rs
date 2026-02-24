@@ -1,5 +1,7 @@
 mod confirm_remove;
-mod error_state;
+mod error_window;
+mod help_window;
+mod inspect;
 mod ls;
 mod removing;
 mod stopping;
@@ -17,7 +19,8 @@ use crate::{
     cli::{
         MIN_FPS,
         ls::app::{
-            confirm_remove::ConfirmRemoveState, error_state::ErrorState, ls::LsState,
+            confirm_remove::ConfirmRemoveState, error_window::ErrorWindowState,
+            help_window::HelpWindowState, inspect::InspectState, ls::LsState,
             removing::RemovingState, stopping::StoppingState,
         },
     },
@@ -30,6 +33,7 @@ use crate::{
 /// - `Ls` → `Stopping` (user presses `s` on a selected container)
 /// - `Ls` → `ConfirmRemove` (user presses `r` on a selected container)
 /// - `Ls` → `Help` (user presses `h`)
+/// - `Ls` → `ShowDefinition` (user presses `i` on a selected item)
 /// - `ConfirmRemove` → `Removing` (user confirms with `y`)
 /// - `ConfirmRemove` → `Ls` (user cancels with `n` or `Esc`)
 /// - `Stopping` → `Ls` (once the item is stopped and the list is refreshed)
@@ -37,6 +41,7 @@ use crate::{
 /// - `Removing` → `Ls` (once the item is removed and the list is refreshed)
 /// - `Removing` → `Error` (remove operation fails)
 /// - `Error` → `Ls` (user presses `Esc`)
+/// - `ShowDefinition` → `Ls` (user presses `i` or `Esc`)
 /// - Any state → `Exit` (user presses `Ctrl-C` or `Ctrl-D`)
 pub enum App {
     Containers(AppInner<SCellContainerInfo>),
@@ -52,7 +57,7 @@ pub enum AppInner<Item> {
     /// Displaying the interactive item table.
     Ls(LsState<Item>),
     /// Displaying the help overlay over the item table.
-    Help(LsState<Item>),
+    HelpWindow(HelpWindowState<Item>),
     /// Stopping a selected item and refreshing the list.
     Stopping(StoppingState<Item>),
     /// Confirming removal of a selected item.
@@ -60,7 +65,9 @@ pub enum AppInner<Item> {
     /// Removing a selected item and refreshing the list.
     Removing(RemovingState<Item>),
     /// Displaying an error that occurred during a background operation.
-    Error(ErrorState<Item>),
+    ErrorWindow(ErrorWindowState<Item>),
+    /// Displaying the definition overlay for the selected item.
+    Inspect(InspectState<Item>),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -215,8 +222,17 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Char('h') => {
                 match self {
-                    Self::Ls(ls_state) => self = Self::Help(ls_state),
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Ls(ls_state) => self = Self::HelpWindow(HelpWindowState { ls_state }),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
+                    _ => {},
+                }
+            },
+            KeyCode::Char('i') => {
+                match self {
+                    Self::Ls(ls_state) => {
+                        self = Self::Inspect(ls_state.inspect()?);
+                    },
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
                 }
             },
@@ -252,8 +268,9 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Esc => {
                 match self {
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
-                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
+                    Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },
@@ -307,8 +324,17 @@ impl AppInner<SCellImageInfo> {
             },
             KeyCode::Char('h') => {
                 match self {
-                    Self::Ls(ls_state) => self = Self::Help(ls_state),
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Ls(ls_state) => self = Self::HelpWindow(HelpWindowState { ls_state }),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
+                    _ => {},
+                }
+            },
+            KeyCode::Char('i') => {
+                match self {
+                    Self::Ls(ls_state) => {
+                        self = Self::Inspect(ls_state.inspect()?);
+                    },
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
                 }
             },
@@ -339,8 +365,9 @@ impl AppInner<SCellImageInfo> {
             },
             KeyCode::Esc => {
                 match self {
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
-                    Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
+                    Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },

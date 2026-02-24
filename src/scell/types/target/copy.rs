@@ -2,7 +2,7 @@ use std::{hash::Hash, path::PathBuf, str::FromStr};
 
 use color_eyre::eyre::ContextCompat;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct CopyStmt(pub Vec<CopyStmtEntry>);
 
 impl Hash for CopyStmt {
@@ -16,7 +16,7 @@ impl Hash for CopyStmt {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct CopyStmtEntry {
     pub dest: PathBuf,
     pub src: Vec<PathBuf>,

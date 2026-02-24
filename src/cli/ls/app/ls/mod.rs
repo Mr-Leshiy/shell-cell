@@ -1,9 +1,13 @@
+mod ui;
+
 use color_eyre::eyre::ContextCompat;
 use ratatui::widgets::TableState;
 
 use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo},
-    cli::ls::app::{confirm_remove::ConfirmRemoveState, stopping::StoppingState},
+    buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
+    cli::ls::app::{
+        confirm_remove::ConfirmRemoveState, inspect::InspectState, stopping::StoppingState,
+    },
 };
 
 /// Holds the data for the interactive container table view.
@@ -72,6 +76,25 @@ impl<Item: Clone> LsState<Item> {
 }
 
 impl LsState<SCellContainerInfo> {
+    /// Returns a [`InspectState`] for the currently selected container.
+    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellContainerInfo>> {
+        let selected = self
+            .table_state
+            .selected()
+            .context("Some item in the list must be selected")?;
+        let item = self
+            .items
+            .get(selected)
+            .context("Selected item must be present in the list")?;
+        let definition = item
+            .definition
+            .as_ref()
+            .map(yaml_serde::to_string)
+            .transpose()?
+            .clone();
+        Ok(InspectState::new(self, definition))
+    }
+
     /// Initiates stopping of the currently selected container.
     ///
     /// Spawns an async task that stops the container and then re-fetches
@@ -106,5 +129,26 @@ impl LsState<SCellContainerInfo> {
             ls_state: self,
             rx,
         })
+    }
+}
+
+impl LsState<SCellImageInfo> {
+    /// Returns a [`InspectState`] for the currently selected image.
+    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellImageInfo>> {
+        let selected = self
+            .table_state
+            .selected()
+            .context("Some item in the list must be selected")?;
+        let item = self
+            .items
+            .get(selected)
+            .context("Selected item must be present in the list")?;
+        let definition = item
+            .definition
+            .as_ref()
+            .map(yaml_serde::to_string)
+            .transpose()?
+            .clone();
+        Ok(InspectState::new(self, definition))
     }
 }
