@@ -117,9 +117,7 @@ fn render_loading(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let block = main_block(item_title);
-    let inner = block.inner(area);
-    Widget::render(block, area, buf);
+    let inner = render_main_block(item_title, area, buf);
 
     let vertical = Layout::vertical([
         Constraint::Percentage(40),
