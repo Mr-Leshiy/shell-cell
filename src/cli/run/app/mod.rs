@@ -12,6 +12,7 @@ use ratatui::{
 };
 use terminput::Encoding;
 use terminput_crossterm::to_terminput;
+use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::BuildKitD,
@@ -98,6 +99,16 @@ impl App {
             {
                 // Exit on Ctrl-C or Ctrl-D for other states
                 self = App::Exit;
+            } else if let Self::Preparing(ref mut state) = self {
+                match key.code {
+                    KeyCode::Down | KeyCode::Char('j') => {
+                        state.scroll_down();
+                    },
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        state.scroll_up();
+                    },
+                    _ => {},
+                }
             }
         }
 
@@ -181,6 +192,7 @@ impl App {
             rx,
             logs_rx,
             logs: Vec::new(),
+            scroll_view_state: ScrollViewState::new(),
         })
     }
 
@@ -201,6 +213,7 @@ pub struct PreparingState {
     rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
     logs_rx: Receiver<(String, LogType)>,
     logs: Vec<(String, LogType)>,
+    scroll_view_state: ScrollViewState,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -216,11 +229,20 @@ impl PreparingState {
         match self.logs_rx.recv_timeout(MIN_FPS) {
             Ok(log) => {
                 self.logs.push(log);
+                self.scroll_view_state.scroll_to_bottom();
                 false
             },
             Err(RecvTimeoutError::Timeout) => false,
             Err(RecvTimeoutError::Disconnected) => true,
         }
+    }
+
+    fn scroll_up(&mut self) {
+        self.scroll_view_state.scroll_up();
+    }
+
+    fn scroll_down(&mut self) {
+        self.scroll_view_state.scroll_down();
     }
 }
 

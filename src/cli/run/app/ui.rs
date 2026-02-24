@@ -1,10 +1,11 @@
 use itertools::Itertools;
 use ratatui::{
-    layout::{Alignment, Constraint, Layout},
+    layout::{Alignment, Constraint, Layout, Rect, Size},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
+    widgets::{Block, Borders, List, ListItem, Paragraph, StatefulWidget, Widget},
 };
+use tui_scrollview::{ScrollView, ScrollbarVisibility};
 
 use crate::{
     cli::run::app::{App, LogType},
@@ -12,6 +13,7 @@ use crate::{
 };
 
 impl Widget for &mut App {
+    #[allow(clippy::indexing_slicing)]
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -28,7 +30,7 @@ impl Widget for &mut App {
                 .title("'Shell-Cell'")
                 .title_bottom("Ctrl-C or Ctrl-D: exit");
             let inner = block.inner(area);
-            Widget::render(block, area, buf);
+            block.render(area, buf);
 
             let area_width = inner.width as usize;
 
@@ -55,9 +57,8 @@ impl Widget for &mut App {
                 })
                 .collect::<Vec<_>>();
             let logs_len = logs.len();
-            // Calculate how many log items can fit in the available height
-            let available_height = inner.height as usize;
-            let skip_amount = logs_len.saturating_sub(available_height);
+            let logs_height = u16::try_from(logs_len).unwrap_or(u16::MAX);
+            let skip_amount = logs_len.saturating_sub(logs_height.into());
 
             let logs = logs
                 .iter()
@@ -84,18 +85,23 @@ impl Widget for &mut App {
                 })
                 .skip(skip_amount);
 
-            Widget::render(List::new(logs), inner, buf);
+            let mut scroll_view = ScrollView::new(Size::new(inner.width, logs_height))
+                .vertical_scrollbar_visibility(ScrollbarVisibility::Automatic)
+                .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
+
+            scroll_view.render_widget(List::new(logs), Rect::new(0, 0, inner.width, logs_height));
+            scroll_view.render(inner, buf, &mut state.scroll_view_state);
         } else if let App::RunningPty(state) = self {
             let block = block
                 .title(format!("'Shell-Cell' {}", state.scell_name))
                 .title_bottom("Ctrl-D: exit");
             let inner = block.inner(area);
-            Widget::render(block, area, buf);
-            Widget::render(&mut state.pty, inner, buf);
+            block.render(area, buf);
+            state.pty.render(inner, buf);
         } else if let App::Finished = self {
             let block = block.title("'Shell-Cell'");
             let inner = block.inner(area);
-            Widget::render(block, area, buf);
+            block.render(area, buf);
 
             // Create a centered area using Layout
             let vertical_layout = Layout::vertical([
@@ -117,8 +123,7 @@ impl Widget for &mut App {
             ];
 
             let paragraph = Paragraph::new(text).alignment(Alignment::Center);
-            #[allow(clippy::indexing_slicing)]
-            Widget::render(paragraph, vertical_layout[1], buf);
+            paragraph.render(vertical_layout[1], buf);
         }
     }
 }
@@ -133,25 +138,6 @@ impl Widget for &mut Pty {
     {
         // set the proper size for the terminal screen
         self.set_size(area.height, area.width);
-        Widget::render(
-            tui_term::widget::PseudoTerminal::new(self.screen()),
-            area,
-            buf,
-        );
+        tui_term::widget::PseudoTerminal::new(self.screen()).render(area, buf);
     }
-}
-
-fn logs_list_iter<'a>(messages: &'a [&str]) -> impl Iterator<Item = ListItem<'a>> {
-    messages.iter().enumerate().map(|(i, msg)| {
-        let is_last = i == messages.len().saturating_sub(1) && i != 0;
-
-        let style = Style::default().add_modifier(Modifier::BOLD);
-
-        let line = if is_last {
-            Line::from(vec![Span::styled(format!("{msg} ..."), style.yellow())])
-        } else {
-            Line::from(vec![Span::styled(format!("✓ {msg}"), style.green())])
-        };
-        ListItem::new(line)
-    })
 }
