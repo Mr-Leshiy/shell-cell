@@ -3,10 +3,14 @@ use std::{path::PathBuf, str::FromStr};
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use crate::scell::{
-    METADATA_DESCRIPTION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_metadata, name::SCellId, types::name::TargetName,
+use crate::{
+    buildkit::decode_object_from_metadata,
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
+
+pub const IMAGE_METADATA_ENTRY_POINT_KEY: &str = "scell-target";
+pub const IMAGE_METADATA_LOCATION_KEY: &str = "scell-location";
+pub const IMAGE_METADATA_DESCRIPTION_KEY: &str = "scell-description";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellImageInfo {
@@ -41,15 +45,18 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         let target = value
             .labels
-            .get(METADATA_TARGET_KEY)
+            .get(IMAGE_METADATA_ENTRY_POINT_KEY)
             .map(|s| TargetName::from_str(s.as_str()))
             .transpose()?;
 
-        let location = value.labels.get(METADATA_LOCATION_KEY).map(PathBuf::from);
+        let location = value
+            .labels
+            .get(IMAGE_METADATA_LOCATION_KEY)
+            .map(PathBuf::from);
 
         let desc = value
             .labels
-            .get(METADATA_DESCRIPTION_KEY)
+            .get(IMAGE_METADATA_DESCRIPTION_KEY)
             .map(|s| decode_object_from_metadata(s))
             .transpose()?;
 

@@ -6,6 +6,7 @@ pub mod image_info;
 
 use std::collections::HashMap;
 
+use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use bollard::{
     Docker,
     secret::{ContainerCreateBody, HostConfig, PortBinding},
@@ -13,13 +14,16 @@ use bollard::{
 
 use crate::{
     buildkit::{
-        container_info::{CONTAINER_METADATA_IMAGE_ID, SCellContainerInfo},
+        container_info::{CONTAINER_METADATA_IMAGE_ID_KEY, SCellContainerInfo},
         docker::{
             build_image, container_iteractive_exec, container_resize_exec, list_all_containers,
             list_all_images, pull_image, remove_container, remove_image, start_container,
             stop_container,
         },
-        image_info::SCellImageInfo,
+        image_info::{
+            IMAGE_METADATA_DESCRIPTION_KEY, IMAGE_METADATA_ENTRY_POINT_KEY,
+            IMAGE_METADATA_LOCATION_KEY, SCellImageInfo,
+        },
     },
     error::WrapUserError,
     pty::Pty,
@@ -55,12 +59,15 @@ impl BuildKitD {
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<ImageId> {
         let (tar, dockerfile_path) = scell.image().image_tar_artifact_bytes()?;
+        let labels = image_metadata(scell)?;
+
         let image_id = build_image(
             &self.docker,
             &scell.image_id()?.to_string(),
             "latest",
             dockerfile_path,
             tar,
+            labels,
             |info| {
                 log_fn(info);
             },
@@ -181,23 +188,62 @@ fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
         })
         .collect();
 
-    let annotations = [(
-        CONTAINER_METADATA_IMAGE_ID.to_string(),
-        scell.image_id()?.to_string(),
-    )]
-    .into_iter()
-    .collect();
-
     Ok(ContainerCreateBody {
         host_config: Some(HostConfig {
             binds: (!binds.is_empty()).then_some(binds),
             port_bindings: (!port_bindings.is_empty()).then_some(port_bindings),
-            annotations: Some(annotations),
+            annotations: Some(container_metadata(scell)?),
             ..Default::default()
         }),
         exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
         ..Default::default()
     })
+}
+
+fn image_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
+    Ok([
+        (
+            IMAGE_METADATA_LOCATION_KEY.to_string(),
+            format!("{}", scell.image().location().display()),
+        ),
+        (
+            IMAGE_METADATA_ENTRY_POINT_KEY.to_string(),
+            scell.image().entry_point().to_string(),
+        ),
+        (
+            IMAGE_METADATA_DESCRIPTION_KEY.to_string(),
+            encode_object_to_metadata(scell.image())?,
+        ),
+    ]
+    .into_iter()
+    .collect())
+}
+
+fn container_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
+    Ok([(
+        CONTAINER_METADATA_IMAGE_ID_KEY.to_string(),
+        scell.image_id()?.to_string(),
+    )]
+    .into_iter()
+    .collect())
+}
+
+/// Serializes `value` JSON string and which is `BASE64_URL_SAFE_NO_PAD` encoded,
+/// so it can be stored as a single-line Docker label value or container annotation value.
+///
+/// The inverse operation is [`decode_object_from_label`].
+fn encode_object_to_metadata<T: serde::Serialize>(value: T) -> color_eyre::Result<String> {
+    let json = serde_json::to_string(&value)?;
+    Ok(BASE64_URL_SAFE_NO_PAD.encode(json))
+}
+
+/// Decodes a Docker label value produced by [`encode_object_to_label`] back into
+/// a [`T`].
+fn decode_object_from_metadata<T: serde::de::DeserializeOwned>(s: &str) -> color_eyre::Result<T> {
+    let json_str_bytes = BASE64_URL_SAFE_NO_PAD.decode(s)?;
+    let json_str = String::from_utf8_lossy(&json_str_bytes);
+    let json: serde_json::Value = serde_json::from_str(&json_str)?;
+    Ok(serde_json::from_value(json)?)
 }
 
 async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Result<()> {
@@ -216,4 +262,35 @@ async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Res
     )
     .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use test_case::test_case;
+
+    use super::{decode_object_from_metadata, encode_object_to_metadata};
+
+    #[test_case(yaml_serde::Value::String("hello".into()) ; "string")]
+    #[test_case(yaml_serde::Value::Bool(true)              ; "bool true")]
+    #[test_case(yaml_serde::Value::Bool(false)             ; "bool false")]
+    #[test_case(yaml_serde::Value::Number(yaml_serde::Number::from(42u64)) ; "integer")]
+    #[test_case(yaml_serde::Value::Sequence(vec![
+        yaml_serde::Value::String("a".into()),
+        yaml_serde::Value::String("b".into()),
+    ]) ; "sequence")]
+    #[test_case({
+        let mut m = yaml_serde::Mapping::new();
+        m.insert(
+            yaml_serde::Value::String("shell".into()),
+            yaml_serde::Value::String("/bin/bash".into()),
+        );
+        yaml_serde::Value::Mapping(m)
+    } ; "mapping")]
+    #[allow(clippy::needless_pass_by_value)]
+    fn round_trip(value: yaml_serde::Value) {
+        let encoded = encode_object_to_metadata(&value).expect("encode should not fail");
+        let decoded: yaml_serde::Value =
+            decode_object_from_metadata(&encoded).expect("decode should not fail");
+        assert_eq!(value, decoded);
+    }
 }

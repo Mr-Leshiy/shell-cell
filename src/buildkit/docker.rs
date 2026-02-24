@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use std::{collections::HashMap, pin::Pin};
 
 use bollard::{
     Docker, body_full,
@@ -22,6 +22,7 @@ pub async fn build_image(
     tag: &str,
     dockerfile_path: &str,
     tar_bytes: Bytes,
+    labels: HashMap<String, String>,
     log_fn: impl Fn(String),
 ) -> color_eyre::Result<String> {
     let options = BuildImageOptionsBuilder::new()
@@ -29,6 +30,7 @@ pub async fn build_image(
         .t(&format!("{image_name}:{tag}"))
         .rm(true)
         .forcerm(true)
+        .labels(&labels)
         .build();
 
     let mut stream = docker.build_image(options, None, Some(body_full(tar_bytes)));

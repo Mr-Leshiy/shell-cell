@@ -4,12 +4,19 @@ use bollard::secret::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use crate::scell::{
-    METADATA_DESCRIPTION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_metadata, name::SCellId, types::name::TargetName,
+use crate::{
+    buildkit::{
+        decode_object_from_metadata,
+        image_info::{
+            IMAGE_METADATA_DESCRIPTION_KEY, IMAGE_METADATA_ENTRY_POINT_KEY,
+            IMAGE_METADATA_LOCATION_KEY,
+        },
+    },
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
 
-pub const CONTAINER_METADATA_IMAGE_ID: &str = "scell-image-id";
+pub const CONTAINER_METADATA_IMAGE_ID_KEY: &str = "scell-image-id";
+pub const CONTAINER_METADATA_DESCRIPTION_KEY: &str = "scell-description";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
@@ -103,7 +110,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .labels
             .as_ref()
             .and_then(|v| {
-                v.get(METADATA_TARGET_KEY)
+                v.get(IMAGE_METADATA_ENTRY_POINT_KEY)
                     .map(|s| TargetName::from_str(s.as_str()))
             })
             .transpose()?;
@@ -111,13 +118,13 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         let location = value
             .labels
             .as_ref()
-            .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from));
+            .and_then(|v| v.get(IMAGE_METADATA_LOCATION_KEY).map(PathBuf::from));
 
         let image_desc = value
             .labels
             .as_ref()
             .and_then(|v| {
-                v.get(METADATA_DESCRIPTION_KEY)
+                v.get(IMAGE_METADATA_DESCRIPTION_KEY)
                     .map(|s| decode_object_from_metadata(s))
             })
             .transpose()?;

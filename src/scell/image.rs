@@ -9,21 +9,26 @@ use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
-    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY,
+    Link,
     types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
 use crate::scell::{
-    METADATA_DESCRIPTION_KEY, encode_object_to_metadata,
     link::RootNode,
     types::target::{env::EnvStmt, hang::HangStmt},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct SCellImage {
+    #[serde(flatten)]
     inner: SCellImageInner,
+    #[serde(skip_serializing)]
+    entry_point: TargetName,
+    #[serde(skip_serializing)]
+    blueprint_location: PathBuf,
+    #[serde(skip_serializing)]
     dockerfile: Dockerfile,
 }
 
@@ -35,6 +40,14 @@ struct SCellImageInner {
 }
 
 impl SCellImage {
+    pub fn entry_point(&self) -> &TargetName {
+        &self.entry_point
+    }
+
+    pub fn location(&self) -> &Path {
+        &self.blueprint_location
+    }
+
     pub fn new(
         chain: Vec<Link>,
         hang: HangStmt,
@@ -44,6 +57,8 @@ impl SCellImage {
         let inner = SCellImageInner { chain, hang };
         let mut links_iter = inner.chain.iter().rev().peekable();
 
+        let mut entry_point = None;
+        let mut blueprint_location = None;
         while let Some(link) = links_iter.next() {
             match link {
                 Link::Root(RootNode::Image(image)) => {
@@ -71,12 +86,8 @@ impl SCellImage {
                     // The last item
                     if links_iter.peek().is_none() {
                         // Adding metadata
-                        prepare_metadata_stmt(
-                            &mut dockerfile_instructions,
-                            name,
-                            location,
-                            &inner,
-                        )?;
+                        entry_point = Some(name.clone());
+                        blueprint_location = Some(location.clone());
                     }
                 },
             }
@@ -86,7 +97,13 @@ impl SCellImage {
 
         let dockerfile = Dockerfile::new(dockerfile_instructions);
 
-        Ok(Self { inner, dockerfile })
+        Ok(Self {
+            inner,
+            entry_point: entry_point.context("'entry_point' cannot be None")?,
+            blueprint_location: blueprint_location
+                .context("'blueprint_location' cannot be None")?,
+            dockerfile,
+        })
     }
 
     pub fn hash<H: Hasher>(
@@ -229,34 +246,6 @@ fn prepare_dockerfile(
     }
 
     dockerfile_instructions.extend(dockerfile.instructions);
-    Ok(())
-}
-
-fn prepare_metadata_stmt(
-    dockerfile_instructions: &mut Vec<Instruction>,
-    name: &TargetName,
-    location: &Path,
-    inner: &SCellImageInner,
-) -> color_eyre::Result<()> {
-    color_eyre::eyre::ensure!(
-        location.is_absolute(),
-        "prepare_metadata_stmt, path be absolute"
-    );
-    dockerfile_instructions.push(Instruction::Label(
-        [
-            (METADATA_TARGET_KEY.to_string(), name.to_string()),
-            (
-                METADATA_LOCATION_KEY.to_string(),
-                format!("{}", location.display()),
-            ),
-            (
-                METADATA_DESCRIPTION_KEY.to_string(),
-                encode_object_to_metadata(inner)?,
-            ),
-        ]
-        .into_iter()
-        .collect(),
-    ));
     Ok(())
 }
 

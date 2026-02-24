@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect, Size},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Tabs, Widget},
+    widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Widget},
 };
 use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
@@ -84,14 +84,12 @@ fn render_inspect_window(
 
     Clear.render(overlay_area, buf);
 
-    let tabs_block = Tabs::new(["Container", "Image"]).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(" Definition ")
-            .title_bottom("i / Esc: close this window")
-            .title_alignment(HorizontalAlignment::Center)
-            .border_style(Style::default().fg(Color::Cyan)),
-    );
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Definition ")
+        .title_bottom("i / Esc: close this window")
+        .title_alignment(HorizontalAlignment::Center)
+        .border_style(Style::default().fg(Color::Cyan));
 
     let inner_overlay_arrea = overlay_area.inner(Margin::new(1, 2));
 
@@ -107,5 +105,5 @@ fn render_inspect_window(
         Rect::new(0, 0, inner_overlay_arrea.width, content_height),
     );
     scroll_view.render(inner_overlay_arrea, buf, state);
-    tabs_block.render(overlay_area, buf);
+    block.render(overlay_area, buf);
 }
