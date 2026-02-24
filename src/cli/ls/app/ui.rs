@@ -45,7 +45,7 @@ impl Widget for &AppInner<SCellContainerInfo> {
             AppInner::Removing(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                state.render(area, buf);
+                state.render(inner, buf);
             },
             AppInner::ErrorWindow(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
@@ -94,7 +94,7 @@ impl Widget for &AppInner<SCellImageInfo> {
             AppInner::Removing(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                state.render(area, buf);
+                state.render(inner, buf);
             },
             AppInner::ErrorWindow(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);

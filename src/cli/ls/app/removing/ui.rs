@@ -12,7 +12,7 @@ use crate::{
     cli::ls::app::removing::RemovingState,
 };
 
-impl Widget for RemovingState<SCellContainerInfo> {
+impl Widget for &RemovingState<SCellContainerInfo> {
     fn render(
         self,
         area: Rect,
@@ -20,11 +20,11 @@ impl Widget for RemovingState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
-        render_removing(self.for_removal.name, area, buf);
+        render_removing(&self.for_removal.name, area, buf);
     }
 }
 
-impl Widget for RemovingState<SCellImageInfo> {
+impl Widget for &RemovingState<SCellImageInfo> {
     fn render(
         self,
         area: Rect,
@@ -32,7 +32,7 @@ impl Widget for RemovingState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        render_removing(self.for_removal.name, area, buf);
+        render_removing(&self.for_removal.name, area, buf);
     }
 }
 
