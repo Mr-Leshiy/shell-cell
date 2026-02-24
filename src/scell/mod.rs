@@ -11,10 +11,9 @@ mod link;
 pub mod name;
 pub mod types;
 
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
-use hex::ToHex;
 
 use crate::scell::{
     image::SCellImage,
@@ -66,21 +65,24 @@ impl SCell {
             .unwrap_or_default()
     }
 
-    pub fn id(&self) -> color_eyre::Result<SCellId> {
-        SCellId::new(self)
+    pub fn image_id(&self) -> color_eyre::Result<SCellId> {
+        SCellId::new(|hasher| {
+            self.0.hash(hasher);
+            self.image()?.dump_to_string()?.hash(hasher);
+            Ok(())
+        })
+    }
+
+    pub fn container_id(&self) -> color_eyre::Result<SCellId> {
+        SCellId::new(|hasher| {
+            self.0.hash(hasher);
+            self.image()?.dump_to_string()?.hash(hasher);
+            Ok(())
+        })
     }
 
     pub fn image(&self) -> color_eyre::Result<SCellImage> {
         SCellImage::new(self)
-    }
-
-    /// Calculates a fast, non-cryptographic 'metrohash' hash value.
-    /// Returns a hex string value.
-    fn hex_hash(&self) -> color_eyre::Result<String> {
-        let mut hasher = metrohash::MetroHash64::new();
-        self.0.hash(&mut hasher);
-        self.image()?.dump_to_string()?.hash(&mut hasher);
-        Ok(hasher.finish().to_be_bytes().encode_hex())
     }
 }
 

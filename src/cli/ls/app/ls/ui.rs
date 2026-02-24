@@ -15,15 +15,9 @@ impl Widget for &LsState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
-        let header_cells = [
-            "ID",
-            "Target",
-            "Blueprint Location",
-            "Created At",
-            "Status",
-        ]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+        let header_cells = ["ID", "Target", "Blueprint Location", "Created At", "Status"]
+            .iter()
+            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
         let header = Row::new(header_cells)
             .style(Style::default().add_modifier(Modifier::BOLD))
             .height(1);
@@ -83,15 +77,9 @@ impl Widget for &LsState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        let header_cells = [
-            "ID",
-            "Target",
-            "Blueprint Location",
-            "Created At",
-            "Status",
-        ]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+        let header_cells = ["ID", "Target", "Blueprint Location", "Created At", "Status"]
+            .iter()
+            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
         let header = Row::new(header_cells)
             .style(Style::default().add_modifier(Modifier::BOLD))
             .height(1);

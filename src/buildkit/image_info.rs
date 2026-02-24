@@ -63,7 +63,7 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
             // Determine if the container is orphaned by comparing the container name
             // with the expected SCellId
             SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.id()? != id))
+                .and_then(|scell| Ok(scell.image_id()? != id))
                 // If compilation fails, consider it orphaned
                 .unwrap_or(true)
         } else {

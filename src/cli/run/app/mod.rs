@@ -202,7 +202,7 @@ impl App {
     ) -> color_eyre::Result<Self> {
         Ok(Self::RunningPty(Box::new(RunningPtyState {
             pty,
-            session_id: scell.id()?,
+            container_id: scell.container_id()?,
             prev_height: 0,
             prev_width: 0,
         })))
@@ -248,7 +248,7 @@ impl PreparingState {
 
 pub struct RunningPtyState {
     pty: Pty,
-    session_id: SCellId,
+    container_id: SCellId,
     prev_height: u16,
     prev_width: u16,
 }

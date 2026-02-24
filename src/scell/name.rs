@@ -1,6 +1,6 @@
-use std::{fmt::Display, str::FromStr};
+use std::{fmt::Display, hash::Hasher, str::FromStr};
 
-use crate::scell::SCell;
+use hex::ToHex;
 
 const ID_PREFIX: &str = "scell-";
 
@@ -10,8 +10,13 @@ const ID_PREFIX: &str = "scell-";
 pub struct SCellId(String);
 
 impl SCellId {
-    pub fn new(scell: &SCell) -> color_eyre::Result<Self> {
-        Ok(Self(format!("{ID_PREFIX}{}", scell.hex_hash()?)))
+    pub fn new(
+        to_hash: impl FnOnce(&mut metrohash::MetroHash64) -> color_eyre::Result<()>
+    ) -> color_eyre::Result<Self> {
+        let mut hasher = metrohash::MetroHash64::new();
+        to_hash(&mut hasher)?;
+        let hex_hash: String = hasher.finish().to_be_bytes().encode_hex();
+        Ok(Self(format!("{ID_PREFIX}{hex_hash}")))
     }
 
     pub fn as_str(&self) -> &str {
