@@ -6,21 +6,24 @@ use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
     METADATA_DESCRIPTION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_label, name::SCellId, types::name::TargetName,
+    decode_object_from_metadata, name::SCellId, types::name::TargetName,
 };
+
+pub const CONTAINER_METADATA_IMAGE_ID: &str = "scell-image-id";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
     pub id: SCellId,
     pub orphan: bool,
     pub status: Status,
+    // pub image_id: Option<SCellId>,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub image_desc: Option<yaml_serde::Value>,
     pub container_desc: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
-    // An image id, not a [`SCellId`]
-    pub image_id: String,
+    // A Docker image id, not a [`SCellId`]
+    pub docker_image_id: String,
 }
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -115,13 +118,13 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .as_ref()
             .and_then(|v| {
                 v.get(METADATA_DESCRIPTION_KEY)
-                    .map(|s| decode_object_from_label(s))
+                    .map(|s| decode_object_from_metadata(s))
             })
             .transpose()?;
 
-        let image_id = value
+        let docker_image_id = value
             .image_id
-            .context("'Shell-Cell' container must have a corresponding image ID")?;
+            .context("'Shell-Cell' container must have a corresponding Docker/Podman image ID")?;
 
         let id = container_name.parse()?;
 
@@ -148,7 +151,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             image_desc,
             container_desc: None,
             created_at,
-            image_id,
+            docker_image_id,
         })
     }
 }

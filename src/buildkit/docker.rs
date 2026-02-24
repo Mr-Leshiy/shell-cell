@@ -67,7 +67,7 @@ pub async fn pull_image(
     );
     while let Some(pulling_info) = stream.next().await {
         let info = pulling_info?;
-        // TODO: improove logging
+        // TODO: improve logging
         println!("{info:?}");
     }
 

@@ -6,6 +6,7 @@
 //! "base" for entire Shell-Cell.
 
 mod compile;
+pub mod container;
 pub mod image;
 mod link;
 pub mod name;
@@ -25,7 +26,6 @@ use crate::scell::{
     },
 };
 
-pub const NAME_PREFIX: &str = "scell-";
 pub const METADATA_TARGET_KEY: &str = "scell-target";
 pub const METADATA_LOCATION_KEY: &str = "scell-location";
 pub const METADATA_DESCRIPTION_KEY: &str = "scell-description";
@@ -33,6 +33,11 @@ pub const METADATA_DESCRIPTION_KEY: &str = "scell-description";
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SCell {
     image: SCellImage,
+    container: SCellContainer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SCellContainer {
     shell: ShellStmt,
     config: Option<ConfigStmt>,
 }
@@ -40,18 +45,20 @@ pub struct SCell {
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
-        &self.shell.0
+        &self.container.shell.0
     }
 
     pub fn mounts(&self) -> MountsStmt {
-        self.config
+        self.container
+            .config
             .as_ref()
             .map(|c| c.mounts.clone())
             .unwrap_or_default()
     }
 
     pub fn ports(&self) -> PortsStmt {
-        self.config
+        self.container
+            .config
             .as_ref()
             .map(|c| c.ports.clone())
             .unwrap_or_default()
@@ -67,8 +74,7 @@ impl SCell {
     pub fn container_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
             self.image.hash(hasher)?;
-            self.config.hash(hasher);
-            self.shell.hash(hasher);
+            self.container.hash(hasher);
             Ok(())
         })
     }
@@ -76,20 +82,26 @@ impl SCell {
     pub fn image(&self) -> &SCellImage {
         &self.image
     }
+
+    pub fn container(&self) -> &SCellContainer {
+        &self.container
+    }
 }
 
 /// Serializes `value` JSON string and which is `BASE64_URL_SAFE_NO_PAD` encoded,
-/// so it can be stored as a single-line Docker label value.
+/// so it can be stored as a single-line Docker label value or container annotation value.
 ///
 /// The inverse operation is [`decode_object_from_label`].
-pub fn encode_object_to_label<T: serde::Serialize>(value: T) -> color_eyre::Result<String> {
+pub fn encode_object_to_metadata<T: serde::Serialize>(value: T) -> color_eyre::Result<String> {
     let json = serde_json::to_string(&value)?;
     Ok(BASE64_URL_SAFE_NO_PAD.encode(json))
 }
 
 /// Decodes a Docker label value produced by [`encode_object_to_label`] back into
 /// a [`T`].
-pub fn decode_object_from_label<T: serde::de::DeserializeOwned>(s: &str) -> color_eyre::Result<T> {
+pub fn decode_object_from_metadata<T: serde::de::DeserializeOwned>(
+    s: &str
+) -> color_eyre::Result<T> {
     let json_str_bytes = BASE64_URL_SAFE_NO_PAD.decode(s)?;
     let json_str = String::from_utf8_lossy(&json_str_bytes);
     let json: serde_json::Value = serde_json::from_str(&json_str)?;
@@ -100,7 +112,7 @@ pub fn decode_object_from_label<T: serde::de::DeserializeOwned>(s: &str) -> colo
 mod tests {
     use test_case::test_case;
 
-    use super::{decode_object_from_label, encode_object_to_label};
+    use super::{decode_object_from_metadata, encode_object_to_metadata};
 
     #[test_case(yaml_serde::Value::String("hello".into()) ; "string")]
     #[test_case(yaml_serde::Value::Bool(true)              ; "bool true")]
@@ -120,9 +132,9 @@ mod tests {
     } ; "mapping")]
     #[allow(clippy::needless_pass_by_value)]
     fn round_trip(value: yaml_serde::Value) {
-        let encoded = encode_object_to_label(&value).expect("encode should not fail");
+        let encoded = encode_object_to_metadata(&value).expect("encode should not fail");
         let decoded: yaml_serde::Value =
-            decode_object_from_label(&encoded).expect("decode should not fail");
+            decode_object_from_metadata(&encoded).expect("decode should not fail");
         assert_eq!(value, decoded);
     }
 }

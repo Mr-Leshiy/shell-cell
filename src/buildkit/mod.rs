@@ -13,7 +13,7 @@ use bollard::{
 
 use crate::{
     buildkit::{
-        container_info::SCellContainerInfo,
+        container_info::{CONTAINER_METADATA_IMAGE_ID, SCellContainerInfo},
         docker::{
             build_image, container_iteractive_exec, container_resize_exec, list_all_containers,
             list_all_images, pull_image, remove_container, remove_image, start_container,
@@ -75,49 +75,12 @@ impl BuildKitD {
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
-        let binds: Vec<String> = scell
-            .mounts()
-            .0
-            .iter()
-            .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
-            .collect();
-
-        let ports = scell.ports();
-
-        let exposed_ports: Vec<String> = ports
-            .0
-            .iter()
-            .map(|p| format!("{}/{}", p.container_port, p.protocol.as_str()))
-            .collect();
-
-        let port_bindings: HashMap<String, Option<Vec<PortBinding>>> = ports
-            .0
-            .into_iter()
-            .map(|p| {
-                let key = format!("{}/{}", p.container_port, p.protocol.as_str());
-                let binding = PortBinding {
-                    host_ip: p.host_ip,
-                    host_port: Some(p.host_port),
-                };
-                (key, Some(vec![binding]))
-            })
-            .collect();
-
-        let config = ContainerCreateBody {
-            host_config: Some(HostConfig {
-                binds: (!binds.is_empty()).then_some(binds),
-                port_bindings: (!port_bindings.is_empty()).then_some(port_bindings),
-                ..Default::default()
-            }),
-            exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
-            ..Default::default()
-        };
         start_container(
             &self.docker,
             &scell.image_id()?.to_string(),
             "latest",
             &scell.container_id()?.to_string(),
-            config,
+            container_config(scell)?,
         )
         .await
         .mark_as_user_err()?;
@@ -137,7 +100,7 @@ impl BuildKitD {
         container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
         remove_container(&self.docker, container.id.as_str()).await?;
-        remove_image(&self.docker, &container.image_id).await?;
+        remove_image(&self.docker, &container.docker_image_id).await?;
         Ok(())
     }
 
@@ -145,7 +108,7 @@ impl BuildKitD {
         &self,
         image: &SCellImageInfo,
     ) -> color_eyre::Result<()> {
-        remove_image(&self.docker, &image.image_id).await?;
+        remove_image(&self.docker, &image.docker_image_id).await?;
         Ok(())
     }
 
@@ -187,6 +150,54 @@ impl BuildKitD {
     ) -> color_eyre::Result<()> {
         container_resize_exec(&self.docker, session_id, height, width).await
     }
+}
+
+fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
+    let binds: Vec<String> = scell
+        .mounts()
+        .0
+        .iter()
+        .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
+        .collect();
+
+    let ports = scell.ports();
+
+    let exposed_ports: Vec<String> = ports
+        .0
+        .iter()
+        .map(|p| format!("{}/{}", p.container_port, p.protocol.as_str()))
+        .collect();
+
+    let port_bindings: HashMap<String, Option<Vec<PortBinding>>> = ports
+        .0
+        .into_iter()
+        .map(|p| {
+            let key = format!("{}/{}", p.container_port, p.protocol.as_str());
+            let binding = PortBinding {
+                host_ip: p.host_ip,
+                host_port: Some(p.host_port),
+            };
+            (key, Some(vec![binding]))
+        })
+        .collect();
+
+    let annotations = [(
+        CONTAINER_METADATA_IMAGE_ID.to_string(),
+        scell.image_id()?.to_string(),
+    )]
+    .into_iter()
+    .collect();
+
+    Ok(ContainerCreateBody {
+        host_config: Some(HostConfig {
+            binds: (!binds.is_empty()).then_some(binds),
+            port_bindings: (!port_bindings.is_empty()).then_some(port_bindings),
+            annotations: Some(annotations),
+            ..Default::default()
+        }),
+        exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
+        ..Default::default()
+    })
 }
 
 async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Result<()> {

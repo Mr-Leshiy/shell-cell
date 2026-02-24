@@ -5,7 +5,7 @@ use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
     METADATA_DESCRIPTION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_label, name::SCellId, types::name::TargetName,
+    decode_object_from_metadata, name::SCellId, types::name::TargetName,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -17,8 +17,8 @@ pub struct SCellImageInfo {
     pub target: Option<TargetName>,
     pub desc: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
-    // An image id, not a [`SCellId`]
-    pub image_id: String,
+    // A Docker image id, not a [`SCellId`]
+    pub docker_image_id: String,
 }
 
 impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
@@ -50,10 +50,10 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
         let desc = value
             .labels
             .get(METADATA_DESCRIPTION_KEY)
-            .map(|s| decode_object_from_label(s))
+            .map(|s| decode_object_from_metadata(s))
             .transpose()?;
 
-        let image_id = value.id;
+        let docker_image_id = value.id;
 
         let id = image_name.parse()?;
 
@@ -78,7 +78,7 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
             target,
             desc,
             created_at,
-            image_id,
+            docker_image_id,
         })
     }
 }

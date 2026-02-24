@@ -16,7 +16,7 @@ use super::{
     },
 };
 use crate::scell::{
-    METADATA_DESCRIPTION_KEY, encode_object_to_label,
+    METADATA_DESCRIPTION_KEY, encode_object_to_metadata,
     link::RootNode,
     types::target::{env::EnvStmt, hang::HangStmt},
 };
@@ -251,7 +251,7 @@ fn prepare_metadata_stmt(
             ),
             (
                 METADATA_DESCRIPTION_KEY.to_string(),
-                encode_object_to_label(inner)?,
+                encode_object_to_metadata(inner)?,
             ),
         ]
         .into_iter()

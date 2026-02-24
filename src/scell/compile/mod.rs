@@ -12,7 +12,7 @@ use color_eyre::eyre::{Context, ContextCompat};
 use crate::{
     error::{OptionUserError, Report, UserError, WrapUserError},
     scell::{
-        Link, SCell,
+        Link, SCell, SCellContainer,
         compile::errors::{
             CircularTargets, CopySrcNotFound, DirNotFoundFromStmt, DockerfileNotFound,
             FileLoadFromStmt, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
@@ -88,11 +88,11 @@ impl SCell {
         );
 
         let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
-        Ok(Self {
-            image,
+        let container = SCellContainer {
             shell: shell.context("'shell' cannot be 'None'")?,
             config,
-        })
+        };
+        Ok(Self { image, container })
     }
 
     fn compile_inner(
