@@ -1,10 +1,11 @@
 use itertools::Itertools;
 use ratatui::{
-    layout::{Alignment, Constraint, Layout},
+    layout::{Alignment, Constraint, Layout, Rect, Size},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
+    widgets::{Block, Borders, List, ListItem, Paragraph, StatefulWidget, Widget},
 };
+use tui_scrollview::{ScrollView, ScrollbarVisibility};
 
 use crate::{
     cli::run::app::{App, LogType},
@@ -56,9 +57,8 @@ impl Widget for &mut App {
                 })
                 .collect::<Vec<_>>();
             let logs_len = logs.len();
-            // Calculate how many log items can fit in the available height
-            let available_height = inner.height as usize;
-            let skip_amount = logs_len.saturating_sub(available_height);
+            let logs_height = u16::try_from(logs_len).unwrap_or(u16::MAX);
+            let skip_amount = logs_len.saturating_sub(logs_height.into());
 
             let logs = logs
                 .iter()
@@ -85,7 +85,12 @@ impl Widget for &mut App {
                 })
                 .skip(skip_amount);
 
-            List::new(logs).render(inner, buf);
+            let mut scroll_view = ScrollView::new(Size::new(inner.width, logs_height))
+                .vertical_scrollbar_visibility(ScrollbarVisibility::Automatic)
+                .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
+
+            scroll_view.render_widget(List::new(logs), Rect::new(0, 0, inner.width, logs_height));
+            scroll_view.render(inner, buf, &mut state.scroll_view_state);
         } else if let App::RunningPty(state) = self {
             let block = block
                 .title(format!("'Shell-Cell' {}", state.scell_name))
