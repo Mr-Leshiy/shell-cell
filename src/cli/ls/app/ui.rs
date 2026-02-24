@@ -11,6 +11,7 @@ use super::AppInner;
 use crate::buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo};
 
 const CONTAINERS_TITLE: &str = "Containers";
+const IMAGES_TITLE: &str = "Images";
 
 impl Widget for &mut AppInner<SCellContainerInfo> {
     fn render(
@@ -55,7 +56,7 @@ impl Widget for &mut AppInner<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+        let inner = render_main_block(IMAGES_TITLE, area, buf);
         match self {
             AppInner::Loading { .. } => render_loading(inner, buf),
             AppInner::Ls(ls_state) => {
