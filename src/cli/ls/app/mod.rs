@@ -1,9 +1,9 @@
 mod confirm_remove;
 mod error_window;
 mod help_window;
+mod inspect;
 mod ls;
 mod removing;
-mod show_definition;
 mod stopping;
 mod ui;
 
@@ -20,8 +20,8 @@ use crate::{
         MIN_FPS,
         ls::app::{
             confirm_remove::ConfirmRemoveState, error_window::ErrorWindowState,
-            help_window::HelpWindowState, ls::LsState, removing::RemovingState,
-            show_definition::InspectState, stopping::StoppingState,
+            help_window::HelpWindowState, inspect::InspectState, ls::LsState,
+            removing::RemovingState, stopping::StoppingState,
         },
     },
 };
@@ -230,7 +230,7 @@ impl AppInner<SCellContainerInfo> {
             KeyCode::Char('i') => {
                 match self {
                     Self::Ls(ls_state) => {
-                        self = Self::Inspect(ls_state.show_definition()?);
+                        self = Self::Inspect(ls_state.inspect()?);
                     },
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
@@ -332,7 +332,7 @@ impl AppInner<SCellImageInfo> {
             KeyCode::Char('i') => {
                 match self {
                     Self::Ls(ls_state) => {
-                        self = Self::Inspect(ls_state.show_definition()?);
+                        self = Self::Inspect(ls_state.inspect()?);
                     },
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},

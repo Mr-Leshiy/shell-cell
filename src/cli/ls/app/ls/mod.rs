@@ -6,7 +6,7 @@ use ratatui::widgets::TableState;
 use crate::{
     buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::ls::app::{
-        confirm_remove::ConfirmRemoveState, show_definition::InspectState, stopping::StoppingState,
+        confirm_remove::ConfirmRemoveState, inspect::InspectState, stopping::StoppingState,
     },
 };
 
@@ -76,8 +76,8 @@ impl<Item: Clone> LsState<Item> {
 }
 
 impl LsState<SCellContainerInfo> {
-    /// Returns a [`ShowDefinitionState`] for the currently selected container.
-    pub fn show_definition(self) -> color_eyre::Result<InspectState<SCellContainerInfo>> {
+    /// Returns a [`InspectState`] for the currently selected container.
+    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellContainerInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -133,8 +133,8 @@ impl LsState<SCellContainerInfo> {
 }
 
 impl LsState<SCellImageInfo> {
-    /// Returns a [`ShowDefinitionState`] for the currently selected image.
-    pub fn show_definition(self) -> color_eyre::Result<InspectState<SCellImageInfo>> {
+    /// Returns a [`InspectState`] for the currently selected image.
+    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellImageInfo>> {
         let selected = self
             .table_state
             .selected()

@@ -20,6 +20,7 @@ impl Widget for &RemovingState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
         render_removing(&self.for_removal.name, area, buf);
     }
 }
@@ -32,6 +33,7 @@ impl Widget for &RemovingState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
         render_removing(&self.for_removal.name, area, buf);
     }
 }
