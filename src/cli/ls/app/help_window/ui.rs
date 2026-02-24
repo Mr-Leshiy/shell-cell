@@ -85,7 +85,7 @@ impl Widget for &HelpWindowState<SCellContainerInfo> {
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(
-                    "Inspect container defintion",
+                    "Inspect container definition",
                     Style::default().fg(Color::White),
                 ),
             ]),
@@ -215,7 +215,7 @@ impl Widget for &HelpWindowState<SCellImageInfo> {
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 ),
-                Span::styled("Inspect image defintion", Style::default().fg(Color::White)),
+                Span::styled("Inspect image definition", Style::default().fg(Color::White)),
             ]),
             Line::from(vec![
                 Span::styled(

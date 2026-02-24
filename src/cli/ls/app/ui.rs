@@ -202,7 +202,7 @@ fn render_images_help_overlay(
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled("Show image defintion", Style::default().fg(Color::White)),
+            Span::styled("Show image definition", Style::default().fg(Color::White)),
         ]),
         Line::from(vec![
             Span::styled(
