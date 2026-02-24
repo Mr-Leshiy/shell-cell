@@ -11,6 +11,7 @@ use crate::{
 };
 
 impl Widget for &ConfirmRemoveState<SCellContainerInfo> {
+    #[allow(clippy::indexing_slicing)]
     fn render(
         self,
         area: Rect,
@@ -97,6 +98,7 @@ impl Widget for &ConfirmRemoveState<SCellContainerInfo> {
 }
 
 impl Widget for &ConfirmRemoveState<SCellImageInfo> {
+    #[allow(clippy::indexing_slicing)]
     fn render(
         self,
         area: Rect,

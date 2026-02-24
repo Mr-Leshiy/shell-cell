@@ -11,6 +11,7 @@ use crate::{
 };
 
 impl Widget for &HelpWindowState<SCellContainerInfo> {
+    #[allow(clippy::indexing_slicing, clippy::too_many_lines)]
     fn render(
         self,
         area: Rect,
@@ -141,6 +142,7 @@ impl Widget for &HelpWindowState<SCellContainerInfo> {
 }
 
 impl Widget for &HelpWindowState<SCellImageInfo> {
+    #[allow(clippy::indexing_slicing, clippy::too_many_lines)]
     fn render(
         self,
         area: Rect,

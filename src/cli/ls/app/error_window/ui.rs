@@ -19,7 +19,7 @@ impl Widget for &ErrorWindowState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_error_window(&self.message, area, buf)
+        render_error_window(&self.message, area, buf);
     }
 }
 
@@ -32,7 +32,7 @@ impl Widget for &ErrorWindowState<SCellImageInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_error_window(&self.message, area, buf)
+        render_error_window(&self.message, area, buf);
     }
 }
 

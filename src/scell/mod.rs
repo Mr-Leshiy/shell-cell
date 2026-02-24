@@ -125,6 +125,7 @@ mod tests {
         );
         yaml_serde::Value::Mapping(m)
     } ; "mapping")]
+    #[allow(clippy::needless_pass_by_value)]
     fn round_trip(value: yaml_serde::Value) {
         let encoded = encode_object_to_label(&value).expect("encode should not fail");
         let decoded: yaml_serde::Value =

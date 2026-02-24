@@ -21,7 +21,7 @@ impl Widget for &InspectState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(self.definition.as_ref().map(|v| v.as_str()), area, buf);
+        render_inspect_window(self.definition.as_deref(), area, buf);
     }
 }
 
@@ -34,7 +34,7 @@ impl Widget for &InspectState<SCellImageInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(self.definition.as_ref().map(|v| v.as_str()), area, buf);
+        render_inspect_window(self.definition.as_deref(), area, buf);
     }
 }
 
@@ -60,7 +60,7 @@ fn render_inspect_window(
 
     let overlay_area = horizontal[1];
 
-    let content = definition.unwrap_or_else(|| "No definition available");
+    let content = definition.unwrap_or("No definition available");
 
     let lines: Vec<Line> = content
         .lines()
