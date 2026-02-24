@@ -18,6 +18,8 @@ impl Widget for &HelpWindowState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
+
         let vertical = Layout::vertical([
             Constraint::Percentage(15),
             Constraint::Percentage(70),
@@ -146,6 +148,8 @@ impl Widget for &HelpWindowState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
+
         let vertical = Layout::vertical([
             Constraint::Percentage(15),
             Constraint::Percentage(70),

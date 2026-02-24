@@ -20,6 +20,7 @@ impl Widget for &StoppingState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
         render_stopping(&self.for_stop.name, area, buf);
     }
 }
@@ -32,6 +33,7 @@ impl Widget for &StoppingState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
         render_stopping(&self.for_stop.name, area, buf);
     }
 }

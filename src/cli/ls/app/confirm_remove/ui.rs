@@ -18,6 +18,8 @@ impl Widget for &ConfirmRemoveState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
+
         let vertical = Layout::vertical([
             Constraint::Percentage(30),
             Constraint::Percentage(40),
@@ -102,6 +104,8 @@ impl Widget for &ConfirmRemoveState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
+        self.ls_state.render(area, buf);
+
         let vertical = Layout::vertical([
             Constraint::Percentage(30),
             Constraint::Percentage(40),

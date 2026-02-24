@@ -26,15 +26,12 @@ impl Widget for &AppInner<SCellContainerInfo> {
             AppInner::Loading { .. } => render_loading(inner, buf),
             AppInner::Ls(ls_state) => ls_state.render(inner, buf),
             AppInner::HelpWindow(state) => {
-                state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Stopping(state) => {
-                state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::ConfirmRemove(state) => {
-                state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Removing(state) => {
@@ -69,15 +66,12 @@ impl Widget for &AppInner<SCellImageInfo> {
                 ls_state.render(inner, buf);
             },
             AppInner::HelpWindow(state) => {
-                state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Stopping(state) => {
-                state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::ConfirmRemove(state) => {
-                state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Removing(state) => {
