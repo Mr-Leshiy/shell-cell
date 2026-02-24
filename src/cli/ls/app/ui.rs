@@ -21,39 +21,31 @@ impl Widget for &AppInner<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
+        let inner = render_main_block(CONTAINERS_TITLE, area, buf);
         match self {
-            AppInner::Loading { .. } => render_loading(CONTAINERS_TITLE, area, buf),
-            AppInner::Ls(ls_state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
-                ls_state.render(inner, buf)
-            },
+            AppInner::Loading { .. } => render_loading(inner, buf),
+            AppInner::Ls(ls_state) => ls_state.render(inner, buf),
             AppInner::Help(ls_state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 ls_state.render(inner, buf);
                 render_containers_help_overlay(area, buf);
             },
             AppInner::Stopping(state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::ConfirmRemove(state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Removing(state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::ErrorWindow(state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Inspect(state) => {
-                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
@@ -70,39 +62,33 @@ impl Widget for &AppInner<SCellImageInfo> {
     ) where
         Self: Sized,
     {
+        let inner = render_main_block(CONTAINERS_TITLE, area, buf);
         match self {
-            AppInner::Loading { .. } => render_loading(IMAGES_TITLE, area, buf),
+            AppInner::Loading { .. } => render_loading(inner, buf),
             AppInner::Ls(ls_state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 ls_state.render(inner, buf);
             },
             AppInner::Help(ls_state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 ls_state.render(inner, buf);
                 render_images_help_overlay(area, buf);
             },
             AppInner::Stopping(state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::ConfirmRemove(state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Removing(state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::ErrorWindow(state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
             AppInner::Inspect(state) => {
-                let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
                 state.render(inner, buf);
             },
@@ -113,18 +99,15 @@ impl Widget for &AppInner<SCellImageInfo> {
 
 #[allow(clippy::indexing_slicing)]
 fn render_loading(
-    item_title: impl Display,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
-    let inner = render_main_block(item_title, area, buf);
-
     let vertical = Layout::vertical([
         Constraint::Percentage(40),
         Constraint::Length(3),
         Constraint::Percentage(40),
     ])
-    .split(inner);
+    .split(area);
 
     let horizontal = Layout::horizontal([
         Constraint::Percentage(30),
