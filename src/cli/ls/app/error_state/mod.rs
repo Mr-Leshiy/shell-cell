@@ -1,3 +1,5 @@
+mod ui;
+
 use crate::cli::ls::app::ls::LsState;
 
 /// Holds the state when a background operation (stop/remove) has failed.
