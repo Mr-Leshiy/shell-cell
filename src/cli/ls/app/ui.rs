@@ -40,7 +40,7 @@ impl Widget for &AppInner<SCellContainerInfo> {
             AppInner::ConfirmRemove(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                render_container_confirm_remove(&state.selected_to_remove, area, buf);
+                state.render(inner, buf);
             },
             AppInner::Removing(state) => {
                 let inner = render_main_block(CONTAINERS_TITLE, area, buf);
@@ -89,7 +89,7 @@ impl Widget for &AppInner<SCellImageInfo> {
             AppInner::ConfirmRemove(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
                 state.ls_state.render(inner, buf);
-                render_image_confirm_remove(&state.selected_to_remove, area, buf);
+                state.render(inner, buf);
             },
             AppInner::Removing(state) => {
                 let inner = render_main_block(IMAGES_TITLE, area, buf);
@@ -212,172 +212,6 @@ fn render_stopping(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Yellow)),
-        )
-        .centered();
-
-    paragraph.render(horizontal[1], buf);
-}
-
-#[allow(clippy::indexing_slicing)]
-fn render_container_confirm_remove(
-    container: &SCellContainerInfo,
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let block = main_block(CONTAINERS_TITLE);
-    let inner = block.inner(area);
-    Widget::render(block, area, buf);
-
-    let vertical = Layout::vertical([
-        Constraint::Percentage(30),
-        Constraint::Percentage(40),
-        Constraint::Percentage(30),
-    ])
-    .split(inner);
-
-    let horizontal = Layout::horizontal([
-        Constraint::Percentage(15),
-        Constraint::Percentage(70),
-        Constraint::Percentage(15),
-    ])
-    .split(vertical[1]);
-
-    let confirm_text = vec![
-        Line::from(vec![Span::styled(
-            "⚠ WARNING",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-        )]),
-        Line::from(""),
-        Line::from(Span::styled(
-            format!("Remove container '{}'?", container.name),
-            Style::default()
-                .fg(Color::White)
-                .add_modifier(Modifier::BOLD),
-        )),
-        Line::from(""),
-        Line::from(Span::styled(
-            "This will permanently delete:",
-            Style::default().fg(Color::Yellow),
-        )),
-        Line::from(Span::styled(
-            "  • The container and all its state",
-            Style::default().fg(Color::Gray),
-        )),
-        Line::from(Span::styled(
-            "  • The associated image",
-            Style::default().fg(Color::Gray),
-        )),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("Press ", Style::default().fg(Color::Gray)),
-            Span::styled(
-                "y",
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" to confirm, ", Style::default().fg(Color::Gray)),
-            Span::styled(
-                "n",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" or ", Style::default().fg(Color::Gray)),
-            Span::styled(
-                "Esc",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" to cancel", Style::default().fg(Color::Gray)),
-        ]),
-    ];
-
-    Widget::render(Clear, horizontal[1], buf);
-
-    let paragraph = Paragraph::new(confirm_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red)),
-        )
-        .centered();
-
-    paragraph.render(horizontal[1], buf);
-}
-
-#[allow(clippy::indexing_slicing)]
-fn render_image_confirm_remove(
-    image: &SCellImageInfo,
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let block = main_block(IMAGES_TITLE);
-    let inner = block.inner(area);
-    Widget::render(block, area, buf);
-
-    let vertical = Layout::vertical([
-        Constraint::Percentage(30),
-        Constraint::Percentage(40),
-        Constraint::Percentage(30),
-    ])
-    .split(inner);
-
-    let horizontal = Layout::horizontal([
-        Constraint::Percentage(15),
-        Constraint::Percentage(70),
-        Constraint::Percentage(15),
-    ])
-    .split(vertical[1]);
-
-    let confirm_text = vec![
-        Line::from(vec![Span::styled(
-            "⚠ WARNING",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-        )]),
-        Line::from(""),
-        Line::from(Span::styled(
-            format!("Remove image '{}'?", image.name),
-            Style::default()
-                .fg(Color::White)
-                .add_modifier(Modifier::BOLD),
-        )),
-        Line::from(""),
-        Line::from(Span::styled(
-            "This will permanently delete:",
-            Style::default().fg(Color::Yellow),
-        )),
-        Line::from(Span::styled(
-            "  • The image and all its state",
-            Style::default().fg(Color::Gray),
-        )),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("Press ", Style::default().fg(Color::Gray)),
-            Span::styled(
-                "y",
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" to confirm, ", Style::default().fg(Color::Gray)),
-            Span::styled(
-                "n",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" or ", Style::default().fg(Color::Gray)),
-            Span::styled(
-                "Esc",
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(" to cancel", Style::default().fg(Color::Gray)),
-        ]),
-    ];
-
-    Widget::render(Clear, horizontal[1], buf);
-
-    let paragraph = Paragraph::new(confirm_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red)),
         )
         .centered();
 
