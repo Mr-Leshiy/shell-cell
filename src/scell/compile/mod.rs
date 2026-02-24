@@ -18,6 +18,7 @@ use crate::{
             FileLoadFromStmt, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
             MountHostDirNotFound,
         },
+        image::SCellImage,
         link::RootNode,
         types::{
             SCellFile,
@@ -86,12 +87,12 @@ impl SCell {
             "It must be at least two links in the target chain"
         );
 
-        Ok(Self(super::SCellInner {
-            links,
+        let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
+        Ok(Self {
+            image,
             shell: shell.context("'shell' cannot be 'None'")?,
-            hang: hang.context("'hang' cannot be 'None'")?,
             config,
-        }))
+        })
     }
 
     fn compile_inner(

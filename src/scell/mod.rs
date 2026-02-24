@@ -21,7 +21,6 @@ use crate::scell::{
     name::SCellId,
     types::target::{
         config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
-        hang::HangStmt,
         shell::ShellStmt,
     },
 };
@@ -29,37 +28,30 @@ use crate::scell::{
 pub const NAME_PREFIX: &str = "scell-";
 pub const METADATA_TARGET_KEY: &str = "scell-target";
 pub const METADATA_LOCATION_KEY: &str = "scell-location";
-pub const METADATA_DEFINITION_KEY: &str = "scell-definition";
+pub const METADATA_DESCRIPTION_KEY: &str = "scell-description";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SCell(SCellInner);
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
-struct SCellInner {
-    links: Vec<Link>,
+pub struct SCell {
+    image: SCellImage,
     shell: ShellStmt,
-    hang: HangStmt,
-    #[serde(skip_serializing_if = "Option::is_none")]
     config: Option<ConfigStmt>,
 }
 
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
-        &self.0.shell.0
+        &self.shell.0
     }
 
     pub fn mounts(&self) -> MountsStmt {
-        self.0
-            .config
+        self.config
             .as_ref()
             .map(|c| c.mounts.clone())
             .unwrap_or_default()
     }
 
     pub fn ports(&self) -> PortsStmt {
-        self.0
-            .config
+        self.config
             .as_ref()
             .map(|c| c.ports.clone())
             .unwrap_or_default()
@@ -67,22 +59,22 @@ impl SCell {
 
     pub fn image_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
-            self.0.hash(hasher);
-            self.image()?.dump_to_string()?.hash(hasher);
+            self.image.hash(hasher)?;
             Ok(())
         })
     }
 
     pub fn container_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
-            self.0.hash(hasher);
-            self.image()?.dump_to_string()?.hash(hasher);
+            self.image.hash(hasher)?;
+            self.config.hash(hasher);
+            self.shell.hash(hasher);
             Ok(())
         })
     }
 
-    pub fn image(&self) -> color_eyre::Result<SCellImage> {
-        SCellImage::new(self)
+    pub fn image(&self) -> &SCellImage {
+        &self.image
     }
 }
 

@@ -54,8 +54,7 @@ impl BuildKitD {
         scell: &SCell,
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<ImageId> {
-        let image = scell.image()?;
-        let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
+        let (tar, dockerfile_path) = scell.image().image_tar_artifact_bytes()?;
         let scell_name = scell.image_id()?.to_string();
 
         let image_id = build_image(

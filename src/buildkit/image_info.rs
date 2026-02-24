@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
 use crate::scell::{
-    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
+    METADATA_DESCRIPTION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
     decode_object_from_label, name::SCellId, types::name::TargetName,
 };
 
@@ -15,7 +15,7 @@ pub struct SCellImageInfo {
     pub in_use: bool,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
-    pub definition: Option<yaml_serde::Value>,
+    pub desc: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
     // An image id, not a [`SCellId`]
     pub image_id: String,
@@ -47,9 +47,9 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         let location = value.labels.get(METADATA_LOCATION_KEY).map(PathBuf::from);
 
-        let definition = value
+        let desc = value
             .labels
-            .get(METADATA_DEFINITION_KEY)
+            .get(METADATA_DESCRIPTION_KEY)
             .map(|s| decode_object_from_label(s))
             .transpose()?;
 
@@ -76,7 +76,7 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
             in_use,
             location,
             target,
-            definition,
+            desc,
             created_at,
             image_id,
         })
