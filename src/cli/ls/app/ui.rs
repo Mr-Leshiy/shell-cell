@@ -13,7 +13,7 @@ use crate::buildkit::{container_info::SCellContainerInfo, image_info::SCellImage
 const IMAGES_TITLE: &str = "Images";
 const CONTAINERS_TITLE: &str = "Containers";
 
-impl Widget for &AppInner<SCellContainerInfo> {
+impl Widget for &mut AppInner<SCellContainerInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -48,7 +48,7 @@ impl Widget for &AppInner<SCellContainerInfo> {
     }
 }
 
-impl Widget for &AppInner<SCellImageInfo> {
+impl Widget for &mut AppInner<SCellImageInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,

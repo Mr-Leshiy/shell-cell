@@ -12,7 +12,7 @@ use crate::{
     cli::ls::app::inspect::InspectState,
 };
 
-impl Widget for &InspectState<SCellContainerInfo> {
+impl Widget for &mut InspectState<SCellContainerInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -21,11 +21,16 @@ impl Widget for &InspectState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(self.definition.as_deref(), area, buf);
+        render_inspect_window(
+            self.definition.as_deref(),
+            &mut self.scroll_state,
+            area,
+            buf,
+        );
     }
 }
 
-impl Widget for &InspectState<SCellImageInfo> {
+impl Widget for &mut InspectState<SCellImageInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -34,13 +39,19 @@ impl Widget for &InspectState<SCellImageInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(self.definition.as_deref(), area, buf);
+        render_inspect_window(
+            self.definition.as_deref(),
+            &mut self.scroll_state,
+            area,
+            buf,
+        );
     }
 }
 
 #[allow(clippy::indexing_slicing)]
 fn render_inspect_window(
     definition: Option<&str>,
+    state: &mut ScrollViewState,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -87,7 +98,6 @@ fn render_inspect_window(
     let content_area = inner_split[0];
     let scrollbar_area = inner_split[1];
 
-    let mut state = ScrollViewState::new();
     let mut scroll_view = ScrollView::new(content_area.as_size());
 
     let scroll_bar_lengths = ScrollLengths {
@@ -100,7 +110,7 @@ fn render_inspect_window(
         paragraph,
         Rect::new(0, 0, content_area.width, content_area.height),
     );
-    scroll_view.render(content_area, buf, &mut state);
+    scroll_view.render(content_area, buf, state);
     if scroll_bar_lengths.content_len > scroll_bar_lengths.viewport_len {
         let scroll_bar = ScrollBar::vertical(scroll_bar_lengths)
             .arrows(ScrollBarArrows::Both)
