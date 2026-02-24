@@ -33,8 +33,7 @@ pub struct SCellImage {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
-struct SCellImageInner {
-    #[serde(rename = "targets-chain")]
+pub struct SCellImageInner {
     chain: Vec<Link>,
     hang: HangStmt,
 }
