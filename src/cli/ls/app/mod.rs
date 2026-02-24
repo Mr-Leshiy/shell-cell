@@ -1,5 +1,6 @@
 mod confirm_remove;
 mod error_window;
+mod help_window;
 mod ls;
 mod removing;
 mod show_definition;
@@ -18,8 +19,9 @@ use crate::{
     cli::{
         MIN_FPS,
         ls::app::{
-            confirm_remove::ConfirmRemoveState, error_window::ErrorWindowState, ls::LsState,
-            removing::RemovingState, show_definition::InspectState, stopping::StoppingState,
+            confirm_remove::ConfirmRemoveState, error_window::ErrorWindowState,
+            help_window::HelpWindowState, ls::LsState, removing::RemovingState,
+            show_definition::InspectState, stopping::StoppingState,
         },
     },
 };
@@ -55,7 +57,7 @@ pub enum AppInner<Item> {
     /// Displaying the interactive item table.
     Ls(LsState<Item>),
     /// Displaying the help overlay over the item table.
-    Help(LsState<Item>),
+    HelpWindow(HelpWindowState<Item>),
     /// Stopping a selected item and refreshing the list.
     Stopping(StoppingState<Item>),
     /// Confirming removal of a selected item.
@@ -220,8 +222,8 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Char('h') => {
                 match self {
-                    Self::Ls(ls_state) => self = Self::Help(ls_state),
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Ls(ls_state) => self = Self::HelpWindow(HelpWindowState { ls_state }),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
                     _ => {},
                 }
             },
@@ -266,7 +268,7 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Esc => {
                 match self {
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
                     Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
@@ -322,8 +324,8 @@ impl AppInner<SCellImageInfo> {
             },
             KeyCode::Char('h') => {
                 match self {
-                    Self::Ls(ls_state) => self = Self::Help(ls_state),
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::Ls(ls_state) => self = Self::HelpWindow(HelpWindowState { ls_state }),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
                     _ => {},
                 }
             },
@@ -363,7 +365,7 @@ impl AppInner<SCellImageInfo> {
             },
             KeyCode::Esc => {
                 match self {
-                    Self::Help(ls_state) => self = Self::Ls(ls_state),
+                    Self::HelpWindow(state) => self = Self::Ls(state.ls_state),
                     Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
