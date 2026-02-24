@@ -1,3 +1,5 @@
+mod ui;
+
 use color_eyre::eyre::ContextCompat;
 use ratatui::widgets::TableState;
 

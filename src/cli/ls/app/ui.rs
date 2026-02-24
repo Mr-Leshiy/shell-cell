@@ -4,10 +4,10 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, StatefulWidget, Table, Widget, Wrap},
+    widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
 
-use super::{AppInner, LsState};
+use super::AppInner;
 use crate::buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo};
 
 const IMAGES_TITLE: &str = "Images";
@@ -23,30 +23,39 @@ impl Widget for &AppInner<SCellContainerInfo> {
     {
         match self {
             AppInner::Loading { .. } => render_loading(CONTAINERS_TITLE, area, buf),
-            AppInner::Ls(ls_state) => render_ls_containers(ls_state, area, buf),
+            AppInner::Ls(ls_state) => {
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                ls_state.render(inner, buf)
+            },
             AppInner::Help(ls_state) => {
-                render_ls_containers(ls_state, area, buf);
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                ls_state.render(inner, buf);
                 render_containers_help_overlay(area, buf);
             },
             AppInner::Stopping(state) => {
-                render_ls_containers(&state.ls_state, area, buf);
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_stopping(CONTAINERS_TITLE, &state.for_stop.name, area, buf);
             },
             AppInner::ConfirmRemove(state) => {
-                render_ls_containers(&state.ls_state, area, buf);
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_container_confirm_remove(&state.selected_to_remove, area, buf);
             },
             AppInner::Removing(state) => {
-                render_ls_containers(&state.ls_state, area, buf);
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_removing(CONTAINERS_TITLE, &state.for_removal.name, area, buf);
             },
             AppInner::Error(state) => {
-                render_ls_containers(&state.ls_state, area, buf);
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_error_overlay(&state.message, area, buf);
             },
             AppInner::Inspect(state) => {
-                render_ls_containers(&state.ls_state, area, buf);
-                state.render(area, buf);
+                let inner = render_main_block(CONTAINERS_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
+                state.render(inner, buf);
             },
             AppInner::Exit => {},
         }
@@ -63,30 +72,39 @@ impl Widget for &AppInner<SCellImageInfo> {
     {
         match self {
             AppInner::Loading { .. } => render_loading(IMAGES_TITLE, area, buf),
-            AppInner::Ls(ls_state) => render_ls_images(ls_state, area, buf),
+            AppInner::Ls(ls_state) => {
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                ls_state.render(inner, buf);
+            },
             AppInner::Help(ls_state) => {
-                render_ls_images(ls_state, area, buf);
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                ls_state.render(inner, buf);
                 render_images_help_overlay(area, buf);
             },
             AppInner::Stopping(state) => {
-                render_ls_images(&state.ls_state, area, buf);
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_stopping(IMAGES_TITLE, &state.for_stop.name, area, buf);
             },
             AppInner::ConfirmRemove(state) => {
-                render_ls_images(&state.ls_state, area, buf);
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_image_confirm_remove(&state.selected_to_remove, area, buf);
             },
             AppInner::Removing(state) => {
-                render_ls_images(&state.ls_state, area, buf);
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_removing(IMAGES_TITLE, &state.for_removal.name, area, buf);
             },
             AppInner::Error(state) => {
-                render_ls_images(&state.ls_state, area, buf);
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
                 render_error_overlay(&state.message, area, buf);
             },
             AppInner::Inspect(state) => {
-                render_ls_images(&state.ls_state, area, buf);
-                state.render(area, buf);
+                let inner = render_main_block(IMAGES_TITLE, area, buf);
+                state.ls_state.render(inner, buf);
+                state.render(inner, buf);
             },
             AppInner::Exit => {},
         }
@@ -422,148 +440,6 @@ fn render_removing(
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_ls_containers(
-    state: &LsState<SCellContainerInfo>,
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let block = main_block(CONTAINERS_TITLE);
-    let inner = block.inner(area);
-    Widget::render(block, area, buf);
-
-    let header_cells = [
-        "Name",
-        "Target",
-        "Blueprint Location",
-        "Created At",
-        "Status",
-    ]
-    .iter()
-    .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
-    let header = Row::new(header_cells)
-        .style(Style::default().add_modifier(Modifier::BOLD))
-        .height(1);
-
-    let rows = state.items.iter().map(|c| {
-        let cells = vec![
-            Cell::from(if c.orphan {
-                format!("{} (orphan)", c.name)
-            } else {
-                c.name.to_string()
-            }),
-            Cell::from(
-                c.target
-                    .as_ref()
-                    .map_or_else(|| "<empty>".to_string(), ToString::to_string),
-            ),
-            Cell::from(
-                c.location
-                    .as_ref()
-                    .map_or_else(|| "<empty>".to_string(), |l| l.display().to_string()),
-            ),
-            Cell::from(c.created_at.map_or_else(
-                || "<empty>".to_string(),
-                |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
-            )),
-            Cell::from(c.status.to_string()),
-        ];
-        Row::new(cells).height(1)
-    });
-
-    let widths = [
-        Constraint::Percentage(25),
-        Constraint::Percentage(5),
-        Constraint::Percentage(40),
-        Constraint::Percentage(20),
-        Constraint::Percentage(10),
-    ];
-
-    let table = Table::new(rows, widths)
-        .header(header)
-        .row_highlight_style(
-            Style::default()
-                .bg(Color::DarkGray)
-                .add_modifier(Modifier::BOLD),
-        )
-        .highlight_symbol(">> ");
-
-    StatefulWidget::render(table, inner, buf, &mut state.table_state.clone());
-}
-
-#[allow(clippy::indexing_slicing)]
-fn render_ls_images(
-    state: &LsState<SCellImageInfo>,
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let block = main_block(IMAGES_TITLE);
-    let inner = block.inner(area);
-    Widget::render(block, area, buf);
-
-    let header_cells = [
-        "Name",
-        "Target",
-        "Blueprint Location",
-        "Created At",
-        "Status",
-    ]
-    .iter()
-    .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
-    let header = Row::new(header_cells)
-        .style(Style::default().add_modifier(Modifier::BOLD))
-        .height(1);
-
-    let rows = state.items.iter().map(|c| {
-        let cells = vec![
-            Cell::from(if c.orphan {
-                format!("{} (orphan)", c.name)
-            } else {
-                c.name.to_string()
-            }),
-            Cell::from(
-                c.target
-                    .as_ref()
-                    .map_or_else(|| "<empty>".to_string(), ToString::to_string),
-            ),
-            Cell::from(
-                c.location
-                    .as_ref()
-                    .map_or_else(|| "<empty>".to_string(), |l| l.display().to_string()),
-            ),
-            Cell::from(c.created_at.map_or_else(
-                || "<empty>".to_string(),
-                |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
-            )),
-            Cell::from(if c.in_use {
-                "in use".to_string()
-            } else {
-                String::new()
-            }),
-        ];
-        Row::new(cells).height(1)
-    });
-
-    let widths = [
-        Constraint::Percentage(25),
-        Constraint::Percentage(5),
-        Constraint::Percentage(40),
-        Constraint::Percentage(20),
-        Constraint::Percentage(10),
-    ];
-
-    let table = Table::new(rows, widths)
-        .header(header)
-        .row_highlight_style(
-            Style::default()
-                .bg(Color::DarkGray)
-                .add_modifier(Modifier::BOLD),
-        )
-        .highlight_symbol(">> ");
-
-    StatefulWidget::render(table, inner, buf, &mut state.table_state.clone());
-}
-
-#[allow(clippy::indexing_slicing)]
 fn render_containers_help_overlay(
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
@@ -852,4 +728,19 @@ pub fn main_block(items_title: impl Display) -> Block<'static> {
         .title(format!("'Shell-Cell' {items_title}"))
         .title_bottom("h: Help")
         .border_style(Style::new().light_magenta())
+}
+
+fn render_main_block(
+    items_title: impl Display,
+    area: ratatui::prelude::Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) -> Rect {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(format!("'Shell-Cell' {items_title}"))
+        .title_bottom("h: Help")
+        .border_style(Style::new().light_magenta());
+    let inner = block.inner(area);
+    block.render(area, buf);
+    inner
 }
