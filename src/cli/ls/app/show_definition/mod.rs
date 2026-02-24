@@ -9,6 +9,19 @@ pub struct InspectState<Item> {
     /// The list state to restore when the overlay is dismissed.
     pub ls_state: LsState<Item>,
     /// The parsed YAML definition from the `scell-definition` label, if present.
-    pub definition: Option<String>,
-    pub scroll_state: ScrollViewState,
+    definition: Option<String>,
+    scroll_state: ScrollViewState,
+}
+
+impl<Item> InspectState<Item> {
+    pub fn new(
+        ls_state: LsState<Item>,
+        definition: Option<String>,
+    ) -> Self {
+        Self {
+            ls_state,
+            definition,
+            scroll_state: ScrollViewState::new(),
+        }
+    }
 }

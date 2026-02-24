@@ -65,7 +65,7 @@ pub enum AppInner<Item> {
     /// Displaying an error that occurred during a background operation.
     Error(ErrorState<Item>),
     /// Displaying the definition overlay for the selected item.
-    ShowDefinition(InspectState<Item>),
+    Inspect(InspectState<Item>),
     /// Terminal state — the event loop exits.
     Exit,
 }
@@ -228,9 +228,9 @@ impl AppInner<SCellContainerInfo> {
             KeyCode::Char('i') => {
                 match self {
                     Self::Ls(ls_state) => {
-                        self = Self::ShowDefinition(ls_state.show_definition()?);
+                        self = Self::Inspect(ls_state.show_definition()?);
                     },
-                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
                 }
             },
@@ -268,7 +268,7 @@ impl AppInner<SCellContainerInfo> {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
                     Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
-                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },
@@ -330,9 +330,9 @@ impl AppInner<SCellImageInfo> {
             KeyCode::Char('i') => {
                 match self {
                     Self::Ls(ls_state) => {
-                        self = Self::ShowDefinition(ls_state.show_definition()?);
+                        self = Self::Inspect(ls_state.show_definition()?);
                     },
-                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
                 }
             },
@@ -365,7 +365,7 @@ impl AppInner<SCellImageInfo> {
                 match self {
                     Self::Help(ls_state) => self = Self::Ls(ls_state),
                     Self::Error(error_state) => self = Self::Ls(error_state.ls_state),
-                    Self::ShowDefinition(state) => self = Self::Ls(state.ls_state),
+                    Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
                         self = Self::Ls(confirm_state.cancel());
                     },

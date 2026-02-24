@@ -90,10 +90,7 @@ impl LsState<SCellContainerInfo> {
             .map(yaml_serde::to_string)
             .transpose()?
             .clone();
-        Ok(InspectState {
-            ls_state: self,
-            definition,
-        })
+        Ok(InspectState::new(self, definition))
     }
 
     /// Initiates stopping of the currently selected container.
@@ -150,9 +147,6 @@ impl LsState<SCellImageInfo> {
             .map(yaml_serde::to_string)
             .transpose()?
             .clone();
-        Ok(InspectState {
-            ls_state: self,
-            definition,
-        })
+        Ok(InspectState::new(self, definition))
     }
 }

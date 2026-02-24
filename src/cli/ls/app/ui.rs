@@ -44,7 +44,7 @@ impl Widget for &AppInner<SCellContainerInfo> {
                 render_ls_containers(&state.ls_state, area, buf);
                 render_error_overlay(&state.message, area, buf);
             },
-            AppInner::ShowDefinition(state) => {
+            AppInner::Inspect(state) => {
                 render_ls_containers(&state.ls_state, area, buf);
                 state.render(area, buf);
             },
@@ -84,7 +84,7 @@ impl Widget for &AppInner<SCellImageInfo> {
                 render_ls_images(&state.ls_state, area, buf);
                 render_error_overlay(&state.message, area, buf);
             },
-            AppInner::ShowDefinition(state) => {
+            AppInner::Inspect(state) => {
                 render_ls_images(&state.ls_state, area, buf);
                 state.render(area, buf);
             },
