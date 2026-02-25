@@ -1,6 +1,6 @@
 use ratatui::{
-    layout::{Constraint, HorizontalAlignment, Layout,  Rect, Size},
-    style::{Color, Style},
+    layout::{Constraint, HorizontalAlignment, Layout, Rect, Size},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Widget},
 };
@@ -12,6 +12,7 @@ use crate::{
 };
 
 impl Widget for &mut InspectState<SCellContainerInfo> {
+    #[allow(clippy::indexing_slicing)]
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -21,10 +22,29 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
     {
         self.ls_state.render(area, buf);
         let window_area = prepare_window_area(area, buf);
+
+        let vertical = Layout::vertical([
+            Constraint::Length(2),       // image_id line + horizontal separator
+            Constraint::Percentage(100), // description scroll area
+        ])
+        .split(window_area);
+
+        Paragraph::new(Line::from(vec![
+            Span::styled(
+                "Image ID: ",
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("N/A", Style::default().fg(Color::White)),
+        ]))
+        .alignment(HorizontalAlignment::Center)
+        .render(vertical[0], buf);
+
         render_description(
             self.description.as_deref(),
             &mut self.scroll_state,
-            window_area,
+            vertical[1],
             buf,
         );
     }
@@ -79,7 +99,7 @@ fn prepare_window_area(
         .border_style(Style::default().fg(Color::Cyan));
     let inner_window_area = block.inner(window_area);
     block.render(window_area, buf);
-   inner_window_area
+    inner_window_area
 }
 
 fn render_description(
