@@ -23,7 +23,7 @@ use crate::pty::callbacks::TerminalCallback;
 type Output = Pin<Box<dyn Stream<Item = Result<LogOutput, bollard::errors::Error>> + Send>>;
 type Input = Pin<Box<dyn AsyncWrite + Send>>;
 
-const SCROLLBACK_WINDOW_SIZE: usize = 1000;
+const SCROLLBACK_WINDOW: usize = 5000;
 
 pub struct Pty {
     stdin: Sender<Bytes>,
@@ -70,7 +70,7 @@ impl Pty {
         let parser = Parser::new_with_callbacks(
             24,
             80,
-            SCROLLBACK_WINDOW_SIZE,
+            SCROLLBACK_WINDOW,
             TerminalCallback(stdin.clone()),
         );
         Self {

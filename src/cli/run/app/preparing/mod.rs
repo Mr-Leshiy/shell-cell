@@ -9,7 +9,7 @@ use tui_scrollview::ScrollViewState;
 
 use crate::{cli::MIN_FPS, pty::Pty, scell::SCell};
 
-const LOGS_WINDOW: usize = 1000;
+const LOGS_WINDOW: usize = 5000;
 
 pub struct PreparingState {
     pub rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
