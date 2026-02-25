@@ -1,15 +1,20 @@
 mod ui;
 
-use std::sync::mpsc::{Receiver, RecvTimeoutError};
+use std::{
+    collections::VecDeque,
+    sync::mpsc::{Receiver, RecvTimeoutError},
+};
 
 use tui_scrollview::ScrollViewState;
 
 use crate::{cli::MIN_FPS, pty::Pty, scell::SCell};
 
+const LOGS_WINDOW: usize = 1000;
+
 pub struct PreparingState {
     pub rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
     pub logs_rx: Receiver<(String, LogType)>,
-    pub logs: Vec<(String, LogType)>,
+    pub logs: VecDeque<(String, LogType)>,
     pub scroll_view_state: ScrollViewState,
 }
 
@@ -22,10 +27,25 @@ pub enum LogType {
 }
 
 impl PreparingState {
+    pub fn new(
+        rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
+        logs_rx: Receiver<(String, LogType)>,
+    ) -> Self {
+        Self {
+            rx,
+            logs_rx,
+            logs: VecDeque::new(),
+            scroll_view_state: ScrollViewState::new(),
+        }
+    }
+
     pub fn try_update(&mut self) -> bool {
         match self.logs_rx.recv_timeout(MIN_FPS) {
             Ok(log) => {
-                self.logs.push(log);
+                if self.logs.len() == LOGS_WINDOW {
+                    self.logs.pop_front();
+                }
+                self.logs.push_back(log);
                 self.scroll_view_state.scroll_to_bottom();
                 false
             },

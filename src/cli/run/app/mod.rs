@@ -11,7 +11,6 @@ use ratatui::{
 };
 use terminput::Encoding;
 use terminput_crossterm::to_terminput;
-use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::BuildKitD,
@@ -236,12 +235,7 @@ impl App {
                 Err(e) => drop(tx.send(Err(e))),
             }
         });
-        App::Preparing(PreparingState {
-            rx,
-            logs_rx,
-            logs: Vec::new(),
-            scroll_view_state: ScrollViewState::new(),
-        })
+        App::Preparing(PreparingState::new(rx, logs_rx))
     }
 
     fn running_pty(
