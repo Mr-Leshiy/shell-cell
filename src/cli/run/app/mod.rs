@@ -19,7 +19,7 @@ use crate::{
     cli::MIN_FPS,
     error::UserError,
     pty::Pty,
-    scell::{SCell, types::name::TargetName},
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
 
 pub enum App {
@@ -202,7 +202,7 @@ impl App {
     ) -> color_eyre::Result<Self> {
         Ok(Self::RunningPty(Box::new(RunningPtyState {
             pty,
-            scell_name: scell.name()?.to_string(),
+            container_id: scell.container_id()?,
             prev_height: 0,
             prev_width: 0,
         })))
@@ -248,7 +248,7 @@ impl PreparingState {
 
 pub struct RunningPtyState {
     pty: Pty,
-    scell_name: String,
+    container_id: SCellId,
     prev_height: u16,
     prev_width: u16,
 }

@@ -1,5 +1,6 @@
 use std::{
     fmt::Write,
+    hash::{Hash, Hasher},
     path::{Path, PathBuf},
 };
 
@@ -8,24 +9,55 @@ use color_eyre::eyre::{Context, ContextCompat};
 use dockerfile_parser_rs::{Dockerfile, Instruction};
 
 use super::{
-    Link, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell, SCellInner,
+    Link,
     types::{
         name::TargetName,
         target::{build::BuildStmt, copy::CopyStmt, workspace::WorkspaceStmt},
     },
 };
 use crate::scell::{
-    METADATA_DEFINITION_KEY, encode_object_to_label,
     link::RootNode,
     types::target::{env::EnvStmt, hang::HangStmt},
 };
 
-pub struct SCellImage(Dockerfile);
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct SCellImage {
+    #[serde(flatten)]
+    inner: SCellImageInner,
+    #[serde(skip_serializing)]
+    entry_point: TargetName,
+    #[serde(skip_serializing)]
+    blueprint_location: PathBuf,
+    #[serde(skip_serializing)]
+    dockerfile: Dockerfile,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
+pub struct SCellImageInner {
+    chain: Vec<Link>,
+    hang: HangStmt,
+}
 
 impl SCellImage {
-    pub fn new(scell: &SCell) -> color_eyre::Result<Self> {
+    pub fn entry_point(&self) -> &TargetName {
+        &self.entry_point
+    }
+
+    pub fn location(&self) -> &Path {
+        &self.blueprint_location
+    }
+
+    pub fn new(
+        chain: Vec<Link>,
+        hang: HangStmt,
+    ) -> color_eyre::Result<Self> {
         let mut dockerfile_instructions = Vec::new();
-        let mut links_iter = scell.0.links.iter().rev().peekable();
+
+        let inner = SCellImageInner { chain, hang };
+        let mut links_iter = inner.chain.iter().rev().peekable();
+
+        let mut entry_point = None;
+        let mut blueprint_location = None;
         while let Some(link) = links_iter.next() {
             match link {
                 Link::Root(RootNode::Image(image)) => {
@@ -53,25 +85,38 @@ impl SCellImage {
                     // The last item
                     if links_iter.peek().is_none() {
                         // Adding metadata
-                        prepare_metadata_stmt(
-                            &mut dockerfile_instructions,
-                            name,
-                            location,
-                            &scell.0,
-                        )?;
+                        entry_point = Some(name.clone());
+                        blueprint_location = Some(location.clone());
                     }
                 },
             }
         }
         // TODO: find better solution how to hang the container
-        prepare_hang_stmt(&mut dockerfile_instructions, &scell.0.hang);
+        prepare_hang_stmt(&mut dockerfile_instructions, &inner.hang);
 
-        Ok(Self(Dockerfile::new(dockerfile_instructions)))
+        let dockerfile = Dockerfile::new(dockerfile_instructions);
+
+        Ok(Self {
+            inner,
+            entry_point: entry_point.context("'entry_point' cannot be None")?,
+            blueprint_location: blueprint_location
+                .context("'blueprint_location' cannot be None")?,
+            dockerfile,
+        })
     }
 
-    pub fn dump_to_string(&self) -> color_eyre::Result<String> {
+    pub fn hash<H: Hasher>(
+        &self,
+        hasher: &mut H,
+    ) -> color_eyre::Result<()> {
+        self.inner.hash(hasher);
+        self.dump_to_string()?.hash(hasher);
+        Ok(())
+    }
+
+    fn dump_to_string(&self) -> color_eyre::Result<String> {
         let mut dockerfile_str = String::new();
-        let mut iter = self.0.instructions.iter().peekable();
+        let mut iter = self.dockerfile.instructions.iter().peekable();
         while let Some(instruction) = iter.next() {
             if iter.peek().is_none() {
                 if let Instruction::Entrypoint(entrypoint) = instruction
@@ -96,7 +141,7 @@ impl SCellImage {
         const FILE_MODE: u32 = 0o600;
 
         let mut tar = tar::Builder::new(Vec::new());
-        for i in &self.0.instructions {
+        for i in &self.dockerfile.instructions {
             match i {
                 Instruction::Copy { sources, .. } | Instruction::Add { sources, .. } => {
                     for s in sources {
@@ -200,34 +245,6 @@ fn prepare_dockerfile(
     }
 
     dockerfile_instructions.extend(dockerfile.instructions);
-    Ok(())
-}
-
-fn prepare_metadata_stmt(
-    dockerfile_instructions: &mut Vec<Instruction>,
-    name: &TargetName,
-    location: &Path,
-    scell_inner: &SCellInner,
-) -> color_eyre::Result<()> {
-    color_eyre::eyre::ensure!(
-        location.is_absolute(),
-        "prepare_metadata_stmt, path be absolute"
-    );
-    dockerfile_instructions.push(Instruction::Label(
-        [
-            (METADATA_TARGET_KEY.to_string(), name.to_string()),
-            (
-                METADATA_LOCATION_KEY.to_string(),
-                format!("{}", location.display()),
-            ),
-            (
-                METADATA_DEFINITION_KEY.to_string(),
-                encode_object_to_label(scell_inner)?,
-            ),
-        ]
-        .into_iter()
-        .collect(),
-    ));
     Ok(())
 }
 

@@ -3,22 +3,26 @@ use std::{path::PathBuf, str::FromStr};
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use crate::scell::{
-    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_label, name::SCellName, types::name::TargetName,
+use crate::{
+    buildkit::decode_object_from_metadata,
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
+
+pub const IMAGE_METADATA_ENTRY_POINT_KEY: &str = "scell-target";
+pub const IMAGE_METADATA_LOCATION_KEY: &str = "scell-location";
+pub const IMAGE_METADATA_DESCRIPTION_KEY: &str = "scell-image-description";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellImageInfo {
-    pub name: SCellName,
+    pub id: SCellId,
     pub orphan: bool,
     pub in_use: bool,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
-    pub definition: Option<yaml_serde::Value>,
+    pub desc: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
-    // An image id, not a 'scell-*' name
-    pub image_id: String,
+    // A Docker image id, not a [`SCellId`]
+    pub docker_image_id: String,
 }
 
 impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
@@ -41,29 +45,32 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
 
         let target = value
             .labels
-            .get(METADATA_TARGET_KEY)
+            .get(IMAGE_METADATA_ENTRY_POINT_KEY)
             .map(|s| TargetName::from_str(s.as_str()))
             .transpose()?;
 
-        let location = value.labels.get(METADATA_LOCATION_KEY).map(PathBuf::from);
-
-        let definition = value
+        let location = value
             .labels
-            .get(METADATA_DEFINITION_KEY)
-            .map(|s| decode_object_from_label(s))
+            .get(IMAGE_METADATA_LOCATION_KEY)
+            .map(PathBuf::from);
+
+        let desc = value
+            .labels
+            .get(IMAGE_METADATA_DESCRIPTION_KEY)
+            .map(|s| decode_object_from_metadata(s))
             .transpose()?;
 
-        let image_id = value.id;
+        let docker_image_id = value.id;
 
-        let name = image_name.parse()?;
+        let id = image_name.parse()?;
 
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
         {
             // Determine if the container is orphaned by comparing the container name
-            // with the expected SCell name
+            // with the expected SCellId
             SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.name()? != name))
+                .and_then(|scell| Ok(scell.image_id()? != id))
                 // If compilation fails, consider it orphaned
                 .unwrap_or(true)
         } else {
@@ -71,14 +78,14 @@ impl TryFrom<bollard::secret::ImageSummary> for SCellImageInfo {
         };
 
         Ok(Self {
-            name,
+            id,
             orphan,
             in_use,
             location,
             target,
-            definition,
+            desc,
             created_at,
-            image_id,
+            docker_image_id,
         })
     }
 }

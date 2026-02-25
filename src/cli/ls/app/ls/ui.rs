@@ -15,15 +15,9 @@ impl Widget for &LsState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
-        let header_cells = [
-            "Name",
-            "Target",
-            "Blueprint Location",
-            "Created At",
-            "Status",
-        ]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+        let header_cells = ["ID", "Target", "Blueprint Location", "Created At", "Status"]
+            .iter()
+            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
         let header = Row::new(header_cells)
             .style(Style::default().add_modifier(Modifier::BOLD))
             .height(1);
@@ -31,9 +25,9 @@ impl Widget for &LsState<SCellContainerInfo> {
         let rows = self.items.iter().map(|c| {
             let cells = vec![
                 Cell::from(if c.orphan {
-                    format!("{} (orphan)", c.name)
+                    format!("{} (orphan)", c.id)
                 } else {
-                    c.name.to_string()
+                    c.id.to_string()
                 }),
                 Cell::from(
                     c.target
@@ -83,15 +77,9 @@ impl Widget for &LsState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        let header_cells = [
-            "Name",
-            "Target",
-            "Blueprint Location",
-            "Created At",
-            "Status",
-        ]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
+        let header_cells = ["ID", "Target", "Blueprint Location", "Created At", "Status"]
+            .iter()
+            .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
         let header = Row::new(header_cells)
             .style(Style::default().add_modifier(Modifier::BOLD))
             .height(1);
@@ -99,9 +87,9 @@ impl Widget for &LsState<SCellImageInfo> {
         let rows = self.items.iter().map(|c| {
             let cells = vec![
                 Cell::from(if c.orphan {
-                    format!("{} (orphan)", c.name)
+                    format!("{} (orphan)", c.id)
                 } else {
-                    c.name.to_string()
+                    c.id.to_string()
                 }),
                 Cell::from(
                     c.target

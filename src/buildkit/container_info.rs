@@ -4,22 +4,33 @@ use bollard::secret::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
-use crate::scell::{
-    METADATA_DEFINITION_KEY, METADATA_LOCATION_KEY, METADATA_TARGET_KEY, SCell,
-    decode_object_from_label, name::SCellName, types::name::TargetName,
+use crate::{
+    buildkit::{
+        decode_object_from_metadata,
+        image_info::{
+            IMAGE_METADATA_DESCRIPTION_KEY, IMAGE_METADATA_ENTRY_POINT_KEY,
+            IMAGE_METADATA_LOCATION_KEY,
+        },
+    },
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
+
+pub const CONTAINER_METADATA_IMAGE_ID_KEY: &str = "scell-image-id";
+pub const CONTAINER_METADATA_DESCRIPTION_KEY: &str = "scell-container-description";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
-    pub name: SCellName,
+    pub id: SCellId,
     pub orphan: bool,
     pub status: Status,
+    pub image_id: Option<SCellId>,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
-    pub definition: Option<yaml_serde::Value>,
+    pub image_desc: Option<yaml_serde::Value>,
+    pub container_desc: Option<yaml_serde::Value>,
     pub created_at: Option<DateTime<Utc>>,
-    // An image id, not a 'scell-*' name
-    pub image_id: String,
+    // A Docker image id, not a [`SCellId`]
+    pub docker_image_id: String,
 }
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -99,7 +110,7 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .labels
             .as_ref()
             .and_then(|v| {
-                v.get(METADATA_TARGET_KEY)
+                v.get(IMAGE_METADATA_ENTRY_POINT_KEY)
                     .map(|s| TargetName::from_str(s.as_str()))
             })
             .transpose()?;
@@ -107,31 +118,46 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         let location = value
             .labels
             .as_ref()
-            .and_then(|v| v.get(METADATA_LOCATION_KEY).map(PathBuf::from));
+            .and_then(|v| v.get(IMAGE_METADATA_LOCATION_KEY).map(PathBuf::from));
 
-        let definition = value
+        let image_desc = value
             .labels
             .as_ref()
             .and_then(|v| {
-                v.get(METADATA_DEFINITION_KEY)
-                    .map(|s| decode_object_from_label(s))
+                v.get(IMAGE_METADATA_DESCRIPTION_KEY)
+                    .map(|s| decode_object_from_metadata(s))
+            })
+            .transpose()?;
+
+        let container_desc = value
+            .labels
+            .as_ref()
+            .and_then(|v| {
+                v.get(CONTAINER_METADATA_DESCRIPTION_KEY)
+                    .map(|s| decode_object_from_metadata(s))
             })
             .transpose()?;
 
         let image_id = value
-            .image_id
-            .context("'Shell-Cell' container must have a corresponding image ID")?;
+            .labels
+            .as_ref()
+            .and_then(|v| v.get(CONTAINER_METADATA_IMAGE_ID_KEY).map(|s| s.parse()))
+            .transpose()?;
 
-        let name = container_name.parse()?;
+        let docker_image_id = value
+            .image_id
+            .context("'Shell-Cell' container must have a corresponding Docker/Podman image ID")?;
+
+        let id = container_name.parse()?;
 
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
             && created_at.is_some()
         {
             // Determine if the container is orphaned by comparing the container name
-            // with the expected SCell name
+            // with the expected SCellId
             SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.name()? != name))
+                .and_then(|scell| Ok(scell.container_id()? != id))
                 // If compilation fails, consider it orphaned
                 .unwrap_or(true)
         } else {
@@ -139,14 +165,16 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
         };
 
         Ok(Self {
-            name,
+            id,
             orphan,
             status,
+            image_id,
             location,
             target,
-            definition,
+            image_desc,
+            container_desc,
             created_at,
-            image_id,
+            docker_image_id,
         })
     }
 }

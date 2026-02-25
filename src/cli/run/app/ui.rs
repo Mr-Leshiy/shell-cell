@@ -93,7 +93,7 @@ impl Widget for &mut App {
             scroll_view.render(inner, buf, &mut state.scroll_view_state);
         } else if let App::RunningPty(state) = self {
             let block = block
-                .title(format!("'Shell-Cell' {}", state.scell_name))
+                .title(format!("'Shell-Cell' {}", state.container_id))
                 .title_bottom("Ctrl-D: exit");
             let inner = block.inner(area);
             block.render(area, buf);

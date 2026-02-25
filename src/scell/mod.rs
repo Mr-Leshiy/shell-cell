@@ -11,47 +11,38 @@ mod link;
 pub mod name;
 pub mod types;
 
-use std::hash::{Hash, Hasher};
-
-use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
-use hex::ToHex;
+use std::hash::Hash;
 
 use crate::scell::{
     image::SCellImage,
     link::Link,
-    name::SCellName,
+    name::SCellId,
     types::target::{
         config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
-        hang::HangStmt,
         shell::ShellStmt,
     },
 };
 
-pub const NAME_PREFIX: &str = "scell-";
-pub const METADATA_TARGET_KEY: &str = "scell-target";
-pub const METADATA_LOCATION_KEY: &str = "scell-location";
-pub const METADATA_DEFINITION_KEY: &str = "scell-definition";
-
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SCell(SCellInner);
+pub struct SCell {
+    image: SCellImage,
+    container: SCellContainer,
+    shell: ShellStmt,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
-struct SCellInner {
-    links: Vec<Link>,
-    shell: ShellStmt,
-    hang: HangStmt,
-    #[serde(skip_serializing_if = "Option::is_none")]
+pub struct SCellContainer {
     config: Option<ConfigStmt>,
 }
 
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
-        &self.0.shell.0
+        &self.shell.0
     }
 
     pub fn mounts(&self) -> MountsStmt {
-        self.0
+        self.container
             .config
             .as_ref()
             .map(|c| c.mounts.clone())
@@ -59,77 +50,33 @@ impl SCell {
     }
 
     pub fn ports(&self) -> PortsStmt {
-        self.0
+        self.container
             .config
             .as_ref()
             .map(|c| c.ports.clone())
             .unwrap_or_default()
     }
 
-    /// Heavy operation, calculates name based on the `hex_hash` value
-    pub fn name(&self) -> color_eyre::Result<SCellName> {
-        SCellName::new(self)
+    pub fn image_id(&self) -> color_eyre::Result<SCellId> {
+        SCellId::new(|hasher| {
+            self.image.hash(hasher)?;
+            Ok(())
+        })
     }
 
-    pub fn image(&self) -> color_eyre::Result<SCellImage> {
-        SCellImage::new(self)
+    pub fn container_id(&self) -> color_eyre::Result<SCellId> {
+        SCellId::new(|hasher| {
+            self.image.hash(hasher)?;
+            self.container.hash(hasher);
+            Ok(())
+        })
     }
 
-    /// Calculates a fast, non-cryptographic 'metrohash' hash value.
-    /// Returns a hex string value.
-    fn hex_hash(&self) -> color_eyre::Result<String> {
-        let mut hasher = metrohash::MetroHash64::new();
-        self.0.hash(&mut hasher);
-        self.image()?.dump_to_string()?.hash(&mut hasher);
-        Ok(hasher.finish().to_be_bytes().encode_hex())
+    pub fn image(&self) -> &SCellImage {
+        &self.image
     }
-}
 
-/// Serializes `value` JSON string and which is `BASE64_URL_SAFE_NO_PAD` encoded,
-/// so it can be stored as a single-line Docker label value.
-///
-/// The inverse operation is [`decode_object_from_label`].
-pub fn encode_object_to_label<T: serde::Serialize>(value: T) -> color_eyre::Result<String> {
-    let json = serde_json::to_string(&value)?;
-    Ok(BASE64_URL_SAFE_NO_PAD.encode(json))
-}
-
-/// Decodes a Docker label value produced by [`encode_object_to_label`] back into
-/// a [`T`].
-pub fn decode_object_from_label<T: serde::de::DeserializeOwned>(s: &str) -> color_eyre::Result<T> {
-    let json_str_bytes = BASE64_URL_SAFE_NO_PAD.decode(s)?;
-    let json_str = String::from_utf8_lossy(&json_str_bytes);
-    let json: serde_json::Value = serde_json::from_str(&json_str)?;
-    Ok(serde_json::from_value(json)?)
-}
-
-#[cfg(test)]
-mod tests {
-    use test_case::test_case;
-
-    use super::{decode_object_from_label, encode_object_to_label};
-
-    #[test_case(yaml_serde::Value::String("hello".into()) ; "string")]
-    #[test_case(yaml_serde::Value::Bool(true)              ; "bool true")]
-    #[test_case(yaml_serde::Value::Bool(false)             ; "bool false")]
-    #[test_case(yaml_serde::Value::Number(yaml_serde::Number::from(42u64)) ; "integer")]
-    #[test_case(yaml_serde::Value::Sequence(vec![
-        yaml_serde::Value::String("a".into()),
-        yaml_serde::Value::String("b".into()),
-    ]) ; "sequence")]
-    #[test_case({
-        let mut m = yaml_serde::Mapping::new();
-        m.insert(
-            yaml_serde::Value::String("shell".into()),
-            yaml_serde::Value::String("/bin/bash".into()),
-        );
-        yaml_serde::Value::Mapping(m)
-    } ; "mapping")]
-    #[allow(clippy::needless_pass_by_value)]
-    fn round_trip(value: yaml_serde::Value) {
-        let encoded = encode_object_to_label(&value).expect("encode should not fail");
-        let decoded: yaml_serde::Value =
-            decode_object_from_label(&encoded).expect("decode should not fail");
-        assert_eq!(value, decoded);
+    pub fn container(&self) -> &SCellContainer {
+        &self.container
     }
 }

@@ -6,7 +6,7 @@ use crate::{
     buildkit::BuildKitD,
     cli::{
         MIN_FPS,
-        ls::app::{AppInner, error_window::ErrorWindowState, ls::LsState},
+        ls::app::{AppInner, AppItemSuperTrait, error_window::ErrorWindowState, ls::LsState},
     },
 };
 
@@ -20,7 +20,7 @@ pub struct StoppingState<Item> {
     pub rx: Receiver<color_eyre::Result<Vec<Item>>>,
 }
 
-impl<Item: Clone> StoppingState<Item> {
+impl<Item: Clone + AppItemSuperTrait> StoppingState<Item> {
     /// Polls the background stop task for completion and returns the next app state.
     ///
     /// - [`AppInner::Stopping`] — still waiting (self is returned back)

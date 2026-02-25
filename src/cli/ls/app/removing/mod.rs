@@ -6,7 +6,7 @@ use crate::{
     buildkit::BuildKitD,
     cli::{
         MIN_FPS,
-        ls::app::{AppInner, error_window::ErrorWindowState, ls::LsState},
+        ls::app::{AppInner, AppItemSuperTrait, error_window::ErrorWindowState, ls::LsState},
     },
 };
 
@@ -20,7 +20,7 @@ pub struct RemovingState<Item> {
     pub rx: Receiver<color_eyre::Result<Vec<Item>>>,
 }
 
-impl<Item: Clone> RemovingState<Item> {
+impl<Item: Clone + AppItemSuperTrait> RemovingState<Item> {
     /// Polls the background remove task for completion and returns the next app state.
     ///
     /// - [`AppInner::Removing`] — still waiting (self is returned back)

@@ -12,12 +12,13 @@ use color_eyre::eyre::{Context, ContextCompat};
 use crate::{
     error::{OptionUserError, Report, UserError, WrapUserError},
     scell::{
-        Link, SCell,
+        Link, SCell, SCellContainer,
         compile::errors::{
             CircularTargets, CopySrcNotFound, DirNotFoundFromStmt, DockerfileNotFound,
             FileLoadFromStmt, MissingEntrypoint, MissingHangStmt, MissingShellStmt, MissingTarget,
             MountHostDirNotFound,
         },
+        image::SCellImage,
         link::RootNode,
         types::{
             SCellFile,
@@ -86,12 +87,13 @@ impl SCell {
             "It must be at least two links in the target chain"
         );
 
-        Ok(Self(super::SCellInner {
-            links,
+        let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
+        let container = SCellContainer { config };
+        Ok(Self {
+            image,
+            container,
             shell: shell.context("'shell' cannot be 'None'")?,
-            hang: hang.context("'hang' cannot be 'None'")?,
-            config,
-        }))
+        })
     }
 
     fn compile_inner(

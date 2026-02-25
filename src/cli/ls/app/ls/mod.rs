@@ -85,14 +85,9 @@ impl LsState<SCellContainerInfo> {
         let item = self
             .items
             .get(selected)
-            .context("Selected item must be present in the list")?;
-        let definition = item
-            .definition
-            .as_ref()
-            .map(yaml_serde::to_string)
-            .transpose()?
+            .context("Selected item must be present in the list")?
             .clone();
-        Ok(InspectState::new(self, definition))
+        InspectState::new(self, &item)
     }
 
     /// Initiates stopping of the currently selected container.
@@ -142,13 +137,8 @@ impl LsState<SCellImageInfo> {
         let item = self
             .items
             .get(selected)
-            .context("Selected item must be present in the list")?;
-        let definition = item
-            .definition
-            .as_ref()
-            .map(yaml_serde::to_string)
-            .transpose()?
+            .context("Selected item must be present in the list")?
             .clone();
-        Ok(InspectState::new(self, definition))
+        InspectState::new(self, &item)
     }
 }
