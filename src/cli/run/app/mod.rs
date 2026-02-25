@@ -1,3 +1,4 @@
+mod help_window;
 mod preparing;
 mod running_pty;
 mod ui;
@@ -17,6 +18,7 @@ use crate::{
     cli::{
         MIN_FPS,
         run::app::{
+            help_window::HelpWindowState,
             preparing::{LogType, PreparingState},
             running_pty::RunningPtyState,
         },
@@ -29,6 +31,7 @@ use crate::{
 pub enum App {
     Preparing(PreparingState),
     RunningPty(Box<RunningPtyState>),
+    HelpWindow(HelpWindowState),
     Finished,
     Exit,
 }
@@ -83,27 +86,12 @@ impl App {
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
         {
-            // For `RunningPty` - forward all key events to PTY stdin
-            if let Self::RunningPty(ref state) = self
-                && let Ok(event) = to_terminput(Event::Key(key))
-            {
-                // Convert crossterm event to terminput and encode as stdin bytes
-                let mut buf = [0u8; 32];
-                if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
-                    && let Some(bytes) = buf.get(..written)
-                {
-                    state.pty.process_stdin(bytes);
-                }
-                // Handles every other app state
-            } else if matches!(self, App::Finished) {
+            if matches!(self, App::Finished) {
                 // Exit on any key if finished
                 self = App::Exit;
-            } else if let KeyCode::Char('c' | 'd') = key.code
-                && key.modifiers.contains(event::KeyModifiers::CONTROL)
-            {
-                // Exit on Ctrl-C or Ctrl-D for other states
-                self = App::Exit;
-            } else if let Self::Preparing(ref mut state) = self {
+            }
+
+            if let Self::Preparing(ref mut state) = self {
                 match key.code {
                     KeyCode::Down | KeyCode::Char('j') => {
                         state.scroll_down();
@@ -111,7 +99,32 @@ impl App {
                     KeyCode::Up | KeyCode::Char('k') => {
                         state.scroll_up();
                     },
+                    KeyCode::Char('c' | 'd')
+                        if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                    {
+                        self = App::Exit;
+                    },
                     _ => {},
+                }
+            }
+            // For `RunningPty` - forward all key events to PTY stdin
+            if let Self::RunningPty(state) = self {
+                if let KeyCode::Char('h') = key.code
+                    && key.modifiers.contains(event::KeyModifiers::CONTROL)
+                {
+                    self = Self::HelpWindow(HelpWindowState {
+                        running_pty_state: state,
+                    });
+                } else {
+                    let event = to_terminput(Event::Key(key))?;
+                    // Convert crossterm event to terminput and encode as stdin bytes
+                    let mut buf = [0u8; 32];
+                    if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
+                        && let Some(bytes) = buf.get(..written)
+                    {
+                        state.pty.process_stdin(bytes);
+                    }
+                    self = Self::RunningPty(state);
                 }
             }
         }
