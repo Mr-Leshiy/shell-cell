@@ -21,7 +21,7 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        let (container_desc, _image_id) = &self.data;
+        let (container_desc, image_id) = &self.data;
 
         let window_area = prepare_window_area(area, buf);
 
@@ -38,7 +38,10 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled("N/A", Style::default().fg(Color::White)),
+            Span::styled(
+                image_id.as_deref().unwrap_or("N/A"),
+                Style::default().fg(Color::White),
+            ),
         ]))
         .alignment(HorizontalAlignment::Center)
         .render(vertical[0], buf);
