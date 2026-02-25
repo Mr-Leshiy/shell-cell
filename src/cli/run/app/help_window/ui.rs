@@ -48,64 +48,12 @@ impl Widget for &mut HelpWindowState {
             )]),
             Line::from(vec![
                 Span::styled(
-                    "  ↑ / ↓ / k / j     ",
+                    " Ctrl - ↑ / ↓ / k / j ",
                     Style::default()
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("Move selection", Style::default().fg(Color::White)),
-            ]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Actions",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  q                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Switch to the images view",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  i                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Inspect container definition",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  s                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Stop selected container", Style::default().fg(Color::White)),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  r                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Remove selected container",
-                    Style::default().fg(Color::White),
-                ),
             ]),
             Line::from(""),
             Line::from(vec![Span::styled(
@@ -116,7 +64,7 @@ impl Widget for &mut HelpWindowState {
             )]),
             Line::from(vec![
                 Span::styled(
-                    "  Ctrl-C / Ctrl-D  ",
+                    "        Ctrl-D.       ",
                     Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("Exit", Style::default().fg(Color::White)),
