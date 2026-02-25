@@ -21,6 +21,8 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
+        let (container_desc, _image_id) = &self.data;
+
         let window_area = prepare_window_area(area, buf);
 
         let vertical = Layout::vertical([
@@ -42,7 +44,7 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
         .render(vertical[0], buf);
 
         render_description(
-            self.description.as_deref(),
+            container_desc.as_deref(),
             &mut self.scroll_state,
             vertical[1],
             buf,
@@ -59,9 +61,11 @@ impl Widget for &mut InspectState<SCellImageInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
+        let image_desc = &self.data;
+
         let window_area = prepare_window_area(area, buf);
         render_description(
-            self.description.as_deref(),
+            image_desc.as_deref(),
             &mut self.scroll_state,
             window_area,
             buf,

@@ -19,9 +19,13 @@ use crate::{
     cli::{
         MIN_FPS,
         ls::app::{
-            confirm_remove::ConfirmRemoveState, error_window::ErrorWindowState,
-            help_window::HelpWindowState, inspect::InspectState, ls::LsState,
-            removing::RemovingState, stopping::StoppingState,
+            confirm_remove::ConfirmRemoveState,
+            error_window::ErrorWindowState,
+            help_window::HelpWindowState,
+            inspect::{InspectState, ItemToInspect},
+            ls::LsState,
+            removing::RemovingState,
+            stopping::StoppingState,
         },
     },
 };
@@ -48,7 +52,10 @@ pub enum App {
     Images(AppInner<SCellImageInfo>),
 }
 
-pub enum AppInner<Item> {
+pub trait AppItemSuperTrait: ItemToInspect {}
+impl<T: ItemToInspect> AppItemSuperTrait for T {}
+
+pub enum AppInner<Item: AppItemSuperTrait> {
     /// Fetching the item list from Docker in the background.
     Loading {
         rx: Receiver<color_eyre::Result<Vec<Item>>>,
@@ -148,7 +155,7 @@ impl App {
     }
 }
 
-impl<Item: Clone> AppInner<Item> {
+impl<Item: Clone + AppItemSuperTrait> AppInner<Item> {
     /// Runs only ONE TUI event loop, polling for state transitions and key events.
     /// Returns `None` if its `Exit` state.
     fn run_one_turn(
