@@ -67,12 +67,8 @@ impl Pty {
             color_eyre::eyre::Ok(())
         });
 
-        let parser = Parser::new_with_callbacks(
-            24,
-            80,
-            SCROLLBACK_WINDOW,
-            TerminalCallback(stdin.clone()),
-        );
+        let parser =
+            Parser::new_with_callbacks(24, 80, SCROLLBACK_WINDOW, TerminalCallback(stdin.clone()));
         Self {
             stdin,
             stdout,
