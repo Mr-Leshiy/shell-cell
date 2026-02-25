@@ -88,11 +88,12 @@ impl SCell {
         );
 
         let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
-        let container = SCellContainer {
+        let container = SCellContainer { config };
+        Ok(Self {
+            image,
+            container,
             shell: shell.context("'shell' cannot be 'None'")?,
-            config,
-        };
-        Ok(Self { image, container })
+        })
     }
 
     fn compile_inner(

@@ -23,7 +23,7 @@ pub struct SCellContainerInfo {
     pub id: SCellId,
     pub orphan: bool,
     pub status: Status,
-    // pub image_id: Option<SCellId>,
+    pub image_id: Option<SCellId>,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub image_desc: Option<yaml_serde::Value>,
@@ -129,6 +129,27 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             })
             .transpose()?;
 
+        let container_desc = value
+            .host_config
+            .as_ref()
+            .and_then(|v| {
+                v.annotations.as_ref().and_then(|a| {
+                    a.get(CONTAINER_METADATA_DESCRIPTION_KEY)
+                        .map(|s| decode_object_from_metadata(s))
+                })
+            })
+            .transpose()?;
+
+        let image_id = value
+            .host_config
+            .as_ref()
+            .and_then(|v| {
+                v.annotations
+                    .as_ref()
+                    .and_then(|a| a.get(CONTAINER_METADATA_IMAGE_ID_KEY).map(|s| s.parse()))
+            })
+            .transpose()?;
+
         let docker_image_id = value
             .image_id
             .context("'Shell-Cell' container must have a corresponding Docker/Podman image ID")?;
@@ -153,10 +174,11 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             id,
             orphan,
             status,
+            image_id,
             location,
             target,
             image_desc,
-            container_desc: None,
+            container_desc,
             created_at,
             docker_image_id,
         })

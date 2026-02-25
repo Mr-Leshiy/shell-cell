@@ -14,7 +14,9 @@ use bollard::{
 
 use crate::{
     buildkit::{
-        container_info::{CONTAINER_METADATA_IMAGE_ID_KEY, SCellContainerInfo},
+        container_info::{
+            CONTAINER_METADATA_DESCRIPTION_KEY, CONTAINER_METADATA_IMAGE_ID_KEY, SCellContainerInfo,
+        },
         docker::{
             build_image, container_iteractive_exec, container_resize_exec, list_all_containers,
             list_all_images, pull_image, remove_container, remove_image, start_container,
@@ -220,10 +222,16 @@ fn image_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> 
 }
 
 fn container_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
-    Ok([(
-        CONTAINER_METADATA_IMAGE_ID_KEY.to_string(),
-        scell.image_id()?.to_string(),
-    )]
+    Ok([
+        (
+            CONTAINER_METADATA_IMAGE_ID_KEY.to_string(),
+            scell.image_id()?.to_string(),
+        ),
+        (
+            CONTAINER_METADATA_DESCRIPTION_KEY.to_string(),
+            encode_object_to_metadata(scell.container())?,
+        ),
+    ]
     .into_iter()
     .collect())
 }

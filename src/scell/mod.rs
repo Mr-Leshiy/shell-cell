@@ -6,7 +6,6 @@
 //! "base" for entire Shell-Cell.
 
 mod compile;
-pub mod container;
 pub mod image;
 mod link;
 pub mod name;
@@ -28,18 +27,18 @@ use crate::scell::{
 pub struct SCell {
     image: SCellImage,
     container: SCellContainer,
+    shell: ShellStmt,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct SCellContainer {
-    shell: ShellStmt,
     config: Option<ConfigStmt>,
 }
 
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
-        &self.container.shell.0
+        &self.shell.0
     }
 
     pub fn mounts(&self) -> MountsStmt {
