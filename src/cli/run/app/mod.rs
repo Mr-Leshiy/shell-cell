@@ -1,10 +1,7 @@
+mod preparing;
 mod ui;
 
-use std::{
-    path::Path,
-    sync::mpsc::{Receiver, RecvTimeoutError},
-    time::Duration,
-};
+use std::{path::Path, time::Duration};
 
 use ratatui::{
     Terminal,
@@ -16,7 +13,10 @@ use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::MIN_FPS,
+    cli::{
+        MIN_FPS,
+        run::app::preparing::{LogType, PreparingState},
+    },
     error::UserError,
     pty::Pty,
     scell::{SCell, name::SCellId, types::name::TargetName},
@@ -206,43 +206,6 @@ impl App {
             prev_height: 0,
             prev_width: 0,
         })))
-    }
-}
-
-pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
-    logs_rx: Receiver<(String, LogType)>,
-    logs: Vec<(String, LogType)>,
-    scroll_view_state: ScrollViewState,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum LogType {
-    Main,
-    MainError,
-    MainInfo,
-    SubLog,
-}
-
-impl PreparingState {
-    fn try_update(&mut self) -> bool {
-        match self.logs_rx.recv_timeout(MIN_FPS) {
-            Ok(log) => {
-                self.logs.push(log);
-                self.scroll_view_state.scroll_to_bottom();
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        }
-    }
-
-    fn scroll_up(&mut self) {
-        self.scroll_view_state.scroll_up();
-    }
-
-    fn scroll_down(&mut self) {
-        self.scroll_view_state.scroll_down();
     }
 }
 
