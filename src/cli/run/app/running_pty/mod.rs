@@ -10,6 +10,26 @@ pub struct RunningPtyState {
 }
 
 impl RunningPtyState {
+    pub fn new(
+        pty: Pty,
+        container_id: SCellId,
+    ) -> Self {
+        Self {
+            pty,
+            container_id,
+            prev_height: 0,
+            prev_width: 0,
+        }
+    }
+
+    pub fn scroll_up(&mut self) {
+        self.pty.scroll_up();
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.pty.scroll_down();
+    }
+
     pub fn try_update(&mut self) -> bool {
         self.pty.process_stdout_and_stderr(MIN_FPS)
     }

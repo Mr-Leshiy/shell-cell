@@ -64,7 +64,7 @@ impl Widget for &mut HelpWindowState {
             )]),
             Line::from(vec![
                 Span::styled(
-                    "        Ctrl-D.       ",
+                    "        Ctrl-D        ",
                     Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("Exit", Style::default().fg(Color::White)),

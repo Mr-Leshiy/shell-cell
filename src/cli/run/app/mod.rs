@@ -87,6 +87,18 @@ impl App {
             && key.kind == KeyEventKind::Press
         {
             match self {
+                Self::RunningPty(ref mut state)
+                    if matches!(key.code, KeyCode::Up | KeyCode::Char('k'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    state.scroll_up();
+                },
+                Self::RunningPty(ref mut state)
+                    if matches!(key.code, KeyCode::Down | KeyCode::Char('j'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    state.scroll_down();
+                },
                 Self::RunningPty(state)
                     if matches!(key.code, KeyCode::Char('h'))
                         && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
@@ -94,6 +106,12 @@ impl App {
                     self = Self::HelpWindow(HelpWindowState {
                         running_pty_state: state,
                     });
+                },
+                Self::RunningPty(state)
+                    if matches!(key.code, KeyCode::Char('d'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    self = Self::Finished;
                 },
                 Self::RunningPty(ref state) => {
                     let event = to_terminput(Event::Key(key))?;
@@ -111,6 +129,12 @@ impl App {
                         || matches!(key.code, KeyCode::Esc) =>
                 {
                     self = Self::RunningPty(state.running_pty_state);
+                },
+                Self::HelpWindow(state)
+                    if matches!(key.code, KeyCode::Char('d'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    self = Self::Finished;
                 },
                 Self::Preparing(ref mut state) => {
                     match key.code {
@@ -224,11 +248,9 @@ impl App {
         pty: Pty,
         scell: &SCell,
     ) -> color_eyre::Result<Self> {
-        Ok(Self::RunningPty(Box::new(RunningPtyState {
+        Ok(Self::RunningPty(Box::new(RunningPtyState::new(
             pty,
-            container_id: scell.container_id()?,
-            prev_height: 0,
-            prev_width: 0,
-        })))
+            scell.container_id()?,
+        ))))
     }
 }

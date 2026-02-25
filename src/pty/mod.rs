@@ -23,12 +23,15 @@ use crate::pty::callbacks::TerminalCallback;
 type Output = Pin<Box<dyn Stream<Item = Result<LogOutput, bollard::errors::Error>> + Send>>;
 type Input = Pin<Box<dyn AsyncWrite + Send>>;
 
+const SCROLLBACK_WINDOW_SIZE: usize = 1000;
+
 pub struct Pty {
     stdin: Sender<Bytes>,
     stdout: Receiver<Bytes>,
     stderr: Receiver<Bytes>,
     container_session_id: String,
     parser: Parser<TerminalCallback>,
+    scroll_offset: usize,
 }
 
 impl Pty {
@@ -64,14 +67,34 @@ impl Pty {
             color_eyre::eyre::Ok(())
         });
 
-        let parser = Parser::new_with_callbacks(24, 80, 0, TerminalCallback(stdin.clone()));
+        let parser = Parser::new_with_callbacks(
+            24,
+            80,
+            SCROLLBACK_WINDOW_SIZE,
+            TerminalCallback(stdin.clone()),
+        );
         Self {
             stdin,
             stdout,
             stderr,
             container_session_id,
             parser,
+            scroll_offset: 0,
         }
+    }
+
+    pub fn scroll_up(&mut self) {
+        let cur_scrollback = self.parser.screen().scrollback();
+        self.parser
+            .screen_mut()
+            .set_scrollback(cur_scrollback.saturating_add(1));
+    }
+
+    pub fn scroll_down(&mut self) {
+        let cur_scrollback = self.parser.screen().scrollback();
+        self.parser
+            .screen_mut()
+            .set_scrollback(cur_scrollback.saturating_sub(1));
     }
 
     pub fn container_session_id(&self) -> &str {
