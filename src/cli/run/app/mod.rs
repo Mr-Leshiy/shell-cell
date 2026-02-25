@@ -1,4 +1,5 @@
 mod preparing;
+mod running_pty;
 mod ui;
 
 use std::{path::Path, time::Duration};
@@ -15,11 +16,14 @@ use crate::{
     buildkit::BuildKitD,
     cli::{
         MIN_FPS,
-        run::app::preparing::{LogType, PreparingState},
+        run::app::{
+            preparing::{LogType, PreparingState},
+            running_pty::RunningPtyState,
+        },
     },
     error::UserError,
     pty::Pty,
-    scell::{SCell, name::SCellId, types::name::TargetName},
+    scell::{SCell, types::name::TargetName},
 };
 
 pub enum App {
@@ -206,40 +210,5 @@ impl App {
             prev_height: 0,
             prev_width: 0,
         })))
-    }
-}
-
-pub struct RunningPtyState {
-    pty: Pty,
-    container_id: SCellId,
-    prev_height: u16,
-    prev_width: u16,
-}
-
-impl RunningPtyState {
-    fn try_update(&mut self) -> bool {
-        self.pty.process_stdout_and_stderr(MIN_FPS)
-    }
-
-    fn notify_screen_resize(
-        &mut self,
-        buildkit: BuildKitD,
-    ) {
-        // Notify container's session about screen resize
-        let (curr_height, curr_width) = self.pty.size();
-        if curr_height != self.prev_height || curr_width != self.prev_width {
-            tokio::spawn({
-                let session_id = self.pty.container_session_id().to_owned();
-                async move {
-                    buildkit
-                        .resize_shell(&session_id, curr_height, curr_width)
-                        .await?;
-                    color_eyre::eyre::Ok(())
-                }
-            });
-
-            self.prev_height = curr_height;
-            self.prev_width = curr_width;
-        }
     }
 }

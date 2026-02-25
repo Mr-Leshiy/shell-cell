@@ -2,13 +2,10 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph,  Widget},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::{
-    cli::run::app::{App},
-    pty::Pty,
-};
+use crate::cli::run::app::App;
 
 impl Widget for &mut App {
     #[allow(clippy::indexing_slicing)]
@@ -19,21 +16,15 @@ impl Widget for &mut App {
     ) where
         Self: Sized,
     {
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::new().light_magenta());
-
         if let App::Preparing(state) = self {
             state.render(area, buf);
         } else if let App::RunningPty(state) = self {
-            let block = block
-                .title(format!("'Shell-Cell' {}", state.container_id))
-                .title_bottom("Ctrl-D: exit");
-            let inner = block.inner(area);
-            block.render(area, buf);
-            state.pty.render(inner, buf);
+            state.render(area, buf);
         } else if let App::Finished = self {
-            let block = block.title("'Shell-Cell'");
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().light_magenta())
+                .title("'Shell-Cell'");
             let inner = block.inner(area);
             block.render(area, buf);
 
@@ -59,19 +50,5 @@ impl Widget for &mut App {
             let paragraph = Paragraph::new(text).alignment(Alignment::Center);
             paragraph.render(vertical_layout[1], buf);
         }
-    }
-}
-
-impl Widget for &mut Pty {
-    fn render(
-        self,
-        area: ratatui::prelude::Rect,
-        buf: &mut ratatui::prelude::Buffer,
-    ) where
-        Self: Sized,
-    {
-        // set the proper size for the terminal screen
-        self.set_size(area.height, area.width);
-        tui_term::widget::PseudoTerminal::new(self.screen()).render(area, buf);
     }
 }
