@@ -194,10 +194,10 @@ fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
         host_config: Some(HostConfig {
             binds: (!binds.is_empty()).then_some(binds),
             port_bindings: (!port_bindings.is_empty()).then_some(port_bindings),
-            annotations: Some(container_metadata(scell)?),
             ..Default::default()
         }),
         exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
+        labels: Some(container_metadata(scell)?),
         ..Default::default()
     })
 }

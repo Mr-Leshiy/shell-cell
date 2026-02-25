@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub const CONTAINER_METADATA_IMAGE_ID_KEY: &str = "scell-image-id";
-pub const CONTAINER_METADATA_DESCRIPTION_KEY: &str = "scell-description";
+pub const CONTAINER_METADATA_DESCRIPTION_KEY: &str = "scell-container-description";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
@@ -130,23 +130,19 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .transpose()?;
 
         let container_desc = value
-            .host_config
+            .labels
             .as_ref()
             .and_then(|v| {
-                v.annotations.as_ref().and_then(|a| {
-                    a.get(CONTAINER_METADATA_DESCRIPTION_KEY)
+                v.get(CONTAINER_METADATA_DESCRIPTION_KEY)
                         .map(|s| decode_object_from_metadata(s))
-                })
             })
             .transpose()?;
 
         let image_id = value
-            .host_config
+            .labels
             .as_ref()
             .and_then(|v| {
-                v.annotations
-                    .as_ref()
-                    .and_then(|a| a.get(CONTAINER_METADATA_IMAGE_ID_KEY).map(|s| s.parse()))
+                v.get(CONTAINER_METADATA_IMAGE_ID_KEY).map(|s| s.parse())
             })
             .transpose()?;
 

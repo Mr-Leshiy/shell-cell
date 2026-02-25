@@ -10,7 +10,7 @@ use crate::{
 
 pub const IMAGE_METADATA_ENTRY_POINT_KEY: &str = "scell-target";
 pub const IMAGE_METADATA_LOCATION_KEY: &str = "scell-location";
-pub const IMAGE_METADATA_DESCRIPTION_KEY: &str = "scell-description";
+pub const IMAGE_METADATA_DESCRIPTION_KEY: &str = "scell-image-description";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellImageInfo {
