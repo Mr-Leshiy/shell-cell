@@ -1,10 +1,9 @@
+mod help_window;
+mod preparing;
+mod running_pty;
 mod ui;
 
-use std::{
-    path::Path,
-    sync::mpsc::{Receiver, RecvTimeoutError},
-    time::Duration,
-};
+use std::{path::Path, time::Duration};
 
 use ratatui::{
     Terminal,
@@ -12,19 +11,26 @@ use ratatui::{
 };
 use terminput::Encoding;
 use terminput_crossterm::to_terminput;
-use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::MIN_FPS,
+    cli::{
+        MIN_FPS,
+        run::app::{
+            help_window::HelpWindowState,
+            preparing::{LogType, PreparingState},
+            running_pty::RunningPtyState,
+        },
+    },
     error::UserError,
     pty::Pty,
-    scell::{SCell, name::SCellId, types::name::TargetName},
+    scell::{SCell, types::name::TargetName},
 };
 
 pub enum App {
     Preparing(PreparingState),
     RunningPty(Box<RunningPtyState>),
+    HelpWindow(HelpWindowState),
     Finished,
     Exit,
 }
@@ -53,7 +59,9 @@ impl App {
                 app = Self::running_pty(pty, &scell)?;
             }
 
-            if let App::RunningPty(ref mut state) = app {
+            if let App::RunningPty(ref mut state)
+            | App::HelpWindow(HelpWindowState(ref mut state)) = app
+            {
                 state.notify_screen_resize(buildkit.clone());
                 if state.try_update() {
                     app = App::Finished;
@@ -79,36 +87,69 @@ impl App {
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
         {
-            // For `RunningPty` - forward all key events to PTY stdin
-            if let Self::RunningPty(ref state) = self
-                && let Ok(event) = to_terminput(Event::Key(key))
-            {
-                // Convert crossterm event to terminput and encode as stdin bytes
-                let mut buf = [0u8; 32];
-                if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
-                    && let Some(bytes) = buf.get(..written)
+            match self {
+                Self::RunningPty(ref mut state)
+                    if matches!(key.code, KeyCode::Up | KeyCode::Char('k'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                 {
-                    state.pty.process_stdin(bytes);
-                }
-                // Handles every other app state
-            } else if matches!(self, App::Finished) {
-                // Exit on any key if finished
-                self = App::Exit;
-            } else if let KeyCode::Char('c' | 'd') = key.code
-                && key.modifiers.contains(event::KeyModifiers::CONTROL)
-            {
-                // Exit on Ctrl-C or Ctrl-D for other states
-                self = App::Exit;
-            } else if let Self::Preparing(ref mut state) = self {
-                match key.code {
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        state.scroll_down();
-                    },
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        state.scroll_up();
-                    },
-                    _ => {},
-                }
+                    state.scroll_up();
+                },
+                Self::RunningPty(ref mut state)
+                    if matches!(key.code, KeyCode::Down | KeyCode::Char('j'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    state.scroll_down();
+                },
+                Self::RunningPty(state)
+                    if matches!(key.code, KeyCode::Char('h'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    self = Self::HelpWindow(HelpWindowState(state));
+                },
+                Self::RunningPty(ref state) => {
+                    let event = to_terminput(Event::Key(key))?;
+                    // Convert crossterm event to terminput and encode as stdin bytes
+                    let mut buf = [0u8; 32];
+                    if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
+                        && let Some(bytes) = buf.get(..written)
+                    {
+                        state.pty.process_stdin(bytes);
+                    }
+                },
+                Self::HelpWindow(state)
+                    if (matches!(key.code, KeyCode::Char('h'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL))
+                        || matches!(key.code, KeyCode::Esc) =>
+                {
+                    self = Self::RunningPty(state.0);
+                },
+                Self::HelpWindow(state)
+                    if matches!(key.code, KeyCode::Char('d'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    self = Self::Finished;
+                },
+                Self::Preparing(ref mut state) => {
+                    match key.code {
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            state.scroll_down();
+                        },
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            state.scroll_up();
+                        },
+                        KeyCode::Char('c' | 'd')
+                            if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                        {
+                            self = App::Exit;
+                        },
+                        _ => {},
+                    }
+                },
+                Self::Finished => {
+                    // Exit on any key if finished
+                    self = App::Exit;
+                },
+                _ => {},
             }
         }
 
@@ -188,95 +229,16 @@ impl App {
                 Err(e) => drop(tx.send(Err(e))),
             }
         });
-        App::Preparing(PreparingState {
-            rx,
-            logs_rx,
-            logs: Vec::new(),
-            scroll_view_state: ScrollViewState::new(),
-        })
+        App::Preparing(PreparingState::new(rx, logs_rx))
     }
 
     fn running_pty(
         pty: Pty,
         scell: &SCell,
     ) -> color_eyre::Result<Self> {
-        Ok(Self::RunningPty(Box::new(RunningPtyState {
+        Ok(Self::RunningPty(Box::new(RunningPtyState::new(
             pty,
-            container_id: scell.container_id()?,
-            prev_height: 0,
-            prev_width: 0,
-        })))
-    }
-}
-
-pub struct PreparingState {
-    rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
-    logs_rx: Receiver<(String, LogType)>,
-    logs: Vec<(String, LogType)>,
-    scroll_view_state: ScrollViewState,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum LogType {
-    Main,
-    MainError,
-    MainInfo,
-    SubLog,
-}
-
-impl PreparingState {
-    fn try_update(&mut self) -> bool {
-        match self.logs_rx.recv_timeout(MIN_FPS) {
-            Ok(log) => {
-                self.logs.push(log);
-                self.scroll_view_state.scroll_to_bottom();
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        }
-    }
-
-    fn scroll_up(&mut self) {
-        self.scroll_view_state.scroll_up();
-    }
-
-    fn scroll_down(&mut self) {
-        self.scroll_view_state.scroll_down();
-    }
-}
-
-pub struct RunningPtyState {
-    pty: Pty,
-    container_id: SCellId,
-    prev_height: u16,
-    prev_width: u16,
-}
-
-impl RunningPtyState {
-    fn try_update(&mut self) -> bool {
-        self.pty.process_stdout_and_stderr(MIN_FPS)
-    }
-
-    fn notify_screen_resize(
-        &mut self,
-        buildkit: BuildKitD,
-    ) {
-        // Notify container's session about screen resize
-        let (curr_height, curr_width) = self.pty.size();
-        if curr_height != self.prev_height || curr_width != self.prev_width {
-            tokio::spawn({
-                let session_id = self.pty.container_session_id().to_owned();
-                async move {
-                    buildkit
-                        .resize_shell(&session_id, curr_height, curr_width)
-                        .await?;
-                    color_eyre::eyre::Ok(())
-                }
-            });
-
-            self.prev_height = curr_height;
-            self.prev_width = curr_width;
-        }
+            scell.container_id()?,
+        ))))
     }
 }
