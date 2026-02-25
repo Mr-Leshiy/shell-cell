@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Constraint, HorizontalAlignment, Layout, Margin, Rect, Size},
+    layout::{Constraint, HorizontalAlignment, Layout,  Rect, Size},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, StatefulWidget, Widget},
@@ -20,10 +20,11 @@ impl Widget for &mut InspectState<SCellContainerInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(
+        let window_area = prepare_window_area(area, buf);
+        render_description(
             self.description.as_deref(),
             &mut self.scroll_state,
-            area,
+            window_area,
             buf,
         );
     }
@@ -38,22 +39,21 @@ impl Widget for &mut InspectState<SCellImageInfo> {
         Self: Sized,
     {
         self.ls_state.render(area, buf);
-        render_inspect_window(
+        let window_area = prepare_window_area(area, buf);
+        render_description(
             self.description.as_deref(),
             &mut self.scroll_state,
-            area,
+            window_area,
             buf,
         );
     }
 }
 
 #[allow(clippy::indexing_slicing)]
-fn render_inspect_window(
-    definition: Option<&str>,
-    state: &mut ScrollViewState,
-    area: Rect,
+fn prepare_window_area(
+    area: ratatui::prelude::Rect,
     buf: &mut ratatui::prelude::Buffer,
-) {
+) -> ratatui::prelude::Rect {
     let vertical = Layout::vertical([
         Constraint::Percentage(10),
         Constraint::Percentage(80),
@@ -68,10 +68,27 @@ fn render_inspect_window(
     ])
     .split(vertical[1]);
 
-    let overlay_area = horizontal[1];
+    let window_area = horizontal[1];
+    Clear.render(window_area, buf);
 
-    let content = definition.unwrap_or("No definition available");
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Definition ")
+        .title_bottom("i / Esc: close this window")
+        .title_alignment(HorizontalAlignment::Center)
+        .border_style(Style::default().fg(Color::Cyan));
+    let inner_window_area = block.inner(window_area);
+    block.render(window_area, buf);
+   inner_window_area
+}
 
+fn render_description(
+    desc: Option<&str>,
+    state: &mut ScrollViewState,
+    area: ratatui::prelude::Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let content = desc.unwrap_or("No description available");
     let lines: Vec<Line> = content
         .lines()
         .map(|l| {
@@ -82,28 +99,13 @@ fn render_inspect_window(
         })
         .collect();
 
-    Clear.render(overlay_area, buf);
-
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Definition ")
-        .title_bottom("i / Esc: close this window")
-        .title_alignment(HorizontalAlignment::Center)
-        .border_style(Style::default().fg(Color::Cyan));
-
-    let inner_overlay_arrea = overlay_area.inner(Margin::new(1, 2));
-
     let content_height = u16::try_from(lines.len()).unwrap_or(u16::MAX);
-    let mut scroll_view = ScrollView::new(Size::new(inner_overlay_arrea.width, content_height))
+    let mut scroll_view = ScrollView::new(Size::new(area.width, content_height))
         .vertical_scrollbar_visibility(ScrollbarVisibility::Automatic)
         .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
 
     let paragraph = Paragraph::new(lines);
 
-    scroll_view.render_widget(
-        paragraph,
-        Rect::new(0, 0, inner_overlay_arrea.width, content_height),
-    );
-    scroll_view.render(inner_overlay_arrea, buf, state);
-    block.render(overlay_area, buf);
+    scroll_view.render_widget(paragraph, Rect::new(0, 0, area.width, content_height));
+    scroll_view.render(area, buf, state);
 }

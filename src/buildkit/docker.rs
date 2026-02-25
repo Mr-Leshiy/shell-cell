@@ -5,7 +5,9 @@ use bollard::{
     container::LogOutput,
     exec::{ResizeExecOptions, StartExecOptions, StartExecResults},
     query_parameters::{
-        BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions, ListContainersOptionsBuilder, ListImagesOptionsBuilder, RemoveContainerOptionsBuilder, RemoveImageOptionsBuilder
+        BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
+        ListContainersOptionsBuilder, ListImagesOptionsBuilder, RemoveContainerOptionsBuilder,
+        RemoveImageOptionsBuilder,
     },
     secret::{ContainerCreateBody, ContainerSummary, ExecConfig, ImageSummary},
 };

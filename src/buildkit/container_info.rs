@@ -134,16 +134,14 @@ impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
             .as_ref()
             .and_then(|v| {
                 v.get(CONTAINER_METADATA_DESCRIPTION_KEY)
-                        .map(|s| decode_object_from_metadata(s))
+                    .map(|s| decode_object_from_metadata(s))
             })
             .transpose()?;
 
         let image_id = value
             .labels
             .as_ref()
-            .and_then(|v| {
-                v.get(CONTAINER_METADATA_IMAGE_ID_KEY).map(|s| s.parse())
-            })
+            .and_then(|v| v.get(CONTAINER_METADATA_IMAGE_ID_KEY).map(|s| s.parse()))
             .transpose()?;
 
         let docker_image_id = value
