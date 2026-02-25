@@ -59,7 +59,9 @@ impl App {
                 app = Self::running_pty(pty, &scell)?;
             }
 
-            if let App::RunningPty(ref mut state) = app {
+            if let App::RunningPty(ref mut state)
+            | App::HelpWindow(HelpWindowState(ref mut state)) = app
+            {
                 state.notify_screen_resize(buildkit.clone());
                 if state.try_update() {
                     app = App::Finished;
@@ -102,15 +104,7 @@ impl App {
                     if matches!(key.code, KeyCode::Char('h'))
                         && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                 {
-                    self = Self::HelpWindow(HelpWindowState {
-                        running_pty_state: state,
-                    });
-                },
-                Self::RunningPty(state)
-                    if matches!(key.code, KeyCode::Char('d'))
-                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                {
-                    self = Self::Finished;
+                    self = Self::HelpWindow(HelpWindowState(state));
                 },
                 Self::RunningPty(ref state) => {
                     let event = to_terminput(Event::Key(key))?;
@@ -127,7 +121,7 @@ impl App {
                         && key.modifiers.contains(event::KeyModifiers::CONTROL))
                         || matches!(key.code, KeyCode::Esc) =>
                 {
-                    self = Self::RunningPty(state.running_pty_state);
+                    self = Self::RunningPty(state.0);
                 },
                 Self::HelpWindow(state)
                     if matches!(key.code, KeyCode::Char('d'))

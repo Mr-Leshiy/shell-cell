@@ -16,7 +16,7 @@ impl Widget for &mut HelpWindowState {
     ) where
         Self: Sized,
     {
-        self.running_pty_state.render(area, buf);
+        self.0.render(area, buf);
 
         let vertical = Layout::vertical([
             Constraint::Percentage(15),
