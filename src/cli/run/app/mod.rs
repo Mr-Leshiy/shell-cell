@@ -86,36 +86,16 @@ impl App {
             && let Event::Key(key) = event::read()?
             && key.kind == KeyEventKind::Press
         {
-            if matches!(self, App::Finished) {
-                // Exit on any key if finished
-                self = App::Exit;
-            }
-
-            if let Self::Preparing(ref mut state) = self {
-                match key.code {
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        state.scroll_down();
-                    },
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        state.scroll_up();
-                    },
-                    KeyCode::Char('c' | 'd')
-                        if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                    {
-                        self = App::Exit;
-                    },
-                    _ => {},
-                }
-            }
-            // For `RunningPty` - forward all key events to PTY stdin
-            if let Self::RunningPty(state) = self {
-                if let KeyCode::Char('h') = key.code
-                    && key.modifiers.contains(event::KeyModifiers::CONTROL)
+            match self {
+                Self::RunningPty(state)
+                    if matches!(key.code, KeyCode::Char('h'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                 {
                     self = Self::HelpWindow(HelpWindowState {
                         running_pty_state: state,
                     });
-                } else {
+                },
+                Self::RunningPty(ref state) => {
                     let event = to_terminput(Event::Key(key))?;
                     // Convert crossterm event to terminput and encode as stdin bytes
                     let mut buf = [0u8; 32];
@@ -124,8 +104,35 @@ impl App {
                     {
                         state.pty.process_stdin(bytes);
                     }
-                    self = Self::RunningPty(state);
-                }
+                },
+                Self::HelpWindow(state)
+                    if (matches!(key.code, KeyCode::Char('h'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL))
+                        || matches!(key.code, KeyCode::Esc) =>
+                {
+                    self = Self::RunningPty(state.running_pty_state);
+                },
+                Self::Preparing(ref mut state) => {
+                    match key.code {
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            state.scroll_down();
+                        },
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            state.scroll_up();
+                        },
+                        KeyCode::Char('c' | 'd')
+                            if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                        {
+                            self = App::Exit;
+                        },
+                        _ => {},
+                    }
+                },
+                Self::Finished => {
+                    // Exit on any key if finished
+                    self = App::Exit;
+                },
+                _ => {},
             }
         }
 
