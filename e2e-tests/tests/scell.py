@@ -11,8 +11,8 @@ SCELL_WINDOWN_HEIGHT = 600
 class SCell:
     def __init__(self, process: pexpect.spawn) -> None:
         self._process = process
-        fout = open('mylog.txt','wb')
-        self._process.logfile = fout
+        # fout = open('mylog.txt','wb')
+        # self._process.logfile = fout
 
     @property
     def exitstatus(self) -> int | None:
@@ -24,10 +24,7 @@ class SCell:
         return self._process.expect(pattern)
 
     def send(self, s: str) -> int:
-        return self._process.send(s)
-
-    def sendline(self, s: str = "") -> int:
-        return self._process.sendline(s)
+        return self._process.send(f"{s}\r")
 
     def close(self) -> None:
         self._process.close()
@@ -40,7 +37,7 @@ def assert_clean_exit(child: SCell) -> None:
 
 
 @pytest.fixture(scope="session")
-def scell():
+def spawn_scell():
     scell_bin = os.environ.get("SCELL_BIN")
     assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
 
