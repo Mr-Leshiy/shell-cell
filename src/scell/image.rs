@@ -110,7 +110,7 @@ impl SCellImage {
         hasher: &mut H,
     ) -> color_eyre::Result<()> {
         self.inner.hash(hasher);
-        self.dump_to_string()?.hash(hasher);
+        self.image_tar_artifact_bytes()?.hash(hasher);
         Ok(())
     }
 
