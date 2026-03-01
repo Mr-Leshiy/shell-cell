@@ -200,12 +200,21 @@ impl App {
                 )));
                 let scell = SCell::compile(scell_path, entry)?;
 
-                drop(logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)));
-                buildkit
-                    .build_image(&scell, |msg| {
-                        drop(logs_tx.send((msg, LogType::SubLog)));
-                    })
-                    .await?;
+                if buildkit.image_exists(&scell).await? {
+                    drop(logs_tx.send((
+                        "⚡ 'Shell-Cell' image already exists, skipping build".to_string(),
+                        LogType::MainInfo,
+                    )));
+                } else {
+                    drop(
+                        logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)),
+                    );
+                    buildkit
+                        .build_image(&scell, |msg| {
+                            drop(logs_tx.send((msg, LogType::SubLog)));
+                        })
+                        .await?;
+                }
 
                 drop(logs_tx.send((
                     "📦 Starting 'Shell-Cell' container".to_string(),
