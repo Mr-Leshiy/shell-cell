@@ -206,7 +206,9 @@ impl App {
                         LogType::MainInfo,
                     )));
                 } else {
-                    drop(logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)));
+                    drop(
+                        logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)),
+                    );
                     buildkit
                         .build_image(&scell, |msg| {
                             drop(logs_tx.send((msg, LogType::SubLog)));
