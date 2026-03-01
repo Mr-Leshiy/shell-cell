@@ -47,6 +47,16 @@ the instructions are executed in a specific, strict order:
 4. `copy`
 5. `build`
 
+### Statement groups
+
+Every statement in a target belongs to one of three groups, depending on what it influences:
+
+| Group | Statements | Influences |
+|---|---|---|
+| **Image** | `from`, `from_image`, `from_docker`, `workspace`, `env`, `copy`, `build`, `hang` | The built Docker image. Any change to an image statement produces a different image and triggers a rebuild. |
+| **Container** | `config` | How the container is started and kept alive. Changes here cause the existing container to be replaced. |
+| **Session** | `shell` | The interactive shell session attached to the running container. Changes here take effect on the next session without affecting the image or container. |
+
 ### `from`, `from_image`, `from_docker`
 
 Similar to the Dockerfile [`FROM`](https://docs.docker.com/reference/dockerfile/#from) instruction,
