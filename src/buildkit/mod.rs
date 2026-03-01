@@ -133,7 +133,16 @@ impl BuildKitD {
         Ok(list_all_images(&self.docker)
             .await?
             .into_iter()
-            .filter_map(|v| SCellImageInfo::try_from(v).ok())
+            .map(|v| {
+                // the same image could have more than one tag
+                v.repo_tags
+                    .clone()
+                    .into_iter()
+                    .filter_map(move |image_tag| {
+                        SCellImageInfo::try_from((image_tag, v.clone())).ok()
+                    })
+            })
+            .flatten()
             .collect())
     }
 
