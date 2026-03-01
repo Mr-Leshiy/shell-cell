@@ -80,6 +80,17 @@ impl BuildKitD {
         Ok(image_id)
     }
 
+    pub async fn image_exists(&self, scell: &SCell) -> color_eyre::Result<bool> {
+        let tag = format!("{}:latest", scell.image_id()?);
+        match self.docker.inspect_image(&tag).await {
+            Ok(_) => Ok(true),
+            Err(bollard::errors::Error::DockerResponseServerError {
+                status_code: 404, ..
+            }) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
+    }
+
     pub async fn start_container(
         &self,
         scell: &SCell,
