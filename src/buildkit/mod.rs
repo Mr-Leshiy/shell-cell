@@ -147,7 +147,7 @@ impl BuildKitD {
         Ok(list_all_images(&self.docker)
             .await?
             .into_iter()
-            .map(|v| {
+            .flat_map(|v| {
                 // the same image could have more than one tag
                 v.repo_tags
                     .clone()
@@ -156,7 +156,6 @@ impl BuildKitD {
                         SCellImageInfo::try_from((image_tag, v.clone())).ok()
                     })
             })
-            .flatten()
             .collect())
     }
 
