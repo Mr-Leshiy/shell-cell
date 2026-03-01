@@ -561,9 +561,11 @@ dependencies = [
 
 [[package]]
 name = "cue-rs"
-version = "0.1.0"
-source = "git+https://github.com/Mr-Leshiy/cue-rs#aeb840cb64b08a889f48e3bdd37942d9a0e87e67"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b63fdecf8b58e539a1cb66730cb4efa3180fa69fcb7439bfa175ab28ed2d4ddc"
 dependencies = [
+ "bytes",
  "thiserror 2.0.18",
 ]
 
