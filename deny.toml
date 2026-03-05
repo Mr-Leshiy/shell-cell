@@ -25,9 +25,7 @@ ignore = []
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-git = [
-    "https://github.com/Mr-Leshiy/cue-rs"
-]
+allow-git = []
 
 [licenses]
 version = 2
