@@ -135,7 +135,6 @@ impl SCellImage {
 
     pub fn image_tar_artifact_bytes(&self) -> color_eyre::Result<(Bytes, &str)> {
         const DOCKERFILE_NAME: &str = "Dockerfile";
-        const TEMP_DIR_PREFIX: &str = "scell";
         // Unix file mode,
         // 6 (Owner): Read (4) + Write (2) = Read & Write.
         const FILE_MODE: u32 = 0o600;

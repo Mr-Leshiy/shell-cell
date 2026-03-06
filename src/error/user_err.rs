@@ -6,6 +6,7 @@ use std::fmt::{Debug, Display};
 pub struct UserError(color_eyre::eyre::Error);
 
 impl UserError {
+    #[allow(dead_code)]
     pub fn inner(self) -> color_eyre::eyre::Error {
         self.0
     }

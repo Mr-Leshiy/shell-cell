@@ -276,6 +276,7 @@ fn decode_object_from_metadata<T: serde::de::DeserializeOwned>(s: &str) -> color
     Ok(serde_json::from_value(json)?)
 }
 
+#[allow(dead_code)]
 async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Result<()> {
     const BUILDKIT_IMAGE: &str = "moby/buildkit";
     const BUILDKIT_TAG: &str = "v0.27.1";

@@ -123,7 +123,7 @@ impl App {
                 {
                     self = Self::RunningPty(state.0);
                 },
-                Self::HelpWindow(state)
+                Self::HelpWindow(_)
                     if matches!(key.code, KeyCode::Char('d'))
                         && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                 {
