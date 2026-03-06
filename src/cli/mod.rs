@@ -3,7 +3,6 @@
 mod cleanup;
 mod init;
 mod ls;
-mod progress;
 mod run;
 mod stop;
 

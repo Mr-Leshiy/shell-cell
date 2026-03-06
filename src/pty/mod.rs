@@ -31,7 +31,6 @@ pub struct Pty {
     stderr: Receiver<Bytes>,
     container_session_id: String,
     parser: Parser<TerminalCallback>,
-    scroll_offset: usize,
 }
 
 impl Pty {
@@ -75,7 +74,6 @@ impl Pty {
             stderr,
             container_session_id,
             parser,
-            scroll_offset: 0,
         }
     }
 

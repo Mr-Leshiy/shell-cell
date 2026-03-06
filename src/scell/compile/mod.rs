@@ -244,6 +244,7 @@ fn resolve_path(
     Ok(std::fs::canonicalize(ctx.join(path))?)
 }
 
+#[allow(dead_code)]
 fn global() -> color_eyre::Result<Option<SCellFile>> {
     const SCELL_GLOBAL: &str = "global.yml";
     let scell_home = scell_home_dir()?;
