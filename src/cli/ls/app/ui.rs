@@ -23,10 +23,8 @@ impl Widget for &mut AppInner<SCellContainerInfo> {
         let inner = render_main_block(CONTAINERS_TITLE, area, buf);
         match self {
             AppInner::Loading(state) => state.render(inner, buf),
-            AppInner::Ls(ls_state) => ls_state.render(inner, buf),
-            AppInner::HelpWindow(state) => {
-                state.render(inner, buf);
-            },
+            AppInner::Ls(state) => state.render(inner, buf),
+            AppInner::HelpWindow(state) => state.render(inner, buf),
             AppInner::Stopping(state) => {
                 state.render(inner, buf);
             },
@@ -58,9 +56,7 @@ impl Widget for &mut AppInner<SCellImageInfo> {
         let inner = render_main_block(IMAGES_TITLE, area, buf);
         match self {
             AppInner::Loading(state) => state.render(inner, buf),
-            AppInner::Ls(ls_state) => {
-                ls_state.render(inner, buf);
-            },
+            AppInner::Ls(state) => state.render(inner, buf),
             AppInner::HelpWindow(state) => {
                 state.render(inner, buf);
             },

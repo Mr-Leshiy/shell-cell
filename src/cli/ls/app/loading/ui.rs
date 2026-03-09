@@ -1,14 +1,13 @@
 use ratatui::{
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph, Widget},
 };
 
-use crate::cli::ls::app::loading::LoadingState;
+use crate::{buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo}, cli::ls::app::loading::LoadingState};
 
-impl<Item> Widget for &LoadingState<Item> {
-    #[allow(clippy::indexing_slicing)]
+impl Widget for &LoadingState<SCellContainerInfo> {
     fn render(
         self,
         area: ratatui::prelude::Rect,
@@ -16,47 +15,69 @@ impl<Item> Widget for &LoadingState<Item> {
     ) where
         Self: Sized,
     {
-        let vertical = Layout::vertical([
-            Constraint::Percentage(40),
-            Constraint::Length(3),
-            Constraint::Percentage(40),
-        ])
-        .split(area);
-
-        let horizontal = Layout::horizontal([
-            Constraint::Percentage(30),
-            Constraint::Percentage(40),
-            Constraint::Percentage(30),
-        ])
-        .split(vertical[1]);
-
-        let loading_text = vec![
-            Line::from(vec![
-                Span::styled(
-                    "Loading",
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("...", Style::default().fg(Color::Cyan)),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Fetching 'Shell-Cell' info",
-                Style::default().fg(Color::Gray),
-            )),
-        ];
-
-        Widget::render(Clear, horizontal[1], buf);
-
-        let paragraph = Paragraph::new(loading_text)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Cyan)),
-            )
-            .centered();
-
-        paragraph.render(horizontal[1], buf);
+        self.ls_state.render(area, buf);
+        render_loading(area, buf);
     }
+}
+
+impl Widget for &LoadingState<SCellImageInfo> {
+    fn render(
+        self,
+        area: ratatui::prelude::Rect,
+        buf: &mut ratatui::prelude::Buffer,
+    ) where
+        Self: Sized,
+    {
+        self.ls_state.render(area, buf);
+        render_loading(area, buf);
+    }
+}
+
+#[allow(clippy::indexing_slicing)]
+fn render_loading(
+    area: Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
+    let vertical = Layout::vertical([
+        Constraint::Percentage(40),
+        Constraint::Length(3),
+        Constraint::Percentage(40),
+    ])
+    .split(area);
+
+    let horizontal = Layout::horizontal([
+        Constraint::Percentage(30),
+        Constraint::Percentage(40),
+        Constraint::Percentage(30),
+    ])
+    .split(vertical[1]);
+
+    let loading_text = vec![
+        Line::from(vec![
+            Span::styled(
+                "Loading",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("...", Style::default().fg(Color::Cyan)),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            "Fetching 'Shell-Cell' info",
+            Style::default().fg(Color::Gray),
+        )),
+    ];
+
+    Widget::render(Clear, horizontal[1], buf);
+
+    let paragraph = Paragraph::new(loading_text)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Cyan)),
+        )
+        .centered();
+
+    paragraph.render(horizontal[1], buf);
 }
