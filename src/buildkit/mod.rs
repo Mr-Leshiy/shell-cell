@@ -261,14 +261,13 @@ fn container_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, Strin
 /// Serializes `value` JSON string and which is `BASE64_URL_SAFE_NO_PAD` encoded,
 /// so it can be stored as a single-line Docker label value or container annotation value.
 ///
-/// The inverse operation is [`decode_object_from_label`].
+/// The inverse operation is [`decode_object_from_metadata`].
 fn encode_object_to_metadata<T: serde::Serialize>(value: T) -> color_eyre::Result<String> {
     let json = serde_json::to_string(&value)?;
     Ok(BASE64_URL_SAFE_NO_PAD.encode(json))
 }
 
-/// Decodes a Docker label value produced by [`encode_object_to_label`] back into
-/// a [`T`].
+/// Decodes a Docker label value produced by [`encode_object_to_metadata`] back into `T`.
 fn decode_object_from_metadata<T: serde::de::DeserializeOwned>(s: &str) -> color_eyre::Result<T> {
     let json_str_bytes = BASE64_URL_SAFE_NO_PAD.decode(s)?;
     let json_str = String::from_utf8_lossy(&json_str_bytes);
