@@ -25,7 +25,6 @@ impl<Item: Clone + AppItemSuperTrait> RemovingState<Item> {
     ///
     /// - [`AppInner::Removing`] — still waiting (self is returned back)
     /// - [`AppInner::Ls`] — removal succeeded; contains the refreshed item list
-    /// - [`AppInner::Error`] — removal failed; contains the error message
     pub fn try_recv(
         self,
         buildkit: &BuildKitD,

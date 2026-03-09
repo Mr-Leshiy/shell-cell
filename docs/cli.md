@@ -15,29 +15,41 @@ scell init
 This creates a minimal, ready-to-use `scell.yml` in the current directory.
 You can then open and adjust it to your needs.
 
-Once your file is ready, simply open your terminal in that directory and run:
+## Commands
+
+### `run` — Start a Shell-Cell Session
+
 ```shell
 scell
 ```
 
-That’s it, simple as that!
 **Shell-Cell** will automatically look for a file named `scell.yml` in your current location and start the **Shell-Cell** session on the spot.
 
-It would try to locate an entry point target - `main`.
+#### Custom entry point (`-t`, `--target`)
 
-If you want to specify some other entry point target, rather than `main`,
-you could pass a `-t`, `--target` CLI option.
+By default, **Shell-Cell** tries to locate an entry point target named `main`.
+If you want to use a different entry point, pass the `-t`, `--target` option.
 ```shell
 scell -t <other-entrypoint-target>
 ```
 
+#### Detach mode (`-d`, `--detach`)
 
-If your configuration file is located elsewhere and you don't want to change directories, you can point **Shell-Cell** directly to it.
+If you want to start the container without attaching to the shell session,
+pass the `-d`, `--detach` flag.
+```shell
+scell -d
+```
+
+This is useful for pre-warming containers in the background — the container will be started and kept alive,
+but no interactive shell will be opened.
+
+#### Custom blueprint path
+
+If your configuration file is located elsewhere and you don’t want to change directories, you can point **Shell-Cell** directly to it.
 ```shell
 scell ./path/to/the/blueprint/directory
 ```
-
-## Commands
 
 ### `init` — Create a Blueprint
 

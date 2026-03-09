@@ -25,7 +25,6 @@ impl<Item: Clone + AppItemSuperTrait> StoppingState<Item> {
     ///
     /// - [`AppInner::Stopping`] — still waiting (self is returned back)
     /// - [`AppInner::Ls`] — stop succeeded; contains the refreshed item list
-    /// - [`AppInner::Error`] — stop failed; contains the error message
     pub fn try_recv(
         self,
         buildkit: &BuildKitD,

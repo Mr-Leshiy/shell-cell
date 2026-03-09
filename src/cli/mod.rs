@@ -28,6 +28,10 @@ pub struct Cli {
     #[clap(short, long)]
     target: Option<TargetName>,
 
+    /// Run the container without attaching to the shell session
+    #[clap(short, long)]
+    detach: bool,
+
     #[clap(subcommand)]
     command: Option<Commands>,
 }
@@ -71,7 +75,7 @@ impl Cli {
 
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
-            None => run::run(self.scell_path, self.target).await?,
+            None => run::run(self.scell_path, self.target, self.detach).await?,
             Some(Commands::Init { path }) => init::init(path)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop) => stop::stop().await?,
