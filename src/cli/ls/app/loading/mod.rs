@@ -11,8 +11,7 @@ use crate::{
 
 /// Holds the state when the user is viewing the inspect overlay.
 pub struct LoadingState<Item> {
-    /// The list state to restore when the overlay is dismissed.
-    pub ls_state: LsState<Item>,
+    buildkit: BuildKitD,
     rx: Receiver<color_eyre::Result<Vec<Item>>>,
 }
 
@@ -34,10 +33,7 @@ impl LoadingState<SCellContainerInfo> {
             }
         });
 
-        Self {
-            ls_state: LsState::new(vec![], buildkit),
-            rx,
-        }
+        Self { buildkit, rx }
     }
 }
 
@@ -60,10 +56,7 @@ impl LoadingState<SCellImageInfo> {
             }
         });
 
-        Self {
-            ls_state: LsState::new(vec![], buildkit),
-            rx,
-        }
+        Self { buildkit, rx }
     }
 }
 
@@ -74,7 +67,7 @@ impl<Item: Clone + AppItemSuperTrait> LoadingState<Item> {
     /// - [`AppInner::Ls`] — stop succeeded; contains the refreshed item list
     pub fn try_recv(self) -> color_eyre::Result<AppInner<Item>> {
         match self.rx.recv_timeout(MIN_FPS) {
-            Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, self.ls_state.buildkit))),
+            Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, self.buildkit))),
             Ok(Err(e)) => {
                 color_eyre::eyre::bail!(e)
             },

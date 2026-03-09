@@ -18,8 +18,7 @@ impl Widget for &LoadingState<SCellContainerInfo> {
     ) where
         Self: Sized,
     {
-        self.ls_state.render(area, buf);
-        render_loading(area, buf);
+        render_loading("containers", area, buf);
     }
 }
 
@@ -31,13 +30,13 @@ impl Widget for &LoadingState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        self.ls_state.render(area, buf);
-        render_loading(area, buf);
+        render_loading("images", area, buf);
     }
 }
 
 #[allow(clippy::indexing_slicing)]
 fn render_loading(
+    list_type: &str,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -58,7 +57,7 @@ fn render_loading(
     let loading_text = vec![
         Line::from(vec![
             Span::styled(
-                "Loading",
+                format!("Loading {list_type}"),
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
