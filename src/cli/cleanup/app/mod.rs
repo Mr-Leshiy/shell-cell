@@ -90,10 +90,7 @@ impl App {
                         .into_iter()
                         .filter(|c| c.orphan)
                         .collect::<Vec<_>>();
-                    let images = images
-                        .into_iter()
-                        .filter(|c| c.orphan)
-                        .collect::<Vec<_>>();
+                    let images = images.into_iter().filter(|c| c.orphan).collect::<Vec<_>>();
 
                     color_eyre::eyre::Ok((containers, images))
                 };

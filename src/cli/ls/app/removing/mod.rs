@@ -3,7 +3,7 @@ mod ui;
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 
 use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
+    buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::{
         MIN_FPS,
         ls::app::{AppInner, AppItemSuperTrait, error_window::ErrorWindowState, ls::LsState},
@@ -81,12 +81,9 @@ impl<Item: Clone + AppItemSuperTrait> RemovingState<Item> {
     ///
     /// - [`AppInner::Removing`] — still waiting (self is returned back)
     /// - [`AppInner::Ls`] — removal succeeded; contains the refreshed item list
-    pub fn try_recv(
-        self,
-        buildkit: &BuildKitD,
-    ) -> color_eyre::Result<AppInner<Item>> {
+    pub fn try_recv(self) -> color_eyre::Result<AppInner<Item>> {
         match self.rx.recv_timeout(MIN_FPS) {
-            Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, buildkit.clone()))),
+            Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, self.ls_state.buildkit))),
             Ok(Err(e)) => {
                 Ok(AppInner::ErrorWindow(ErrorWindowState {
                     ls_state: self.ls_state,

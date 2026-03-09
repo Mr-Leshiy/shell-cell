@@ -2,12 +2,11 @@ mod confirm_remove;
 mod error_window;
 mod help_window;
 mod inspect;
+mod loading;
 mod ls;
 mod removing;
 mod stopping;
 mod ui;
-
-use std::sync::mpsc::Receiver;
 
 use ratatui::{
     Terminal,
@@ -23,6 +22,7 @@ use crate::{
             error_window::ErrorWindowState,
             help_window::HelpWindowState,
             inspect::{InspectState, ItemToInspect},
+            loading::LoadingState,
             ls::LsState,
             removing::RemovingState,
             stopping::StoppingState,
@@ -57,10 +57,7 @@ impl<T: ItemToInspect> AppItemSuperTrait for T {}
 
 pub enum AppInner<Item: AppItemSuperTrait> {
     /// Fetching the item list from Docker in the background.
-    Loading {
-        rx: Receiver<color_eyre::Result<Vec<Item>>>,
-        buildkit: BuildKitD,
-    },
+    Loading(LoadingState<Item>),
     /// Displaying the interactive item table.
     Ls(LsState<Item>),
     /// Displaying the help overlay over the item table.
@@ -86,12 +83,14 @@ impl App {
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::Containers(AppInner::<SCellContainerInfo>::loading(buildkit.clone()));
+        let mut app = Self::Containers(AppInner::Loading(LoadingState::<SCellContainerInfo>::new(
+            buildkit.clone(),
+        )));
 
         loop {
             let new_app = match app {
-                Self::Containers(app) => app.run_one_turn(buildkit)?.map(Self::Containers),
-                Self::Images(app) => app.run_one_turn(buildkit)?.map(Self::Images),
+                Self::Containers(app) => app.run_one_turn()?.map(Self::Containers),
+                Self::Images(app) => app.run_one_turn()?.map(Self::Images),
             };
 
             let Some(new_app) = new_app else {
@@ -134,15 +133,19 @@ impl App {
             match self {
                 Self::Containers(app) => {
                     self = app.handle_key_event(key)?.map_or_else(
-                        || Self::Images(AppInner::<SCellImageInfo>::loading(buildkit.clone())),
+                        || {
+                            Self::Images(AppInner::Loading(LoadingState::<SCellImageInfo>::new(
+                                buildkit.clone(),
+                            )))
+                        },
                         Self::Containers,
                     );
                 },
                 Self::Images(app) => {
                     self = app.handle_key_event(key)?.map_or_else(
                         || {
-                            Self::Containers(AppInner::<SCellContainerInfo>::loading(
-                                buildkit.clone(),
+                            Self::Containers(AppInner::Loading(
+                                LoadingState::<SCellContainerInfo>::new(buildkit.clone()),
                             ))
                         },
                         Self::Images,
@@ -158,27 +161,17 @@ impl App {
 impl<Item: Clone + AppItemSuperTrait> AppInner<Item> {
     /// Runs only ONE TUI event loop, polling for state transitions and key events.
     /// Returns `None` if its `Exit` state.
-    fn run_one_turn(
-        mut self,
-        buildkit: &BuildKitD,
-    ) -> color_eyre::Result<Option<Self>> {
-        // Loading → Ls: container list is ready
-        if let Self::Loading {
-            ref rx,
-            ref buildkit,
-        } = self
-            && let Ok(result) = rx.try_recv()
-        {
-            let items = result?;
-            self = Self::Ls(LsState::new(items, buildkit.clone()));
+    fn run_one_turn(mut self) -> color_eyre::Result<Option<Self>> {
+        if let Self::Loading(state) = self {
+            self = state.try_recv()?;
         }
 
         if let Self::Stopping(state) = self {
-            self = state.try_recv(buildkit)?;
+            self = state.try_recv()?;
         }
 
         if let Self::Removing(state) = self {
-            self = state.try_recv(buildkit)?;
+            self = state.try_recv()?;
         }
 
         if matches!(self, Self::Exit) {
@@ -190,27 +183,6 @@ impl<Item: Clone + AppItemSuperTrait> AppInner<Item> {
 }
 
 impl AppInner<SCellContainerInfo> {
-    /// Creates a new `App` in the `Loading` state, spawning an async task
-    /// that fetches the current Shell-Cell container list.
-    fn loading(buildkit: BuildKitD) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        tokio::spawn({
-            let buildkit = buildkit.clone();
-            async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    res
-                }
-                .await;
-                drop(tx.send(result));
-            }
-        });
-
-        Self::Loading { rx, buildkit }
-    }
-
     /// Handles a single key event, dispatching navigation and actions
     /// based on the current state.
     fn handle_key_event(
@@ -298,27 +270,6 @@ impl AppInner<SCellContainerInfo> {
 }
 
 impl AppInner<SCellImageInfo> {
-    /// Creates a new `App` in the `Loading` state, spawning an async task
-    /// that fetches the current Shell-Cell image list.
-    fn loading(buildkit: BuildKitD) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        tokio::spawn({
-            let buildkit = buildkit.clone();
-            async move {
-                let result = async {
-                    let res = buildkit.list_images().await;
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    res
-                }
-                .await;
-                drop(tx.send(result));
-            }
-        });
-
-        Self::Loading { rx, buildkit }
-    }
-
     /// Handles a single key event, dispatching navigation and actions
     /// based on the current state.
     fn handle_key_event(

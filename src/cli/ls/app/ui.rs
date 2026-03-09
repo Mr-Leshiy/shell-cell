@@ -1,10 +1,9 @@
 use std::fmt::Display;
 
 use ratatui::{
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph, Widget},
+    layout::Rect,
+    style::Style,
+    widgets::{Block, Borders, Widget},
 };
 
 use super::AppInner;
@@ -23,7 +22,7 @@ impl Widget for &mut AppInner<SCellContainerInfo> {
     {
         let inner = render_main_block(CONTAINERS_TITLE, area, buf);
         match self {
-            AppInner::Loading { .. } => render_loading(inner, buf),
+            AppInner::Loading(state) => state.render(inner, buf),
             AppInner::Ls(ls_state) => ls_state.render(inner, buf),
             AppInner::HelpWindow(state) => {
                 state.render(inner, buf);
@@ -58,7 +57,7 @@ impl Widget for &mut AppInner<SCellImageInfo> {
     {
         let inner = render_main_block(IMAGES_TITLE, area, buf);
         match self {
-            AppInner::Loading { .. } => render_loading(inner, buf),
+            AppInner::Loading(state) => state.render(inner, buf),
             AppInner::Ls(ls_state) => {
                 ls_state.render(inner, buf);
             },
@@ -83,55 +82,6 @@ impl Widget for &mut AppInner<SCellImageInfo> {
             AppInner::Exit => {},
         }
     }
-}
-
-#[allow(clippy::indexing_slicing)]
-fn render_loading(
-    area: Rect,
-    buf: &mut ratatui::prelude::Buffer,
-) {
-    let vertical = Layout::vertical([
-        Constraint::Percentage(40),
-        Constraint::Length(3),
-        Constraint::Percentage(40),
-    ])
-    .split(area);
-
-    let horizontal = Layout::horizontal([
-        Constraint::Percentage(30),
-        Constraint::Percentage(40),
-        Constraint::Percentage(30),
-    ])
-    .split(vertical[1]);
-
-    let loading_text = vec![
-        Line::from(vec![
-            Span::styled(
-                "Loading",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("...", Style::default().fg(Color::Cyan)),
-        ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            "Fetching 'Shell-Cell' info",
-            Style::default().fg(Color::Gray),
-        )),
-    ];
-
-    Widget::render(Clear, horizontal[1], buf);
-
-    let paragraph = Paragraph::new(loading_text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan)),
-        )
-        .centered();
-
-    paragraph.render(horizontal[1], buf);
 }
 
 fn render_main_block(
