@@ -56,8 +56,10 @@ impl App {
                 && state.try_update()
                 && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
-                let (pty, scell) = res?;
-                app = Self::running_pty(pty, &scell)?;
+                match res? {
+                    Some((pty, scell)) => app = Self::running_pty(pty, &scell)?,
+                    None => app = App::Exit,
+                }
             }
 
             if let App::RunningPty(ref mut state)
@@ -161,7 +163,7 @@ impl App {
         buildkit: BuildKitD,
         scell_path: P,
         entry: Option<TargetName>,
-        _detach: bool,
+        detach: bool,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
         let (logs_tx, logs_rx) = std::sync::mpsc::channel();
@@ -223,13 +225,18 @@ impl App {
                     LogType::Main,
                 )));
                 buildkit.start_container(&scell).await?;
+
+                if detach {
+                    return color_eyre::eyre::Ok(None);
+                }
+
                 let pty = buildkit.attach_to_shell(&scell).await?;
 
                 drop(logs_tx.send((
                     "🚀 Starting 'Shell-Cell' session".to_string(),
                     LogType::Main,
                 )));
-                color_eyre::eyre::Ok((pty, scell))
+                color_eyre::eyre::Ok(Some((pty, scell)))
             };
 
             match preparing().await {

@@ -12,7 +12,7 @@ use crate::{cli::MIN_FPS, pty::Pty, scell::SCell};
 const LOGS_WINDOW: usize = 5000;
 
 pub struct PreparingState {
-    pub rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
+    pub rx: Receiver<color_eyre::Result<Option<(Pty, SCell)>>>,
     pub logs_rx: Receiver<(String, LogType)>,
     pub logs: VecDeque<(String, LogType)>,
     pub scroll_view_state: ScrollViewState,
@@ -28,7 +28,7 @@ pub enum LogType {
 
 impl PreparingState {
     pub fn new(
-        rx: Receiver<color_eyre::Result<(Pty, SCell)>>,
+        rx: Receiver<color_eyre::Result<Option<(Pty, SCell)>>>,
         logs_rx: Receiver<(String, LogType)>,
     ) -> Self {
         Self {
