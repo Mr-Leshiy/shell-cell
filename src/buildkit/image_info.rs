@@ -16,7 +16,6 @@ pub const IMAGE_METADATA_DESCRIPTION_KEY: &str = "scell-image-description";
 pub struct SCellImageInfo {
     pub id: SCellId,
     pub orphan: bool,
-    pub in_use: bool,
     pub location: Option<PathBuf>,
     pub target: Option<TargetName>,
     pub desc: Option<yaml_serde::Value>,
@@ -33,8 +32,6 @@ impl TryFrom<(String, bollard::secret::ImageSummary)> for SCellImageInfo {
         let Some((image_name, "latest")) = image_tag.split_once(':') else {
             color_eyre::eyre::bail!("'Shell-Cell' image tag must be '<scell_name>:latest'");
         };
-
-        let in_use = value.containers > 0;
 
         let created_at = Some(
             DateTime::from_timestamp_secs(value.created)
@@ -78,7 +75,6 @@ impl TryFrom<(String, bollard::secret::ImageSummary)> for SCellImageInfo {
         Ok(Self {
             id,
             orphan,
-            in_use,
             location,
             target,
             desc,
