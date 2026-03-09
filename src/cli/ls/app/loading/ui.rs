@@ -5,7 +5,10 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Paragraph, Widget},
 };
 
-use crate::{buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo}, cli::ls::app::loading::LoadingState};
+use crate::{
+    buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
+    cli::ls::app::loading::LoadingState,
+};
 
 impl Widget for &LoadingState<SCellContainerInfo> {
     fn render(
