@@ -3,7 +3,7 @@ mod ui;
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 
 use crate::{
-    buildkit::BuildKitD,
+    buildkit::{BuildKitD, container_info::SCellContainerInfo},
     cli::{
         MIN_FPS,
         ls::app::{AppInner, AppItemSuperTrait, error_window::ErrorWindowState, ls::LsState},
@@ -18,6 +18,34 @@ pub struct StoppingState<Item> {
     pub for_stop: Item,
     pub ls_state: LsState<Item>,
     pub rx: Receiver<color_eyre::Result<Vec<Item>>>,
+}
+
+impl StoppingState<SCellContainerInfo> {
+    /// Spawns a background task that stops `container` and re-fetches the list,
+    /// returning a [`StoppingState`] to track progress.
+    pub fn new(
+        ls_state: LsState<SCellContainerInfo>,
+        for_stop: SCellContainerInfo,
+    ) -> Self {
+        let buildkit = ls_state.buildkit.clone();
+        let (tx, rx) = std::sync::mpsc::channel();
+        tokio::spawn({
+            let container = for_stop.clone();
+            async move {
+                let res = buildkit.stop_container(&container).await;
+                let res = match res {
+                    Ok(()) => buildkit.list_containers().await,
+                    Err(e) => Err(e),
+                };
+                drop(tx.send(res));
+            }
+        });
+        Self {
+            for_stop,
+            ls_state,
+            rx,
+        }
+    }
 }
 
 impl<Item: Clone + AppItemSuperTrait> StoppingState<Item> {

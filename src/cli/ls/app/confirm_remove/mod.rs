@@ -24,49 +24,13 @@ impl<Item> ConfirmRemoveState<Item> {
 impl ConfirmRemoveState<SCellContainerInfo> {
     /// User confirmed removal - initiate the removal process.
     pub fn confirm(self) -> RemovingState<SCellContainerInfo> {
-        let (tx, rx) = std::sync::mpsc::channel();
-        let buildkit = self.ls_state.buildkit.clone();
-        tokio::spawn({
-            let for_removal = self.selected_to_remove.clone();
-            async move {
-                let res = buildkit.cleanup_container(&for_removal).await;
-                let res = match res {
-                    Ok(()) => buildkit.list_containers().await,
-                    Err(e) => Err(e),
-                };
-                drop(tx.send(res));
-            }
-        });
-
-        RemovingState {
-            for_removal: self.selected_to_remove,
-            ls_state: self.ls_state,
-            rx,
-        }
+        RemovingState::<SCellContainerInfo>::new(self.ls_state, self.selected_to_remove)
     }
 }
 
 impl ConfirmRemoveState<SCellImageInfo> {
     /// User confirmed removal - initiate the removal process.
     pub fn confirm(self) -> RemovingState<SCellImageInfo> {
-        let (tx, rx) = std::sync::mpsc::channel();
-        let buildkit = self.ls_state.buildkit.clone();
-        tokio::spawn({
-            let for_removal = self.selected_to_remove.clone();
-            async move {
-                let res = buildkit.cleanup_image(&for_removal).await;
-                let res = match res {
-                    Ok(()) => buildkit.list_images().await,
-                    Err(e) => Err(e),
-                };
-                drop(tx.send(res));
-            }
-        });
-
-        RemovingState {
-            for_removal: self.selected_to_remove,
-            ls_state: self.ls_state,
-            rx,
-        }
+        RemovingState::<SCellImageInfo>::new(self.ls_state, self.selected_to_remove)
     }
 }

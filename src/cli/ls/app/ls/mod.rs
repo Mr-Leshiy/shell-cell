@@ -102,28 +102,9 @@ impl LsState<SCellContainerInfo> {
         let container = self
             .items
             .get(selected)
-            .context("Selected item must be present in the list")?;
-        let buildkit = self.buildkit.clone();
-
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        tokio::spawn({
-            let container = container.clone();
-            async move {
-                let res = buildkit.stop_container(&container).await;
-                let res = match res {
-                    Ok(()) => buildkit.list_containers().await,
-                    Err(e) => Err(e),
-                };
-                drop(tx.send(res));
-            }
-        });
-
-        Ok(StoppingState {
-            for_stop: container.clone(),
-            ls_state: self,
-            rx,
-        })
+            .context("Selected item must be present in the list")?
+            .clone();
+        Ok(StoppingState::new(self, container))
     }
 }
 
