@@ -77,7 +77,7 @@ impl Widget for &LsState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        let header_cells = ["ID", "Target", "Blueprint Location", "Created At", "Status"]
+        let header_cells = ["ID", "Target", "Blueprint Location", "Created At"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
         let header = Row::new(header_cells)
@@ -105,11 +105,6 @@ impl Widget for &LsState<SCellImageInfo> {
                     || "<empty>".to_string(),
                     |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
                 )),
-                Cell::from(if c.in_use {
-                    "in use".to_string()
-                } else {
-                    String::new()
-                }),
             ];
             Row::new(cells).height(1)
         });
@@ -117,9 +112,8 @@ impl Widget for &LsState<SCellImageInfo> {
         let widths = [
             Constraint::Percentage(25),
             Constraint::Percentage(5),
-            Constraint::Percentage(40),
+            Constraint::Percentage(50),
             Constraint::Percentage(20),
-            Constraint::Percentage(10),
         ];
 
         let table = Table::new(rows, widths)
