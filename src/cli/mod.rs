@@ -20,7 +20,7 @@ const MIN_FPS: Duration = Duration::from_millis(1000 / 60);
 #[clap(version = crate_info::version())]
 #[clap(about = crate_info::description())]
 pub struct Cli {
-    /// Path to the directory with 'scell.yml' file (optional),
+    /// Path to the directory with 'scell.cue' file (optional),
     #[clap(value_name = "FILE", default_value = ".")]
     scell_path: PathBuf,
 
@@ -38,7 +38,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Create a minimal `scell.yml` blueprint in the target directory
+    /// Create a minimal `scell.cue` blueprint in the target directory
     Init {
         /// Directory to create the blueprint in (defaults to current directory)
         #[clap(value_name = "PATH", default_value = ".")]
