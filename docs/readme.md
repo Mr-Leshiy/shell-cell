@@ -1,13 +1,13 @@
 ## 💡 The Core Idea
 
 **Shell-Cell** is a lightweight containerized shells orchestrator
-that turns simple [YAML](https://yaml.org) blueprints into instant, isolated shell sessions.
+that turns simple [CUE](https://cuelang.org) blueprints into instant, isolated shell sessions.
 
 It could be really handy, when you want to have secure, isolated place for your development.
 
 ## 🏛️ Architecture concepts
 
-1. **The Blueprint (`scell.yml`)**.<br>
+1. **The Blueprint (`scell.cue`)**.<br>
     Everything starts with the configuration file.
     It describes how your environment should be built, how it should behave at runtime and what data or resources you are exposing to it.
 

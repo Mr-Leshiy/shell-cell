@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Shell-Cell (`scell`) is a lightweight CLI tool that creates instant, isolated, and reproducible containerized development shell sessions. It uses YAML blueprints (`scell.yml`) to define layered environments (called "targets") that compile into Docker images and run as persistent "shell server" containers.
+Shell-Cell (`scell`) is a lightweight CLI tool that creates instant, isolated, and reproducible containerized development shell sessions. It uses CUE blueprints (`scell.cue`) to define layered environments (called "targets") that compile into Docker images and run as persistent "shell server" containers.
 
 **Key Concept**: Unlike standard containers that run a task and exit, Shell-Cell containers use a `hang` instruction to stay alive as background servers, allowing multiple shell sessions to attach to a warm, ready environment.
 
@@ -41,7 +41,7 @@ cargo clippy --all-targets
 # Build and run
 cargo run
 
-# Run with a specific scell.yml path
+# Run with a specific scell.cue path
 cargo run -- /path/to/directory
 
 # List containers
@@ -60,7 +60,7 @@ The binary name is `scell` (defined in Cargo.toml).
 
 ### Core Pipeline: Blueprint → Image → Container → Shell
 
-1. **Parser** (`src/scell/parser/`): Parses `scell.yml` files into `SCellFile` and `TargetStmt` structures
+1. **Parser** (`src/scell/parser/`): Parses `scell.cue` files into `SCellFile` and `TargetStmt` structures
 2. **Compiler** (`src/scell/compile/`): Resolves target references recursively, building a chain of `Link`s (Root + Nodes) to form an `SCell`
 3. **Image Builder** (`src/scell/image.rs`): Generates a Dockerfile and tar artifact from the `SCell` link chain
 4. **BuildKit** (`src/buildkit/`): Uses Bollard (Docker client) to build images and manage containers
@@ -78,7 +78,7 @@ The binary name is `scell` (defined in Cargo.toml).
 
 - **Target Resolution**: Starting from entry point (`main` by default), the compiler follows `from` statements recursively:
   - `from: debian:bookworm` → Root image
-  - `from: path/to/dir+target_name` → Reference to another target (potentially in another `scell.yml`)
+  - `from: path/to/dir+target_name` → Reference to another target (potentially in another `scell.cue`)
 
 - **Build Order**: Targets are parsed from entry→root, but Dockerfile generation happens in reverse (root→entry)
 
@@ -110,7 +110,7 @@ Containers are named `scell-<hash>` where `<hash>` is a MetroHash64 of the entir
 
 Images are tagged with metadata labels:
 - `scell-name`: Target name
-- `scell-location`: Absolute path to the `scell.yml` file
+- `scell-location`: Absolute path to the `scell.cue` file
 
 ## Linting Rules
 
@@ -130,7 +130,7 @@ scell_home_dir() // Returns ~/.scell/
 ```
 
 ### Blueprint Location
-The CLI accepts a directory path, not a file path. It always looks for `scell.yml` in that directory.
+The CLI accepts a directory path, not a file path. It always looks for `scell.cue` in that directory.
 
 ### Docker Integration
 All Docker operations go through `BuildKitD` (`src/buildkit/mod.rs`), which wraps the Bollard client. The project uses async/await with Tokio runtime.

@@ -4,7 +4,7 @@
 
 # **Shell-Cell**
 
-Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, and reproducible containerized development shell sessions.
+Lightweight CLI tool that turns simple CUE blueprints into instant, isolated, and reproducible containerized development shell sessions.
 </div>
 
 > [!WARNING]
@@ -12,7 +12,7 @@ Lightweight CLI tool that turns simple YAML blueprints into instant, isolated, a
 
 ## 💡 How It Works
 
-**Shell-Cell** reads a `scell.yml` blueprint, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
+**Shell-Cell** reads a `scell.cue` blueprint, compiles it into a image, and launches a persistent container that acts as a "shell server". You can then attach interactive shell sessions to this warm, ready-to-use environment.
 
 ## 🚀 Quick Start
 
@@ -40,7 +40,7 @@ For socket configuration and other setup details, see the [Install and Configure
 
 ### Create a Blueprint
 
-Run `scell init` to generate a minimal `scell.yml` in your project directory:
+Run `scell init` to generate a minimal `scell.cue` in your project directory:
 
 ```shell
 scell init
@@ -48,12 +48,13 @@ scell init
 
 Or write one by hand (see the full [Blueprint Reference](https://mr-leshiy.github.io/shell-cell/blueprint) for all available instructions):
 
-```yml
-main:
-  from_image: debian:bookworm
-  workspace: /app
-  shell: /bin/bash
-  hang: while true; do sleep 3600; done
+```cue
+main: {
+  from_image: "debian:bookworm"
+  workspace:  "/app"
+  shell:      "/bin/bash"
+  hang:       "while true; do sleep 3600; done"
+}
 ```
 
 ### Launch a Session
@@ -62,7 +63,7 @@ main:
 scell
 ```
 
-That's it! **Shell-Cell** will find the `scell.yml` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](https://mr-leshiy.github.io/shell-cell/cli).
+That's it! **Shell-Cell** will find the `scell.cue` in your current directory, build the environment, and drop you into an interactive shell. For more CLI options and usage patterns, see the [CLI Reference](https://mr-leshiy.github.io/shell-cell/cli).
 
 ## 👨🏻‍👩🏻‍👦🏻‍👦🏻 Community
 
