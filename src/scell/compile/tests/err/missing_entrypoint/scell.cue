@@ -1,0 +1,5 @@
+other: {
+	from_image: "from"
+	shell:      "shell"
+	hang:       "hang"
+}

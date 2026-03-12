@@ -1,0 +1,9 @@
+main: {
+	from_image: "from"
+	shell:      "shell"
+	hang:       "hang"
+	env: [
+		"DB_HOST=localhost",
+		"PORT=8080",
+	]
+}

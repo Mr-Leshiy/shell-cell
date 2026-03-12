@@ -1,0 +1,5 @@
+main: {
+	from:  "empty_dir+other"
+	shell: "shell"
+	hang:  "hang"
+}

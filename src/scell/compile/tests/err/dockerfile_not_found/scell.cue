@@ -1,0 +1,5 @@
+main: {
+	from_docker: "Dockerfile"
+	shell:       "shell"
+	hang:        "hang"
+}

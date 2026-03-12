@@ -1,0 +1,5 @@
+main: {
+	from:  "+missing_target"
+	shell: "shell"
+	hang:  "hang"
+}

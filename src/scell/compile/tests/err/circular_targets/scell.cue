@@ -1,0 +1,5 @@
+main: {
+	from:  "other+other"
+	shell: "shell"
+	hang:  "hang"
+}
