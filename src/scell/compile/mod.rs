@@ -22,6 +22,7 @@ use crate::{
         link::RootNode,
         types::{
             SCellFile,
+            extra_arguments::SCellExtraArguments,
             name::TargetName,
             target::{
                 TargetStmt,
@@ -52,7 +53,7 @@ impl SCell {
         path: P,
         entry: Option<TargetName>,
     ) -> color_eyre::Result<Self> {
-        let mut scell_f = SCellFile::from_path(path)?;
+        let mut scell_f = SCellFile::from_path(path, &SCellExtraArguments::new_emtpy())?;
         let entry_point_target = entry.map_or_else(
             || {
                 SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(
@@ -154,8 +155,8 @@ impl SCell {
                         let location = resolve_path(&walk_f.location, &location).user_err(
                             DirNotFoundFromStmt(location, name.clone(), walk_f.location.clone()),
                         )?;
-                        walk_f =
-                            SCellFile::from_path(&location).wrap_user_err(FileLoadFromStmt(
+                        walk_f = SCellFile::from_path(&location, &SCellExtraArguments::new_emtpy())
+                            .wrap_user_err(FileLoadFromStmt(
                                 location.clone(),
                                 name.clone(),
                                 walk_f.location.clone(),
@@ -248,14 +249,17 @@ fn resolve_path(
 fn global() -> color_eyre::Result<Option<SCellFile>> {
     const SCELL_GLOBAL: &str = "global.yml";
     let scell_home = scell_home_dir()?;
-    SCellFile::from_path(scell_home.join(SCELL_GLOBAL))
-        .map(Some)
-        .or_else(|e| {
-            let io_e = e.downcast::<std::io::Error>()?;
-            if io_e.kind() == std::io::ErrorKind::NotFound {
-                Ok(None)
-            } else {
-                Err(io_e.into())
-            }
-        })
+    SCellFile::from_path(
+        scell_home.join(SCELL_GLOBAL),
+        &SCellExtraArguments::new_emtpy(),
+    )
+    .map(Some)
+    .or_else(|e| {
+        let io_e = e.downcast::<std::io::Error>()?;
+        if io_e.kind() == std::io::ErrorKind::NotFound {
+            Ok(None)
+        } else {
+            Err(io_e.into())
+        }
+    })
 }

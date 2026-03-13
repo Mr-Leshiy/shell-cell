@@ -1,30 +1,56 @@
-use std::path::Path;
+#![allow(dead_code)]
 
-use super::errors::{FileOpenFailed, FilePathNotResolved};
+use std::path::{Path, PathBuf};
+
+use super::{
+    CUE_CTX,
+    errors::{FileOpenFailed, FilePathNotResolved},
+};
 use crate::error::WrapUserError;
 
 pub const SCELL_ARGS_FILE_NAME: &str = ".scell_args";
 
-/// A type wrapper over a compiled CUE value representing extra arguments
-/// that can be passed to a Shell-Cell session.
+/// Holds an optional [`SCellExtraArgumentsFile`] loaded from a `.scell_args` file.
+/// When the file is absent the inner field is `None`.
 #[derive(Debug)]
-pub struct SCellExtraArguments(cue_rs::Value);
+pub struct SCellExtraArguments {
+    file: Option<SCellExtraArgumentsFile>,
+}
+
+/// The parsed contents of a `.scell_args` CUE file.
+#[derive(Debug)]
+struct SCellExtraArgumentsFile {
+    value: cue_rs::Value,
+    location: PathBuf,
+}
 
 impl SCellExtraArguments {
+    pub fn new_emtpy() -> Self {
+        Self { file: None }
+    }
+
     /// Reads and compiles the `.scell_args` CUE file found in the given directory
     /// into a [`SCellExtraArguments`].
     pub fn from_path<P: AsRef<Path>>(path: P) -> color_eyre::Result<Self> {
-        let ctx = cue_rs::Ctx::new()?;
-
         let location = std::fs::canonicalize(&path)
             .wrap_user_err(FilePathNotResolved(path.as_ref().to_path_buf()))?;
-        let file_path = location.join(SCELL_ARGS_FILE_NAME);
+        let location = location.join(SCELL_ARGS_FILE_NAME);
 
-        let bytes = std::fs::read(&file_path).wrap_user_err(FileOpenFailed(file_path.clone()))?;
+        let file = match std::fs::read(&location) {
+            Ok(b) => {
+                let value = cue_rs::Value::compile_bytes(&CUE_CTX, &b).mark_as_user_err()?;
+                value.is_valid().mark_as_user_err()?;
+                Some(SCellExtraArgumentsFile { value, location })
+            },
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => return Err(e).wrap_user_err(FileOpenFailed(location))?,
+        };
 
-        let value = cue_rs::Value::compile_bytes(&ctx, &bytes).mark_as_user_err()?;
-        value.is_valid().mark_as_user_err()?;
+        Ok(Self { file })
+    }
 
-        Ok(Self(value))
+    /// Returns the compiled CUE value.
+    pub fn cue_value(&self) -> Option<&cue_rs::Value> {
+        self.file.as_ref().map(|f| &f.value)
     }
 }
