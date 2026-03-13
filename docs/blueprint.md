@@ -248,7 +248,7 @@ config: {
 When present, its CUE values are unified with the blueprint before compilation, allowing you to supply
 concrete values for CUE constraints declared in `scell.cue`.
 
-This is useful for parameterizing a blueprint — keeping the blueprint generic and checked in, while
+This is useful for parameterize a blueprint — keeping the blueprint generic and checked in, while
 supplying environment-specific or personal overrides through a gitignored `.scell_args.cue` file.
 Typical uses include machine-specific paths, image tags, and secrets such as API keys or tokens
 that should never be committed to version control.
