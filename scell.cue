@@ -25,16 +25,7 @@ main: {
 	hang:      "while true; do sleep 3600; done"
 	config: {
 		mounts: [
-			"./.claude:/shell_cell/.claude",
-			"./.github:/shell_cell/.github",
-			"./docs:/shell_cell/docs",
-			"./e2e-tests:/shell_cell/e2e-tests",
-			"./src:/shell_cell/src",
-			"./build.rs:/shell_cell/build.rs",
-			"./README.md:/shell_cell/README.md",
-			"./CLAUDE.md:/shell_cell/CLAUDE.md",
-			"./Cargo.toml:/shell_cell/Cargo.toml",
-			"./Cargo.lock:/shell_cell/Cargo.lock",
+			"./:/shell_cell/",
 		]
 	}
 }
