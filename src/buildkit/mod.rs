@@ -123,7 +123,6 @@ impl BuildKitD {
         container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
         remove_container(&self.docker, container.id.as_str()).await?;
-        remove_image(&self.docker, &container.docker_image_id).await?;
         Ok(())
     }
 
