@@ -35,7 +35,7 @@ pub struct SCellFile {
 impl SCellFile {
     pub fn from_path<P: AsRef<Path>>(
         path: P,
-        _extra_args: &SCellExtraArguments,
+        extra_args: &SCellExtraArguments,
     ) -> color_eyre::Result<Self> {
         let schema = cue_rs::Value::compile_bytes(&CUE_CTX, SCELL_SCHEMA)?;
         schema.is_valid()?;
@@ -47,7 +47,10 @@ impl SCellFile {
         let scell_yaml_bytes =
             std::fs::read(&file_path).wrap_user_err(FileOpenFailed(file_path.clone()))?;
 
-        let scell_cue = cue_rs::Value::compile_bytes(&CUE_CTX, &scell_yaml_bytes)?;
+        let mut scell_cue = cue_rs::Value::compile_bytes(&CUE_CTX, &scell_yaml_bytes)?;
+        if let Some(extra_args) = extra_args.cue_value() {
+            scell_cue = cue_rs::Value::unify(&scell_cue, extra_args);
+        }
         let scell_cue = cue_rs::Value::unify(&schema, &scell_cue);
         scell_cue.is_valid().mark_as_user_err()?;
 

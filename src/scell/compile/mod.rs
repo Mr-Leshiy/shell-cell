@@ -53,7 +53,8 @@ impl SCell {
         path: P,
         entry: Option<TargetName>,
     ) -> color_eyre::Result<Self> {
-        let mut scell_f = SCellFile::from_path(path, &SCellExtraArguments::new_emtpy())?;
+        let scell_extra_args = SCellExtraArguments::from_path(&path)?;
+        let mut scell_f = SCellFile::from_path(path, &scell_extra_args)?;
         let entry_point_target = entry.map_or_else(
             || {
                 SCELL_DEFAULT_ENTRY_POINT.parse().context(format!(

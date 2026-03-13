@@ -25,6 +25,7 @@ struct SCellExtraArgumentsFile {
 }
 
 impl SCellExtraArguments {
+    /// Creates a [`SCellExtraArguments`] with no extra arguments loaded.
     pub fn new_emtpy() -> Self {
         Self { file: None }
     }
