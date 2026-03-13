@@ -239,3 +239,62 @@ config: {
     ]
 }
 ```
+
+## Extra Arguments (`.scell_args.cue`)
+
+**Shell-Cell** supports a companion file `.scell_args.cue` placed in the same directory as `scell.cue`.
+When present, its CUE values are unified with the blueprint before compilation, allowing you to supply
+concrete values for CUE constraints declared in `scell.cue`.
+
+This is useful for parameterizing a blueprint — keeping the blueprint generic and checked in, while
+supplying environment-specific or personal overrides through a gitignored `.scell_args.cue` file.
+Typical uses include machine-specific paths, image tags, and secrets such as API keys or tokens
+that should never be committed to version control.
+
+### How it works
+
+Declare open constraints (string fields) in `scell.cue`:
+
+```cue
+_from_image_arg: string
+_workspace_arg:  string
+_env_arg:        int
+
+main: {
+    from_image: _from_image_arg
+    workspace:  _workspace_arg
+    shell:      "/bin/bash"
+    hang:       "while true; do sleep 3600; done"
+    env: [
+        "SOME_ENV=\(_env_arg)"
+    ]
+}
+```
+
+Then provide the concrete values in `.scell_args.cue`. Since the file is full CUE, you can use
+all CUE features — including string interpolation to compose values from other fields:
+
+```cue
+_from_image_arg:"debian:bookworm"
+_workspace_arg: "/app"
+_env_arg:       10
+```
+
+At compile time, **Shell-Cell** unifies the two files. The result is equivalent to having written
+those values directly in `scell.cue`.
+```cue
+main: {
+	from_image: "debian:bookworm"
+	workspace:  "/app"
+	shell:      "/bin/bash"
+	hang:       "while true; do sleep 3600; done"
+	env: ["SOME_ENV=10"]
+}
+```
+
+### Notes
+
+- `.scell_args.cue` is optional. If it is absent, the blueprint is compiled as-is.
+- The file is looked up only in the same directory as `scell.cue`; there is no recursive search.
+- Any CUE unification error (e.g. a value that conflicts with a constraint) is reported as a user error.
+- Add `.scell_args.cue` to `.gitignore` to keep secrets and personal overrides out of version control.
