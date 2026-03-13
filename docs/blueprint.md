@@ -4,6 +4,8 @@
 
 `scell.cue` - is a [CUE](https://cuelang.org) formatted file that contains everything needed to configure your session.
 
+To learn more about CUE capabilities go to the original [docs](https://cuelang.org/docs/reference/spec/).
+
 > The full formal definition of the blueprint schema is available at [`src/scell/types/scell_schema.cue`](../src/scell/types/scell_schema.cue).
 
 Here is a minimal functional example:
@@ -250,6 +252,8 @@ This is useful for parameterizing a blueprint — keeping the blueprint generic 
 supplying environment-specific or personal overrides through a gitignored `.scell_args.cue` file.
 Typical uses include machine-specific paths, image tags, and secrets such as API keys or tokens
 that should never be committed to version control.
+
+To learn more about CUE capabilities go to the original [docs](https://cuelang.org/docs/reference/spec/).
 
 ### How it works
 
