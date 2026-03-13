@@ -1,6 +1,7 @@
 //! Implements a parsing and processing of Shell-Cell '.cue' files
 
 pub mod errors;
+pub mod extra_arguments;
 pub mod name;
 pub mod target;
 
