@@ -14,6 +14,7 @@ class ScellEnv:
 ENVS = [
     ScellEnv("data/common", 4321),
     ScellEnv("data/from_docker", 4322),
+    ScellEnv("data/extra-args", 4323),
 ]
 
 

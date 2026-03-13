@@ -8,10 +8,8 @@ use super::{
 };
 use crate::error::WrapUserError;
 
-pub const SCELL_ARGS_FILE_NAME: &str = ".scell_args";
+pub const SCELL_ARGS_FILE_NAME: &str = ".scell_args.cue";
 
-/// Holds an optional [`SCellExtraArgumentsFile`] loaded from a `.scell_args` file.
-/// When the file is absent the inner field is `None`.
 #[derive(Debug)]
 pub struct SCellExtraArguments {
     file: Option<SCellExtraArgumentsFile>,
@@ -36,7 +34,6 @@ impl SCellExtraArguments {
         let location = std::fs::canonicalize(&path)
             .wrap_user_err(FilePathNotResolved(path.as_ref().to_path_buf()))?;
         let location = location.join(SCELL_ARGS_FILE_NAME);
-
         let file = match std::fs::read(&location) {
             Ok(b) => {
                 let value = cue_rs::Value::compile_bytes(&CUE_CTX, &b).mark_as_user_err()?;
@@ -46,7 +43,6 @@ impl SCellExtraArguments {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
             Err(e) => return Err(e).wrap_user_err(FileOpenFailed(location))?,
         };
-
         Ok(Self { file })
     }
 
