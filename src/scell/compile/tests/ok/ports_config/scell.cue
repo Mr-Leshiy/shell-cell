@@ -1,0 +1,12 @@
+main: {
+	from_image: "from"
+	shell:      "shell"
+	hang:       "hang"
+	config: {
+		ports: [
+			"8080:80",
+			"127.0.0.1:9000:9000",
+			"6060:6060/udp",
+		]
+	}
+}

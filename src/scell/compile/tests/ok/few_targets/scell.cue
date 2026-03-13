@@ -1,0 +1,9 @@
+other: {
+	from_image: "from"
+}
+
+main: {
+	from:  "+other"
+	shell: "shell"
+	hang:  "hang"
+}

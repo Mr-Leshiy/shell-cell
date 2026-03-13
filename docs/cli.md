@@ -3,7 +3,7 @@
 
 Now that you’ve [installed and configured](./install.md) **Shell-Cell**, you’re ready to launch your very first session!
 
-To get started, you need a blueprint `scell.yml` file in your project directory.
+To get started, you need a blueprint `scell.cue` file in your project directory.
 This file defines the environment your shell will live in.
 (For a deep dive into the blueprint specification, check out the [Blueprint Guide](./blueprint.md)).
 
@@ -12,7 +12,7 @@ The quickest way to get one is to let **Shell-Cell** generate it for you:
 scell init
 ```
 
-This creates a minimal, ready-to-use `scell.yml` in the current directory.
+This creates a minimal, ready-to-use `scell.cue` in the current directory.
 You can then open and adjust it to your needs.
 
 ## Commands
@@ -23,7 +23,7 @@ You can then open and adjust it to your needs.
 scell
 ```
 
-**Shell-Cell** will automatically look for a file named `scell.yml` in your current location and start the **Shell-Cell** session on the spot.
+**Shell-Cell** will automatically look for a file named `scell.cue` in your current location and start the **Shell-Cell** session on the spot.
 
 #### Custom entry point (`-t`, `--target`)
 
@@ -57,8 +57,8 @@ scell ./path/to/the/blueprint/directory
 scell init
 ```
 
-Creates a minimal, functional `scell.yml` blueprint in the current directory (or in the directory passed as an argument).
-Returns an error if a `scell.yml` already exists at that location.
+Creates a minimal, functional `scell.cue` blueprint in the current directory (or in the directory passed as an argument).
+Returns an error if a `scell.cue` already exists at that location.
 
 ```shell
 scell init ./path/to/directory
@@ -89,7 +89,7 @@ scell cleanup
 ```
 
 Cleans up **orphan** **Shell-Cell** containers with their corresponding images and just images.
-An item is considered an orphan when it is no longer associated with any existing `scell.yml` blueprint file
+An item is considered an orphan when it is no longer associated with any existing `scell.cue` blueprint file
 (e.g., the blueprint was deleted or moved, or the blueprint contents changed so the container hash no longer matches).
 
 

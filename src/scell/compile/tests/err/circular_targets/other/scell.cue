@@ -1,0 +1,3 @@
+other: {
+	from: "other+other"
+}

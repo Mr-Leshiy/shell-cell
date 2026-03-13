@@ -1,0 +1,4 @@
+main: {
+	from_image: "from"
+	hang:       "hang"
+}

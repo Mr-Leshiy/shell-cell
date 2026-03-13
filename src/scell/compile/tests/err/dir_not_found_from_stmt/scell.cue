@@ -1,0 +1,5 @@
+main: {
+	from:  "nonexistent/path+other"
+	shell: "shell"
+	hang:  "hang"
+}
