@@ -82,7 +82,7 @@
 #Config: {
     // mounts is a list of bind-mount declarations for the running container.
     // Each item follows the format "<host_path>:<container_absolute_path>".
-    // The host path may be relative (resolved relative to scell.yml) or absolute.
+    // The host path may be relative (resolved relative to scell.cue) or absolute.
     //   - Relative host paths are canonicalized at compile time and must already exist.
     //   - The container path must be an absolute path.
     // Examples: "./src:/app/src", "/data:/container/data"

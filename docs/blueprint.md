@@ -1,18 +1,21 @@
 # **Shell-Cell** Blueprint Reference
 
-**Shell-Cell** builds your environment by reading a set of instructions from a `scell.yml` files.
+**Shell-Cell** builds your environment by reading a set of instructions from a `scell.cue` file.
 
-`scell.yml` - is a [YAML](https://yaml.org) formatted file that contains everything needed to configure your session.
+`scell.cue` - is a [CUE](https://cuelang.org) formatted file that contains everything needed to configure your session.
+
+To learn more about CUE capabilities go to the original [docs](https://cuelang.org/docs/reference/spec/).
 
 > The full formal definition of the blueprint schema is available at [`src/scell/types/scell_schema.cue`](../src/scell/types/scell_schema.cue).
 
 Here is a minimal functional example:
-```yml
-main:
-  from_image: debian:bookworm
-  workspace: workdir
-  shell: /bin/bash
-  hang: while true; do sleep 3600; done
+```cue
+main: {
+  from_image: "debian:bookworm"
+  workspace:  "workdir"
+  shell:      "/bin/bash"
+  hang:       "while true; do sleep 3600; done"
+}
 ```
 
 **Shell-Cell** follows a strict logic when building your image.
@@ -31,10 +34,11 @@ Starts from the "bottom" target and works its way up to your entry point (`main`
 
 **Shell-Cell** are comprised of a series of target declarations and recipe definitions.
 
-```yml
-<target-name>:
+```cue
+"<target-name>": {
     <recipe>
     ...
+}
 ```
 
 A valid target name must start with a lowercase letter and contain only lowercase letters, digits, hyphens, and underscores (pattern: `^[a-z][a-z0-9_-]*$`).
@@ -72,30 +76,30 @@ and must eventually resolve to a `from_image` or `from_docker`.
 
 Uses a Docker registry image as the base layer.
 
-```yml
-from_image: <image>:<tag>
+```cue
+from_image: "<image>:<tag>"
 ```
 
 #### `from_docker`
 
 Uses a Dockerfile on the filesystem as the base layer.
-The path is resolved relative to the `scell.yml` file.
+The path is resolved relative to the `scell.cue` file.
 
-```yml
-from_docker: path/to/Dockerfile
+```cue
+from_docker: "path/to/Dockerfile"
 ```
 
 #### `from`
 
 References another [**Shell-Cell** target](#shell-cell-target), resolved recursively.
 Use `+<target_name>` to reference a target in the same file, or `path/to/dir+<target_name>`
-to reference a target in another `scell.yml`.
+to reference a target in another `scell.cue`.
 
-```yml
-from: +<target_name>
+```cue
+from: "+<target_name>"
 ```
-```yml
-from: path/to/dir+<target_name>
+```cue
+from: "path/to/dir+<target_name>"
 ```
 
 ### `shell`
@@ -106,8 +110,8 @@ Such shell would be used for a **Shell-Cell** session.
 
 Only the first `shell` statement encountered in the target chain (starting from the entry point) is used.
 
-```yml
-shell: /bin/bash
+```cue
+shell: "/bin/bash"
 ```
 
 ### `hang`
@@ -118,8 +122,8 @@ Only the first `hang` statement encountered in the target chain (starting from t
 
 To work correctly, you must specify a command that keeps the container running indefinitely.
 The most recommended approach is a simple infinite loop:
-```yaml
-hang: while true; do sleep 3600; done
+```cue
+hang: "while true; do sleep 3600; done"
 ```
 
 This command would be placed as a Dockerfile [`ENTRYPOINT`](https://docs.docker.com/reference/dockerfile/#entrypoint) instruction.
@@ -128,8 +132,8 @@ This command would be placed as a Dockerfile [`ENTRYPOINT`](https://docs.docker.
 
 Similar to the Dockerfile [`WORKDIR`](https://docs.docker.com/reference/dockerfile/#workdir) instruction.
 
-```yml
-workspace: /path/to/workspace
+```cue
+workspace: "/path/to/workspace"
 ```
 
 ### `copy` (optional)
@@ -137,11 +141,12 @@ workspace: /path/to/workspace
 Copies files into the **Shell-Cell** image.
 Similar to the Dockerfile [`COPY`](https://docs.docker.com/reference/dockerfile/#workdir) instruction.
 
-```yml
-copy:
-    - file1 .
-    - file2 .
-    - file3 file4 .
+```cue
+copy: [
+    "file1 .",
+    "file2 .",
+    "file3 file4 .",
+]
 ```
 
 ### `env` (optional)
@@ -151,12 +156,13 @@ Similar to the Dockerfile [`ENV`](https://docs.docker.com/reference/dockerfile/#
 
 Each item follows the list format `<KEY>=<VALUE>`:
 
-```yml
-env:
-    - DB_HOST=localhost
-    - DB_PORT=5432
-    - DB_NAME=db
-    - DB_DESCRIPTION="My Database"
+```cue
+env: [
+    "DB_HOST=localhost",
+    "DB_PORT=5432",
+    "DB_NAME=db",
+    "DB_DESCRIPTION=\"My Database\"",
+]
 ```
 
 ### `build` (optional)
@@ -165,10 +171,11 @@ Will execute any commands to create a new layer on top of the current image,
 during the image building process.
 Similar to the Dockerfile [`RUN`](https://docs.docker.com/reference/dockerfile/#run) instruction.
 
-```yml
-build:
-    - <command_1>
-    - <command_2>
+```cue
+build: [
+    "<command_1>",
+    "<command_2>",
+]
 ```
 
 ### `config` (optional)
@@ -181,12 +188,15 @@ All `config` statements are optional.
 
 Only the first `config` statement encountered in the target chain (starting from the entry point) is used.
 
-```yml
-config:
-    mounts:
-        - <host_path>:<container_absolute_path>
-    ports:
-        - "<host_port>:<container_port>"
+```cue
+config: {
+    mounts: [
+        "<host_path>:<container_absolute_path>",
+    ]
+    ports: [
+        "<host_port>:<container_port>",
+    ]
+}
 ```
 
 #### `mounts`
@@ -194,15 +204,17 @@ config:
 Bind-mounts host directories into the running container.
 Each mount item follows the format `<host_path>:<container_absolute_path>`.
 
-- The **host path** can be relative (resolved relative to the `scell.yml` file location) or absolute.
+- The **host path** can be relative (resolved relative to the `scell.cue` file location) or absolute.
   Relative host paths are canonicalized during compilation, so the referenced directory must exist.
 - The **container path** must be an absolute path.
 
-```yml
-config:
-    mounts:
-        - ./src:/app/src
-        - /data:/container/data
+```cue
+config: {
+    mounts: [
+        "./src:/app/src",
+        "/data:/container/data",
+    ]
+}
 ```
 
 #### `ports`
@@ -220,10 +232,73 @@ Each item can be one of:
 
 Append `/tcp` or `/udp` to any format to specify the protocol (default: `tcp`).
 
-```yml
-config:
-    ports:
-        - "8080:80"
-        - "127.0.0.1:9000:9000"
-        - "6060:6060/udp"
+```cue
+config: {
+    ports: [
+        "8080:80",
+        "127.0.0.1:9000:9000",
+        "6060:6060/udp",
+    ]
+}
 ```
+
+## Extra Arguments (`.scell_args.cue`)
+
+**Shell-Cell** supports a companion file `.scell_args.cue` placed in the same directory as `scell.cue`.
+When present, its CUE values are unified with the blueprint before compilation, allowing you to supply
+concrete values for CUE constraints declared in `scell.cue`.
+
+This is useful for parameterize a blueprint — keeping the blueprint generic and checked in, while
+supplying environment-specific or personal overrides through a gitignored `.scell_args.cue` file.
+Typical uses include machine-specific paths, image tags, and secrets such as API keys or tokens
+that should never be committed to version control.
+
+To learn more about CUE capabilities go to the original [docs](https://cuelang.org/docs/reference/spec/).
+
+### How it works
+
+Declare open constraints (string fields) in `scell.cue`:
+
+```cue
+_from_image_arg: string
+_workspace_arg:  string
+_env_arg:        int
+
+main: {
+    from_image: _from_image_arg
+    workspace:  _workspace_arg
+    shell:      "/bin/bash"
+    hang:       "while true; do sleep 3600; done"
+    env: [
+        "SOME_ENV=\(_env_arg)"
+    ]
+}
+```
+
+Then provide the concrete values in `.scell_args.cue`. Since the file is full CUE, you can use
+all CUE features — including string interpolation to compose values from other fields:
+
+```cue
+_from_image_arg:"debian:bookworm"
+_workspace_arg: "/app"
+_env_arg:       10
+```
+
+At compile time, **Shell-Cell** unifies the two files. The result is equivalent to having written
+those values directly in `scell.cue`.
+```cue
+main: {
+	from_image: "debian:bookworm"
+	workspace:  "/app"
+	shell:      "/bin/bash"
+	hang:       "while true; do sleep 3600; done"
+	env: ["SOME_ENV=10"]
+}
+```
+
+### Notes
+
+- `.scell_args.cue` is optional. If it is absent, the blueprint is compiled as-is.
+- The file is looked up only in the same directory as `scell.cue`; there is no recursive search.
+- Any CUE unification error (e.g. a value that conflicts with a constraint) is reported as a user error.
+- Add `.scell_args.cue` to `.gitignore` to keep secrets and personal overrides out of version control.

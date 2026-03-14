@@ -1,0 +1,9 @@
+main: {
+	from_image: "from"
+	shell:      "shell"
+	hang:       "hang"
+	build: [
+		"apt-get update",
+		"apt-get install -y curl",
+	]
+}

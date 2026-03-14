@@ -1,0 +1,3 @@
+other: {
+	from: "./../../few_targets+other"
+}

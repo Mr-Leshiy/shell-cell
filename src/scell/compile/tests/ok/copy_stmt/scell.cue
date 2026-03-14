@@ -1,0 +1,8 @@
+main: {
+	from_image: "from"
+	shell:      "shell"
+	hang:       "hang"
+	copy: [
+		"copy_file.txt .",
+	]
+}
