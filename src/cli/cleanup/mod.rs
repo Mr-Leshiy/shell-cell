@@ -3,10 +3,10 @@ mod app;
 use self::app::App;
 use crate::buildkit::BuildKitD;
 
-pub async fn cleanup() -> color_eyre::Result<()> {
+pub async fn cleanup(all: bool) -> color_eyre::Result<()> {
     let buildkit = BuildKitD::start().await?;
     let mut terminal = ratatui::try_init()?;
-    let res = App::run(&buildkit, &mut terminal);
+    let res = App::run(&buildkit, all, &mut terminal);
     ratatui::try_restore()?;
     res
 }

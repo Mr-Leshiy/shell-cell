@@ -29,10 +29,11 @@ pub enum App {
 impl App {
     pub fn run<B: ratatui::backend::Backend>(
         buildkit: &BuildKitD,
+        all: bool,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::loading(buildkit.clone());
+        let mut app = Self::loading(buildkit.clone(), all);
         let mut images_for_removal = Vec::new();
         loop {
             // Check for state transitions
@@ -74,7 +75,10 @@ impl App {
         }
     }
 
-    fn loading(buildkit: BuildKitD) -> Self {
+    fn loading(
+        buildkit: BuildKitD,
+        all: bool,
+    ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
 
         // Spawn async task to fetch containers for stop
@@ -85,12 +89,16 @@ impl App {
                     let containers = buildkit.list_containers().await?;
                     let images = buildkit.list_images().await?;
                     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    // consider only orphan Shell-Cell containers and images
-                    let containers = containers
-                        .into_iter()
-                        .filter(|c| c.orphan)
-                        .collect::<Vec<_>>();
-                    let images = images.into_iter().filter(|c| c.orphan).collect::<Vec<_>>();
+                    let containers = if all {
+                        containers
+                    } else {
+                        containers.into_iter().filter(|c| c.orphan).collect()
+                    };
+                    let images = if all {
+                        images
+                    } else {
+                        images.into_iter().filter(|c| c.orphan).collect()
+                    };
 
                     color_eyre::eyre::Ok((containers, images))
                 };

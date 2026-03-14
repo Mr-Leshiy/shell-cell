@@ -65,7 +65,7 @@ fn render_loading(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            "Fetching 'Shell-Cell' containers for cleaning",
+            "Fetching 'Shell-Cell' containers and images for cleaning",
             Style::default().fg(Color::Gray),
         )),
     ];
