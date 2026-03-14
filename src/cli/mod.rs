@@ -51,7 +51,11 @@ pub enum Commands {
     /// Clean up all orphan Shell-Cell containers with their corresponding images and just
     /// single images (those no longer associated with any existing Shell-Cell
     /// blueprint files).
-    Cleanup,
+    Cleanup {
+        /// Remove ALL Shell-Cell containers and images, not only orphaned ones
+        #[clap(long)]
+        all: bool,
+    },
 }
 
 impl Cli {
@@ -79,7 +83,7 @@ impl Cli {
             Some(Commands::Init { path }) => init::init(path)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop) => stop::stop().await?,
-            Some(Commands::Cleanup) => cleanup::cleanup().await?,
+            Some(Commands::Cleanup { all }) => cleanup::cleanup(all).await?,
         }
         Ok(())
     }
