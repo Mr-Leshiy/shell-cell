@@ -46,6 +46,7 @@ impl PreparingState {
                     self.logs.pop_front();
                 }
                 self.logs.push_back(log);
+                self.scroll_view_state.scroll_to_bottom();
                 false
             },
             Err(RecvTimeoutError::Timeout) => false,
