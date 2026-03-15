@@ -32,6 +32,10 @@ pub struct Cli {
     #[clap(short, long)]
     detach: bool,
 
+    /// Suppress Docker build logs
+    #[clap(short, long)]
+    quiet: bool,
+
     #[clap(subcommand)]
     command: Option<Commands>,
 }
@@ -79,7 +83,7 @@ impl Cli {
 
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
-            None => run::run(self.scell_path, self.target, self.detach).await?,
+            None => run::run(self.scell_path, self.target, self.detach, self.quiet).await?,
             Some(Commands::Init { path }) => init::init(path)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop) => stop::stop().await?,
