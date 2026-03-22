@@ -55,7 +55,7 @@ impl SCellFile {
         scell_cue = cue_rs::Value::unify(&schema, &scell_cue);
         scell_cue.is_valid().mark_as_user_err()?;
 
-        let scell_json_bytes = scell_cue.to_json_bytes()?;
+        let scell_json_bytes = scell_cue.to_json_bytes().mark_as_user_err()?;
         let scell_json = serde_json::from_slice(&scell_json_bytes)?;
         let cells: HashMap<TargetName, TargetStmt> = serde_json::from_value(scell_json)?;
 
