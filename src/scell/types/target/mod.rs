@@ -13,7 +13,7 @@ use self::{
 };
 use crate::scell::types::target::{env::EnvStmt, hang::HangStmt};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize, serde::Serialize)]
 pub struct TargetStmt {
     #[serde(flatten)]
     pub from: FromStmt,

@@ -3,11 +3,9 @@ pub mod target_ref;
 
 use std::path::PathBuf;
 
-use serde::Deserialize;
-
 use crate::scell::types::target::from::{image::ImageDef, target_ref::TargetRef};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize, serde::Serialize)]
 pub enum FromStmt {
     #[serde(rename = "from")]
     Target(TargetRef),
