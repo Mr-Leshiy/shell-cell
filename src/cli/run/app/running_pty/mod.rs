@@ -1,10 +1,14 @@
-use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::Pty, scell::name::SCellId};
+use std::path::PathBuf;
+
+use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::Pty, scell::{name::SCellId, types::name::TargetName}};
 
 mod ui;
 
 pub struct RunningPtyState {
     pub pty: Pty,
     pub container_id: SCellId,
+    pub target_name: TargetName,
+    pub location: PathBuf,
     pub prev_height: u16,
     pub prev_width: u16,
 }
@@ -13,10 +17,14 @@ impl RunningPtyState {
     pub fn new(
         pty: Pty,
         container_id: SCellId,
+        target_name: TargetName,
+        location: PathBuf,
     ) -> Self {
         Self {
             pty,
             container_id,
+            target_name,
+            location,
             prev_height: 0,
             prev_width: 0,
         }
