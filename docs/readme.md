@@ -19,8 +19,8 @@ It could be really handy, when you want to have secure, isolated place for your 
 
 ```mermaid
 graph TD
-    R1["📦 Registry / Local Image\n(from_image)"]
-    R2["📄 Dockerfile\n(from_docker)"]
+    R1["📦 Registry / Local Image (from_image)"]
+    R2["📄 Dockerfile (from_docker)"]
     T2["🔧 base-target"]
     T1["🔧 target"]
     M["🔧 main"]
