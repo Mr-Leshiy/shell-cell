@@ -8,20 +8,19 @@ pub struct SCellContainer {
 }
 
 impl SCellContainer {
-    pub fn new(config: Option<ConfigStmt>) -> color_eyre::Result<Self> {
-        color_eyre::eyre::ensure!(
-            config.as_ref().is_none_or(|config| {
-                config.services.0.iter().all(|(_, service)| {
-                    service
-                        .config
-                        .as_ref()
-                        .is_none_or(|service_config| service_config.services.0.is_empty())
-                })
-            }),
-            "Nested services are not allowed"
-        );
-
-        Ok(Self { config })
+    pub fn new(config: Option<ConfigStmt>) -> Self {
+        // color_eyre::eyre::ensure!(
+        //     config.as_ref().is_none_or(|config| {
+        //         config.services.0.iter().all(|(_, service)| {
+        //             service
+        //                 .config
+        //                 .as_ref()
+        //                 .is_none_or(|service_config| service_config.services.0.is_empty())
+        //         })
+        //     }),
+        //     "Nested services are not allowed"
+        // );
+        Self { config }
     }
 
     pub fn mounts(&self) -> MountsStmt {

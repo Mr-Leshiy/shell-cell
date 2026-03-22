@@ -93,7 +93,7 @@ impl SCell {
         );
 
         let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
-        let container = SCellContainer::new(config)?;
+        let container = SCellContainer::new(config);
         Ok(Self {
             image,
             container,
