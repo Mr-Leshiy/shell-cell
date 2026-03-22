@@ -34,7 +34,7 @@ impl SCellContainer {
                         .is_none_or(|service_config| service_config.services.0.is_empty())
                 })
             }),
-            "Nested services does not allowed"
+            "Nested services are not allowed"
         );
 
         Ok(Self {
