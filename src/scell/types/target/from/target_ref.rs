@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use crate::scell::types::name::TargetName;
 
@@ -14,6 +14,19 @@ pub struct TargetRefParsingError(String);
 pub struct TargetRef {
     pub location: Option<PathBuf>,
     pub name: TargetName,
+}
+
+impl Display for TargetRef {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        if let Some(location) = &self.location {
+            write!(f, "{}{TARGET_REF_DELIMITER}{}", location.display(), self.name)
+        } else {
+            write!(f, "{TARGET_REF_DELIMITER}{}", self.name)
+        }
+    }
 }
 
 impl FromStr for TargetRef {
@@ -66,7 +79,9 @@ mod tests {
     #[test_case("+simple" => TargetRef { location: None, name: name("simple") } ; "local target simple name")]
     #[test_case("path/to/dir+target" => TargetRef { location: Some(PathBuf::from("path/to/dir")), name: name("target") } ; "relative path and target")]
     fn parse_ok(input: &str) -> TargetRef {
-        TargetRef::from_str(input).expect("Should be a valid TargetRef")
+        let val = TargetRef::from_str(input).expect("Should be a valid TargetRef");
+        assert_eq!(val.to_string().as_str(), input);
+        val
     }
 
     // Failure: missing '+' delimiter entirely
