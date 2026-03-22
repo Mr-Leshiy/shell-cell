@@ -215,11 +215,32 @@ impl App {
                     })
                     .await?;
 
+                for (s_name, s) in scell.services() {
+                    drop(logs_tx.send((
+                        format!("⚙️ Building 'Shell-Cell' service {s_name} image"),
+                        LogType::Main,
+                    )));
+                    buildkit
+                        .build_image(&s.image, |msg| {
+                            if !quiet {
+                                drop(logs_tx.send((msg, LogType::SubLog)));
+                            }
+                        })
+                        .await?;
+                    drop(logs_tx.send((
+                        format!("📦 Starting 'Shell-Cell' service {s_name} container"),
+                        LogType::Main,
+                    )));
+                    buildkit
+                        .start_service_container(&scell, s_name, &s.image, &s.container)
+                        .await?;
+                }
+
                 drop(logs_tx.send((
-                    "📦 Starting 'Shell-Cell' containers".to_string(),
+                    "📦 Starting 'Shell-Cell' container".to_string(),
                     LogType::Main,
                 )));
-                buildkit.start_containers(&scell).await?;
+                buildkit.start_container(&scell).await?;
 
                 if detach {
                     return color_eyre::eyre::Ok(None);

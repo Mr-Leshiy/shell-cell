@@ -29,7 +29,10 @@ use crate::{
     },
     error::WrapUserError,
     pty::Pty,
-    scell::{SCell, container::SCellContainer, image::SCellImage},
+    scell::{
+        SCell, container::SCellContainer, image::SCellImage,
+        types::target::config::services::ServiceName,
+    },
 };
 
 const SCELL_IMAGE_LATEST: &str = "latest";
@@ -97,7 +100,7 @@ impl BuildKitD {
         }
     }
 
-    pub async fn start_containers(
+    pub async fn start_container(
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
@@ -107,6 +110,25 @@ impl BuildKitD {
             SCELL_IMAGE_LATEST,
             &scell.container_id()?.to_string(),
             container_config(scell.image(), scell.container())?,
+        )
+        .await
+        .mark_as_user_err()?;
+        Ok(())
+    }
+
+    pub async fn start_service_container(
+        &self,
+        scell: &SCell,
+        name: &ServiceName,
+        image: &SCellImage,
+        container: &SCellContainer,
+    ) -> color_eyre::Result<()> {
+        start_container(
+            &self.docker,
+            &image.id()?.to_string(),
+            SCELL_IMAGE_LATEST,
+            &format!("{}-{name}", scell.container_id()?),
+            container_config(scell.image(), container)?,
         )
         .await
         .mark_as_user_err()?;
