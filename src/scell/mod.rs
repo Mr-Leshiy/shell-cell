@@ -12,8 +12,6 @@ mod link;
 pub mod name;
 pub mod types;
 
-use std::hash::Hash;
-
 use crate::scell::{
     container::SCellContainer, image::SCellImage, link::Link, name::SCellId,
     types::target::shell::ShellStmt,
@@ -42,7 +40,7 @@ impl SCell {
     pub fn container_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
             self.image.hash(hasher)?;
-            self.container.hash(hasher);
+            self.container.hash(hasher)?;
             Ok(())
         })
     }
