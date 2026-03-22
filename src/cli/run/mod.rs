@@ -8,10 +8,11 @@ pub async fn run<P: AsRef<Path> + Send + 'static>(
     scell_path: P,
     target: Option<TargetName>,
     detach: bool,
+    quiet: bool,
 ) -> color_eyre::Result<()> {
     let buildkit = BuildKitD::start().await?;
     let mut terminal = ratatui::try_init()?;
-    let res = App::run(&buildkit, scell_path, target, detach, &mut terminal);
+    let res = App::run(&buildkit, scell_path, target, detach, quiet, &mut terminal);
     ratatui::try_restore()?;
     res
 }

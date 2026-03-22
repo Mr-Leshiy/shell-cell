@@ -41,6 +41,7 @@ impl App {
         scell_path: P,
         entry_target: Option<TargetName>,
         detach: bool,
+        quiet: bool,
         terminal: &mut Terminal<B>,
     ) -> color_eyre::Result<()>
     where
@@ -49,7 +50,7 @@ impl App {
         P: AsRef<Path> + Send + 'static,
     {
         // First step
-        let mut app = Self::preparing(buildkit.clone(), scell_path, entry_target, detach);
+        let mut app = Self::preparing(buildkit.clone(), scell_path, entry_target, detach, quiet);
 
         loop {
             if let App::Preparing(ref mut state) = app
@@ -164,6 +165,7 @@ impl App {
         scell_path: P,
         entry: Option<TargetName>,
         detach: bool,
+        quiet: bool,
     ) -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
         let (logs_tx, logs_rx) = std::sync::mpsc::channel();
@@ -215,7 +217,9 @@ impl App {
                     );
                     buildkit
                         .build_image(&scell, |msg| {
-                            drop(logs_tx.send((msg, LogType::SubLog)));
+                            if !quiet {
+                                drop(logs_tx.send((msg, LogType::SubLog)));
+                            }
                         })
                         .await?;
                 }
