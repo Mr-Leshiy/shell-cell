@@ -16,7 +16,9 @@ use super::{
     },
 };
 use crate::scell::{
-    link::RootNode, name::SCellId, types::target::{env::EnvStmt, hang::HangStmt}
+    link::RootNode,
+    name::SCellId,
+    types::target::{env::EnvStmt, hang::HangStmt},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]

@@ -29,7 +29,7 @@ use crate::{
     },
     error::WrapUserError,
     pty::Pty,
-    scell::SCell,
+    scell::{SCell, image::SCellImage},
 };
 
 const SCELL_IMAGE_LATEST: &str = "latest";
@@ -60,12 +60,27 @@ impl BuildKitD {
         scell: &SCell,
         log_fn: impl Fn(String),
     ) -> color_eyre::Result<()> {
-        let (tar, dockerfile_path) = scell.image().image_tar_artifact_bytes()?;
-        let labels = image_metadata(scell)?;
+        self.build_image(scell.image(), &log_fn).await?;
+        for s in scell.container().services().values() {
+            self.build_image(&s.image, &log_fn).await?;
+        }
+        Ok(())
+    }
+
+    async fn build_image(
+        &self,
+        image: &SCellImage,
+        log_fn: impl Fn(String),
+    ) -> color_eyre::Result<()> {
+        if self.image_exists(image).await? {
+            return Ok(());
+        }
+        let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
+        let labels = image_metadata(image)?;
 
         build_image(
             &self.docker,
-            &scell.image().id()?.to_string(),
+            &image.id()?.to_string(),
             SCELL_IMAGE_LATEST,
             dockerfile_path,
             tar,
@@ -80,12 +95,11 @@ impl BuildKitD {
         Ok(())
     }
 
-    #[allow(dead_code)]
     async fn image_exists(
         &self,
-        scell: &SCell,
+        image: &SCellImage,
     ) -> color_eyre::Result<bool> {
-        let tag = format!("{}:{SCELL_IMAGE_LATEST}", scell.image().id()?);
+        let tag = format!("{}:{SCELL_IMAGE_LATEST}", image.id()?);
         match self.docker.inspect_image(&tag).await {
             Ok(_) => Ok(true),
             Err(bollard::errors::Error::DockerResponseServerError {
@@ -225,19 +239,19 @@ fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
     })
 }
 
-fn image_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
+fn image_metadata(image: &SCellImage) -> color_eyre::Result<HashMap<String, String>> {
     Ok([
         (
             IMAGE_METADATA_LOCATION_KEY.to_string(),
-            format!("{}", scell.image().location().display()),
+            format!("{}", image.location().display()),
         ),
         (
             IMAGE_METADATA_ENTRY_POINT_KEY.to_string(),
-            scell.image().entry_point().to_string(),
+            image.entry_point().to_string(),
         ),
         (
             IMAGE_METADATA_DESCRIPTION_KEY.to_string(),
-            encode_object_to_metadata(scell.image())?,
+            encode_object_to_metadata(image)?,
         ),
     ]
     .into_iter()

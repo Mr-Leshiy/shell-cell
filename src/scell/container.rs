@@ -19,16 +19,28 @@ pub struct SCellContainer {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Service {
-    image: SCellImage,
-    container: SCellContainer,
+    pub image: SCellImage,
+    pub container: SCellContainer,
 }
 
 impl SCellContainer {
-    pub fn new(config: Option<ConfigStmt>) -> Self {
-        Self {
+    pub fn new(config: Option<ConfigStmt>) -> color_eyre::Result<Self> {
+        color_eyre::eyre::ensure!(
+            config.as_ref().is_none_or(|config| {
+                config.services.0.iter().all(|(_, service)| {
+                    service
+                        .config
+                        .as_ref()
+                        .is_none_or(|service_config| service_config.services.0.is_empty())
+                })
+            }),
+            "Nested services does not allowed"
+        );
+
+        Ok(Self {
             config,
             services: BTreeMap::new(),
-        }
+        })
     }
 
     pub fn mounts(&self) -> MountsStmt {
@@ -43,6 +55,10 @@ impl SCellContainer {
             .as_ref()
             .map(|c| c.ports.clone())
             .unwrap_or_default()
+    }
+
+    pub fn services(&self) -> &BTreeMap<ServiceName, Service> {
+        &self.services
     }
 
     pub fn hash<H: Hasher>(
