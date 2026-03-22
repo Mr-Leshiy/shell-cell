@@ -4,12 +4,12 @@ use bollard::{
     Docker, body_full,
     container::LogOutput,
     exec::{ResizeExecOptions, StartExecOptions, StartExecResults},
+    models::{ContainerCreateBody, ContainerSummary, ExecConfig, ImageSummary},
     query_parameters::{
         BuildImageOptionsBuilder, CreateContainerOptions, CreateImageOptions,
         ListContainersOptionsBuilder, ListImagesOptionsBuilder, RemoveContainerOptionsBuilder,
         RemoveImageOptionsBuilder,
     },
-    secret::{ContainerCreateBody, ContainerSummary, ExecConfig, ImageSummary},
 };
 use bytes::Bytes;
 use color_eyre::eyre::ContextCompat;
