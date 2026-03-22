@@ -24,6 +24,12 @@ pub struct SCellImageInfo {
     pub docker_image_id: String,
 }
 
+impl SCellImageInfo {
+    pub fn image_name(id: &SCellId) -> String {
+        format!("{id}:latest")
+    }
+}
+
 impl TryFrom<(String, bollard::models::ImageSummary)> for SCellImageInfo {
     type Error = color_eyre::eyre::Error;
 

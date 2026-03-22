@@ -34,8 +34,6 @@ use crate::{
     },
 };
 
-const SCELL_IMAGE_LATEST: &str = "latest";
-
 #[derive(Clone)]
 pub struct BuildKitD {
     docker: Docker,
@@ -70,8 +68,7 @@ impl BuildKitD {
 
         build_image(
             &self.docker,
-            &image.id()?.to_string(),
-            SCELL_IMAGE_LATEST,
+            &SCellImageInfo::image_name(&image.id()?),
             dockerfile_path,
             tar,
             labels,
@@ -89,8 +86,11 @@ impl BuildKitD {
         &self,
         image: &SCellImage,
     ) -> color_eyre::Result<bool> {
-        let tag = format!("{}:{SCELL_IMAGE_LATEST}", image.id()?);
-        match self.docker.inspect_image(&tag).await {
+        match self
+            .docker
+            .inspect_image(&SCellImageInfo::image_name(&image.id()?))
+            .await
+        {
             Ok(_) => Ok(true),
             Err(bollard::errors::Error::DockerResponseServerError {
                 status_code: 404, ..
@@ -105,9 +105,8 @@ impl BuildKitD {
     ) -> color_eyre::Result<()> {
         start_container(
             &self.docker,
-            &scell.image().id()?.to_string(),
-            SCELL_IMAGE_LATEST,
-            &scell.container_id()?.to_string(),
+            &SCellImageInfo::image_name(&scell.image().id()?),
+            &SCellContainerInfo::container_name(&scell.container_id()?, None),
             container_config(scell.image(), scell.container())?,
         )
         .await
@@ -124,9 +123,8 @@ impl BuildKitD {
     ) -> color_eyre::Result<()> {
         start_container(
             &self.docker,
-            &image.id()?.to_string(),
-            SCELL_IMAGE_LATEST,
-            &format!("{}-{name}", scell.container_id()?),
+            &SCellImageInfo::image_name(&image.id()?),
+            &SCellContainerInfo::container_name(&scell.container_id()?, Some(name)),
             container_config(scell.image(), container)?,
         )
         .await
@@ -314,8 +312,7 @@ async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Res
     pull_image(docker, BUILDKIT_IMAGE, BUILDKIT_TAG).await?;
     start_container(
         docker,
-        BUILDKIT_IMAGE,
-        BUILDKIT_TAG,
+        &format!("{BUILDKIT_IMAGE}:{BUILDKIT_TAG}"),
         BUILDKIT_CONTAINER_NAME,
         ContainerCreateBody::default(),
     )

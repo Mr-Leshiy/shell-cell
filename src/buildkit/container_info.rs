@@ -12,11 +12,16 @@ use crate::{
             IMAGE_METADATA_LOCATION_KEY,
         },
     },
-    scell::{SCell, name::SCellId, types::name::TargetName},
+    scell::{
+        SCell,
+        name::SCellId,
+        types::{name::TargetName, target::services::ServiceName},
+    },
 };
 
 pub const CONTAINER_METADATA_IMAGE_ID_KEY: &str = "scell-image-id";
 pub const CONTAINER_METADATA_DESCRIPTION_KEY: &str = "scell-container-description";
+const SERVICE_NAME_DELIMETER: char = '.';
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
@@ -31,6 +36,18 @@ pub struct SCellContainerInfo {
     pub created_at: Option<DateTime<Utc>>,
     // A Docker image id, not a [`SCellId`]
     pub docker_image_id: String,
+}
+
+impl SCellContainerInfo {
+    pub fn container_name(
+        id: &SCellId,
+        service_name: Option<&ServiceName>,
+    ) -> String {
+        service_name.map_or_else(
+            || id.to_string(),
+            |v| format!("{id}{SERVICE_NAME_DELIMETER}{v}"),
+        )
+    }
 }
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -148,7 +165,10 @@ impl TryFrom<bollard::models::ContainerSummary> for SCellContainerInfo {
             .image_id
             .context("'Shell-Cell' container must have a corresponding Docker/Podman image ID")?;
 
-        let id = container_name.parse()?;
+        let id = container_name
+            .split_once(SERVICE_NAME_DELIMETER)
+            .map_or(container_name.as_str(), |(id_part, _)| id_part)
+            .parse()?;
 
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target

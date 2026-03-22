@@ -19,7 +19,6 @@ use tokio::io::AsyncWrite;
 pub async fn build_image(
     docker: &Docker,
     image_name: &str,
-    tag: &str,
     dockerfile_path: &str,
     tar_bytes: Bytes,
     labels: HashMap<String, String>,
@@ -27,7 +26,7 @@ pub async fn build_image(
 ) -> color_eyre::Result<String> {
     let options = BuildImageOptionsBuilder::new()
         .dockerfile(dockerfile_path)
-        .t(&format!("{image_name}:{tag}"))
+        .t(&image_name)
         .rm(true)
         .forcerm(true)
         .labels(&labels)
@@ -79,18 +78,16 @@ pub async fn pull_image(
 pub async fn start_container(
     docker: &Docker,
     image_name: &str,
-    tag: &str,
     container_name: &str,
     mut config: ContainerCreateBody,
 ) -> color_eyre::Result<()> {
-    let buildkit_image = format!("{image_name}:{tag}");
     let res = docker
         .list_containers(Some(
             ListContainersOptionsBuilder::new()
                 .filters(
                     &[
                         ("name", vec![container_name]),
-                        ("ancestor", vec![&buildkit_image]),
+                        ("ancestor", vec![image_name]),
                     ]
                     .into_iter()
                     .collect(),
@@ -101,7 +98,7 @@ pub async fn start_container(
         .await?;
 
     // if the container already exists, skip creating step
-    config.image = Some(buildkit_image);
+    config.image = Some(image_name.to_string());
     if res.is_empty() {
         docker
             .create_container(
