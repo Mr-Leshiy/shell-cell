@@ -13,7 +13,7 @@ pub mod name;
 pub mod service;
 pub mod types;
 
-use std::{collections::BTreeMap, hash::Hash};
+use std::hash::Hash;
 
 use crate::scell::{
     container::SCellContainer,
@@ -29,7 +29,7 @@ pub struct SCell {
     image: SCellImage,
     container: SCellContainer,
     shell: ShellStmt,
-    services: BTreeMap<ServiceName, Service>,
+    services: Vec<(ServiceName, Service)>,
 }
 
 impl SCell {
@@ -59,7 +59,7 @@ impl SCell {
         &self.container
     }
 
-    pub fn services(&self) -> &BTreeMap<ServiceName, Service> {
-        &self.services
+    pub fn services(&self) -> impl Iterator<Item = &(ServiceName, Service)> {
+        self.services.iter()
     }
 }

@@ -3,7 +3,7 @@ pub mod errors;
 mod tests;
 
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::HashSet,
     path::{Path, PathBuf},
 };
 
@@ -20,13 +20,14 @@ use crate::{
         },
         image::SCellImage,
         link::RootNode,
+        service::Service,
         types::{
             SCellFile,
             extra_arguments::SCellExtraArguments,
             name::TargetName,
             target::{
                 TargetStmt,
-                config::ConfigStmt,
+                config::{ConfigStmt, services::ServiceName},
                 copy::CopyStmt,
                 from::{FromStmt, target_ref::TargetRef},
                 hang::HangStmt,
@@ -44,6 +45,7 @@ type CompiledTarget = (
     Option<ShellStmt>,
     Option<HangStmt>,
     Option<ConfigStmt>,
+    Vec<(ServiceName, Service)>,
 );
 
 impl SCell {
@@ -73,7 +75,7 @@ impl SCell {
                     entry_point_target.clone(),
                 ))?;
 
-        let (links, shell, hang, config) =
+        let (links, shell, hang, config, services) =
             Self::compile_target(scell_f, entry_point, entry_point_target)?;
 
         let mut report = Report::new();
@@ -96,7 +98,7 @@ impl SCell {
             image,
             container,
             shell: shell.context("'shell' cannot be 'None'")?,
-            services: BTreeMap::new(),
+            services,
         })
     }
 
@@ -111,6 +113,7 @@ impl SCell {
         let mut shell = None;
         let mut hang = None;
         let mut config = None;
+        let mut services = Vec::new();
 
         loop {
             // Use only the most recent 'shell` and 'hang' statements from the targets chain.
@@ -122,6 +125,7 @@ impl SCell {
             }
             if config.is_none() {
                 config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
+                services = Vec::new();
             }
             let copy = resolve_copy(
                 &walk_f.location,
@@ -181,7 +185,7 @@ impl SCell {
             }
         }
 
-        Ok((links, shell, hang, config))
+        Ok((links, shell, hang, config, services))
     }
 }
 
