@@ -26,7 +26,7 @@ pub async fn build_image(
 ) -> color_eyre::Result<String> {
     let options = BuildImageOptionsBuilder::new()
         .dockerfile(dockerfile_path)
-        .t(&image_name)
+        .t(image_name)
         .rm(true)
         .forcerm(true)
         .labels(&labels)
