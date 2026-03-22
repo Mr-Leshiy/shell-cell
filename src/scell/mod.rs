@@ -10,11 +10,18 @@ pub mod container;
 pub mod image;
 mod link;
 pub mod name;
+pub mod service;
 pub mod types;
 
+use std::{collections::BTreeMap, hash::Hash};
+
 use crate::scell::{
-    container::SCellContainer, image::SCellImage, link::Link, name::SCellId,
-    types::target::shell::ShellStmt,
+    container::SCellContainer,
+    image::SCellImage,
+    link::Link,
+    name::SCellId,
+    service::Service,
+    types::target::{config::services::ServiceName, shell::ShellStmt},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -22,6 +29,7 @@ pub struct SCell {
     image: SCellImage,
     container: SCellContainer,
     shell: ShellStmt,
+    services: BTreeMap<ServiceName, Service>,
 }
 
 impl SCell {
@@ -33,7 +41,12 @@ impl SCell {
     pub fn container_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
             self.image.hash(hasher)?;
-            self.container.hash(hasher)?;
+            self.container.hash(hasher);
+            for (name, service) in &self.services {
+                name.hash(hasher);
+                service.image.hash(hasher)?;
+                service.container.hash(hasher);
+            }
             Ok(())
         })
     }
@@ -44,5 +57,9 @@ impl SCell {
 
     pub fn container(&self) -> &SCellContainer {
         &self.container
+    }
+
+    pub fn services(&self) -> &BTreeMap<ServiceName, Service> {
+        &self.services
     }
 }

@@ -55,19 +55,7 @@ impl BuildKitD {
         Ok(Self { docker })
     }
 
-    pub async fn build_images(
-        &self,
-        scell: &SCell,
-        log_fn: impl Fn(String),
-    ) -> color_eyre::Result<()> {
-        self.build_image(scell.image(), &log_fn).await?;
-        for s in scell.container().services().values() {
-            self.build_image(&s.image, &log_fn).await?;
-        }
-        Ok(())
-    }
-
-    async fn build_image(
+    pub async fn build_image(
         &self,
         image: &SCellImage,
         log_fn: impl Fn(String),

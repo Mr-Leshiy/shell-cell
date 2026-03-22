@@ -206,9 +206,9 @@ impl App {
                 )));
                 let scell = SCell::compile(scell_path, entry)?;
 
-                drop(logs_tx.send(("⚙️ Building 'Shell-Cell' images".to_string(), LogType::Main)));
+                drop(logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)));
                 buildkit
-                    .build_images(&scell, |msg| {
+                    .build_image(scell.image(), |msg| {
                         if !quiet {
                             drop(logs_tx.send((msg, LogType::SubLog)));
                         }

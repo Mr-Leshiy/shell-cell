@@ -3,7 +3,7 @@ pub mod errors;
 mod tests;
 
 use std::{
-    collections::HashSet,
+    collections::{BTreeMap, HashSet},
     path::{Path, PathBuf},
 };
 
@@ -96,6 +96,7 @@ impl SCell {
             image,
             container,
             shell: shell.context("'shell' cannot be 'None'")?,
+            services: BTreeMap::new(),
         })
     }
 

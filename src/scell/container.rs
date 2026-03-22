@@ -1,26 +1,10 @@
-use std::{
-    collections::BTreeMap,
-    hash::{Hash, Hasher},
-};
+use std::hash::Hash;
 
-use crate::scell::{
-    image::SCellImage,
-    types::target::config::{
-        ConfigStmt, mounts::MountsStmt, ports::PortsStmt, services::ServiceName,
-    },
-};
+use crate::scell::types::target::config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt};
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
 pub struct SCellContainer {
     config: Option<ConfigStmt>,
-    #[serde(skip)]
-    services: BTreeMap<ServiceName, Service>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Service {
-    pub image: SCellImage,
-    pub container: SCellContainer,
 }
 
 impl SCellContainer {
@@ -37,10 +21,7 @@ impl SCellContainer {
             "Nested services are not allowed"
         );
 
-        Ok(Self {
-            config,
-            services: BTreeMap::new(),
-        })
+        Ok(Self { config })
     }
 
     pub fn mounts(&self) -> MountsStmt {
@@ -55,22 +36,5 @@ impl SCellContainer {
             .as_ref()
             .map(|c| c.ports.clone())
             .unwrap_or_default()
-    }
-
-    pub fn services(&self) -> &BTreeMap<ServiceName, Service> {
-        &self.services
-    }
-
-    pub fn hash<H: Hasher>(
-        &self,
-        hasher: &mut H,
-    ) -> color_eyre::Result<()> {
-        self.config.hash(hasher);
-        for (name, service) in &self.services {
-            name.hash(hasher);
-            service.image.hash(hasher)?;
-            service.container.hash(hasher)?;
-        }
-        Ok(())
     }
 }
