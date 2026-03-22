@@ -16,7 +16,12 @@ impl Widget for &mut RunningPtyState {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::new().light_magenta())
-            .title(format!("'Shell-Cell' {}", self.container_id))
+            .title(format!(
+                "'Shell-Cell' | {} | {} | {}",
+                self.container_id,
+                self.target_name,
+                self.location.display()
+            ))
             .title_bottom("Ctrl-H: Help");
         let inner = block.inner(area);
         block.render(area, buf);

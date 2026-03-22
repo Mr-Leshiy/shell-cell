@@ -261,6 +261,8 @@ impl App {
         Ok(Self::RunningPty(Box::new(RunningPtyState::new(
             pty,
             scell.container_id()?,
+            scell.image().entry_point().clone(),
+            scell.image().location().to_path_buf(),
         ))))
     }
 }
