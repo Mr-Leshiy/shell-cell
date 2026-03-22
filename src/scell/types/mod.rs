@@ -26,7 +26,7 @@ pub const SCELL_SCHEMA: &[u8] = include_bytes!("scell_schema.cue");
 static CUE_CTX: LazyLock<cue_rs::Ctx> =
     LazyLock::new(|| cue_rs::Ctx::new().expect("Cannot initialize `cue_rs::Ctx`"));
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SCellFile {
     pub targets: BTreeMap<TargetName, TargetStmt>,
     pub location: PathBuf,
