@@ -6,6 +6,7 @@
 //! "base" for entire Shell-Cell.
 
 mod compile;
+pub mod container;
 pub mod image;
 mod link;
 pub mod name;
@@ -14,13 +15,8 @@ pub mod types;
 use std::hash::Hash;
 
 use crate::scell::{
-    image::SCellImage,
-    link::Link,
-    name::SCellId,
-    types::target::{
-        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
-        shell::ShellStmt,
-    },
+    container::SCellContainer, image::SCellImage, link::Link, name::SCellId,
+    types::target::shell::ShellStmt,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,31 +26,10 @@ pub struct SCell {
     shell: ShellStmt,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
-pub struct SCellContainer {
-    config: Option<ConfigStmt>,
-}
-
 impl SCell {
     /// Returns an underlying shell's binary path
     pub fn shell(&self) -> &str {
         &self.shell.0
-    }
-
-    pub fn mounts(&self) -> MountsStmt {
-        self.container
-            .config
-            .as_ref()
-            .map(|c| c.mounts.clone())
-            .unwrap_or_default()
-    }
-
-    pub fn ports(&self) -> PortsStmt {
-        self.container
-            .config
-            .as_ref()
-            .map(|c| c.ports.clone())
-            .unwrap_or_default()
     }
 
     pub fn image_id(&self) -> color_eyre::Result<SCellId> {

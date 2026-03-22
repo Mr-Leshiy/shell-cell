@@ -184,13 +184,14 @@ impl BuildKitD {
 
 fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
     let binds: Vec<String> = scell
+        .container()
         .mounts()
         .0
         .iter()
         .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
         .collect();
 
-    let ports = scell.ports();
+    let ports = scell.container().ports();
 
     let exposed_ports: Vec<String> = ports
         .0

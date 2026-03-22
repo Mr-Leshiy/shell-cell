@@ -39,7 +39,7 @@ use crate::{
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
-type CompileInnerResult = (
+type CompiledTarget = (
     Vec<Link>,
     Option<ShellStmt>,
     Option<HangStmt>,
@@ -74,7 +74,7 @@ impl SCell {
                 ))?;
 
         let (links, shell, hang, config) =
-            Self::compile_inner(scell_f, entry_point, entry_point_target)?;
+            Self::compile_target(scell_f, entry_point, entry_point_target)?;
 
         let mut report = Report::new();
         if shell.is_none() {
@@ -91,7 +91,7 @@ impl SCell {
         );
 
         let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
-        let container = SCellContainer { config };
+        let container = SCellContainer::new(config);
         Ok(Self {
             image,
             container,
@@ -99,11 +99,11 @@ impl SCell {
         })
     }
 
-    fn compile_inner(
+    fn compile_target(
         mut walk_f: SCellFile,
         mut walk_target: TargetStmt,
         mut walk_target_name: TargetName,
-    ) -> color_eyre::Result<CompileInnerResult> {
+    ) -> color_eyre::Result<CompiledTarget> {
         // Store processed target's name and location, to detect circular target dependencies
         let mut visited_targets = HashSet::new();
         let mut links = Vec::new();
