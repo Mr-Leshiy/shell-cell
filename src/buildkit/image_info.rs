@@ -24,10 +24,10 @@ pub struct SCellImageInfo {
     pub docker_image_id: String,
 }
 
-impl TryFrom<(String, bollard::secret::ImageSummary)> for SCellImageInfo {
+impl TryFrom<(String, bollard::models::ImageSummary)> for SCellImageInfo {
     type Error = color_eyre::eyre::Error;
 
-    fn try_from(v: (String, bollard::secret::ImageSummary)) -> Result<Self, Self::Error> {
+    fn try_from(v: (String, bollard::models::ImageSummary)) -> Result<Self, Self::Error> {
         let (image_tag, value) = v;
         let Some((image_name, "latest")) = image_tag.split_once(':') else {
             color_eyre::eyre::bail!("'Shell-Cell' image tag must be '<scell_name>:latest'");

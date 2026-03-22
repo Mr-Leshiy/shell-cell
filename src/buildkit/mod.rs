@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use bollard::{
     Docker,
-    secret::{ContainerCreateBody, HostConfig, PortBinding},
+    models::{ContainerCreateBody, HostConfig, PortBinding},
 };
 
 use crate::{

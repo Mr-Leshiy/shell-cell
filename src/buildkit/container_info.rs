@@ -1,6 +1,6 @@
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 
-use bollard::secret::ContainerSummaryStateEnum;
+use bollard::models::ContainerSummaryStateEnum;
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::ContextCompat;
 
@@ -79,10 +79,10 @@ impl From<&ContainerSummaryStateEnum> for Status {
     }
 }
 
-impl TryFrom<bollard::secret::ContainerSummary> for SCellContainerInfo {
+impl TryFrom<bollard::models::ContainerSummary> for SCellContainerInfo {
     type Error = color_eyre::eyre::Error;
 
-    fn try_from(value: bollard::secret::ContainerSummary) -> Result<Self, Self::Error> {
+    fn try_from(value: bollard::models::ContainerSummary) -> Result<Self, Self::Error> {
         let c_names = value
             .names
             .context("'Shell-Cell' container must have a name")?;
