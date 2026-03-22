@@ -11,4 +11,4 @@ build-dir = "book"
 command = "mdbook-mermaid"
 
 [output.html]
-additional-js = ["mermaid.min.js", "mermaid-init.js"]
+additional-js = ["docs/mermaid.min.js", "docs/mermaid-init.js"]
