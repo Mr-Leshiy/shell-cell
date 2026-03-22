@@ -76,6 +76,19 @@
     // not how the image is built.
     // Only the first config block encountered in the target chain is used.
     config?: #Config
+
+    // services is a named map of companion containers to run alongside the main
+    // Shell-Cell container, similar to Docker Compose services.
+    // Each key is a service name (must match "^[a-z][a-z0-9_-]*$") and each value
+    // is a full target definition — the same structure as any top-level #Target.
+    // Example:
+    //   services: {
+    //     db:    { from_image: "postgres:16", shell: "/bin/sh", hang: "sleep infinity" }
+    //     cache: { from_image: "redis:7",     shell: "/bin/sh", hang: "sleep infinity" }
+    //   }
+    services?: {
+        [=~"^[a-z][a-z0-9_-]*$"]: #Target
+    }
 }
 
 // Config defines runtime behaviour of the **Shell-Cell** container.
@@ -96,19 +109,6 @@
     //   "HOST_IP::CONTAINER_PORT"                 — random host port on a given IP
     // Examples: "8080:80", "127.0.0.1:9000:9000", "6060:6060/udp"
     ports?: [...string]
-
-    // services is a named map of companion containers to run alongside the main
-    // Shell-Cell container, similar to Docker Compose services.
-    // Each key is a service name (must match "^[a-z][a-z0-9_-]*$") and each value
-    // is a full target definition — the same structure as any top-level #Target.
-    // Example:
-    //   services: {
-    //     db:    { from_image: "postgres:16", shell: "/bin/sh", hang: "sleep infinity" }
-    //     cache: { from_image: "redis:7",     shell: "/bin/sh", hang: "sleep infinity" }
-    //   }
-    services?: {
-        [=~"^[a-z][a-z0-9_-]*$"]: #Target
-    }
 }
 
 // defining the final contraint 
