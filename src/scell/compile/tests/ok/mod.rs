@@ -52,6 +52,10 @@ use crate::scell::{SCell, types::name::TargetName};
     "from_docker", None
     ; "from docker"
 )]
+#[test_case(
+    "services_config", None
+    ; "services config"
+)]
 fn compile_ok_test(
     dir_path: &str,
     target: Option<TargetName>,
