@@ -64,13 +64,14 @@ impl SCell {
             Ok,
         )?;
 
-        let entry_point = scell_f
-            .cells
-            .remove(&entry_point_target)
-            .user_err(MissingEntrypoint(
-                scell_f.location.clone(),
-                entry_point_target.clone(),
-            ))?;
+        let entry_point =
+            scell_f
+                .targets
+                .remove(&entry_point_target)
+                .user_err(MissingEntrypoint(
+                    scell_f.location.clone(),
+                    entry_point_target.clone(),
+                ))?;
 
         let (links, shell, hang, config) =
             Self::compile_inner(scell_f, entry_point, entry_point_target)?;
@@ -169,7 +170,7 @@ impl SCell {
                     }
 
                     walk_target = walk_f
-                        .cells
+                        .targets
                         .remove(&name)
                         .user_err(MissingTarget(name.clone(), walk_f.location.clone()))?;
                     walk_target_name = name;
