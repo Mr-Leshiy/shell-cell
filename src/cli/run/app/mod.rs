@@ -216,10 +216,10 @@ impl App {
                     .await?;
 
                 drop(logs_tx.send((
-                    "📦 Starting 'Shell-Cell' container".to_string(),
+                    "📦 Starting 'Shell-Cell' containers".to_string(),
                     LogType::Main,
                 )));
-                buildkit.start_container(&scell).await?;
+                buildkit.start_containers(&scell).await?;
 
                 if detach {
                     return color_eyre::eyre::Ok(None);

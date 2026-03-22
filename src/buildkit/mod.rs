@@ -29,7 +29,7 @@ use crate::{
     },
     error::WrapUserError,
     pty::Pty,
-    scell::{SCell, image::SCellImage},
+    scell::{SCell, container::SCellContainer, image::SCellImage},
 };
 
 const SCELL_IMAGE_LATEST: &str = "latest";
@@ -109,7 +109,7 @@ impl BuildKitD {
         }
     }
 
-    pub async fn start_container(
+    pub async fn start_containers(
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<()> {
@@ -118,7 +118,7 @@ impl BuildKitD {
             &scell.image().id()?.to_string(),
             SCELL_IMAGE_LATEST,
             &scell.container_id()?.to_string(),
-            container_config(scell)?,
+            container_config(scell.image(), scell.container())?,
         )
         .await
         .mark_as_user_err()?;
@@ -197,16 +197,18 @@ impl BuildKitD {
     }
 }
 
-fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
-    let binds: Vec<String> = scell
-        .container()
+fn container_config(
+    image: &SCellImage,
+    container: &SCellContainer,
+) -> color_eyre::Result<ContainerCreateBody> {
+    let binds: Vec<String> = container
         .mounts()
         .0
         .iter()
         .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
         .collect();
 
-    let ports = scell.container().ports();
+    let ports = container.ports();
 
     let exposed_ports: Vec<String> = ports
         .0
@@ -234,7 +236,7 @@ fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
             ..Default::default()
         }),
         exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
-        labels: Some(container_metadata(scell)?),
+        labels: Some(container_metadata(image, container)?),
         ..Default::default()
     })
 }
@@ -258,15 +260,18 @@ fn image_metadata(image: &SCellImage) -> color_eyre::Result<HashMap<String, Stri
     .collect())
 }
 
-fn container_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
+fn container_metadata(
+    image: &SCellImage,
+    container: &SCellContainer,
+) -> color_eyre::Result<HashMap<String, String>> {
     Ok([
         (
             CONTAINER_METADATA_IMAGE_ID_KEY.to_string(),
-            scell.image().id()?.to_string(),
+            image.id()?.to_string(),
         ),
         (
             CONTAINER_METADATA_DESCRIPTION_KEY.to_string(),
-            encode_object_to_metadata(scell.container())?,
+            encode_object_to_metadata(container)?,
         ),
     ]
     .into_iter()
