@@ -5,7 +5,10 @@
     "language": "en,en-US",
     "useGitignore": true,
     "dictionaries": ["html", "css"],
-    "ignorePaths": ["CLAUDE.md"],
+    "ignorePaths": [
+        "CLAUDE.md",
+        "docs/mermaid.min.js"
+    ],
     "files": [
         "docs/**",
         "**.md"
