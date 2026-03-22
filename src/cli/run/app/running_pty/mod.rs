@@ -1,6 +1,11 @@
 use std::path::PathBuf;
 
-use crate::{buildkit::BuildKitD, cli::MIN_FPS, pty::Pty, scell::{name::SCellId, types::name::TargetName}};
+use crate::{
+    buildkit::BuildKitD,
+    cli::MIN_FPS,
+    pty::Pty,
+    scell::{name::SCellId, types::name::TargetName},
+};
 
 mod ui;
 
