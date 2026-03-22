@@ -39,8 +39,7 @@ allow = [
     "MPL-2.0",
     "Zlib",
     "BSD-3-Clause",
-    "ISC",
-    "OpenSSL",
+    "ISC"
 ]
 exceptions = []
 
