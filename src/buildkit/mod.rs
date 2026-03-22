@@ -59,9 +59,9 @@ impl BuildKitD {
         &self,
         image: &SCellImage,
         log_fn: impl Fn(String),
-    ) -> color_eyre::Result<()> {
+    ) -> color_eyre::Result<bool> {
         if self.image_exists(image).await? {
-            return Ok(());
+            return Ok(true);
         }
         let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
         let labels = image_metadata(image)?;
@@ -79,7 +79,7 @@ impl BuildKitD {
         .await
         .mark_as_user_err()?;
 
-        Ok(())
+        Ok(false)
     }
 
     async fn image_exists(
