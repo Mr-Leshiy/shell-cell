@@ -22,7 +22,12 @@ impl Display for TargetRef {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         if let Some(location) = &self.location {
-            write!(f, "{}{TARGET_REF_DELIMITER}{}", location.display(), self.name)
+            write!(
+                f,
+                "{}{TARGET_REF_DELIMITER}{}",
+                location.display(),
+                self.name
+            )
         } else {
             write!(f, "{TARGET_REF_DELIMITER}{}", self.name)
         }
@@ -52,6 +57,15 @@ impl FromStr for TargetRef {
                 )))
             },
         }
+    }
+}
+
+impl serde::Serialize for TargetRef {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        self.to_string().serialize(serializer)
     }
 }
 
