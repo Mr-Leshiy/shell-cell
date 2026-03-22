@@ -32,7 +32,7 @@ use crate::{
     scell::SCell,
 };
 
-pub type ImageId = String;
+const SCELL_IMAGE_LATEST: &str = "latest";
 
 #[derive(Clone)]
 pub struct BuildKitD {
@@ -55,18 +55,18 @@ impl BuildKitD {
         Ok(Self { docker })
     }
 
-    pub async fn build_image(
+    pub async fn build_images(
         &self,
         scell: &SCell,
         log_fn: impl Fn(String),
-    ) -> color_eyre::Result<ImageId> {
+    ) -> color_eyre::Result<()> {
         let (tar, dockerfile_path) = scell.image().image_tar_artifact_bytes()?;
         let labels = image_metadata(scell)?;
 
-        let image_id = build_image(
+        build_image(
             &self.docker,
-            &scell.image_id()?.to_string(),
-            "latest",
+            &scell.image().id()?.to_string(),
+            SCELL_IMAGE_LATEST,
             dockerfile_path,
             tar,
             labels,
@@ -77,14 +77,15 @@ impl BuildKitD {
         .await
         .mark_as_user_err()?;
 
-        Ok(image_id)
+        Ok(())
     }
 
-    pub async fn image_exists(
+    #[allow(dead_code)]
+    async fn image_exists(
         &self,
         scell: &SCell,
     ) -> color_eyre::Result<bool> {
-        let tag = format!("{}:latest", scell.image_id()?);
+        let tag = format!("{}:{SCELL_IMAGE_LATEST}", scell.image().id()?);
         match self.docker.inspect_image(&tag).await {
             Ok(_) => Ok(true),
             Err(bollard::errors::Error::DockerResponseServerError {
@@ -100,8 +101,8 @@ impl BuildKitD {
     ) -> color_eyre::Result<()> {
         start_container(
             &self.docker,
-            &scell.image_id()?.to_string(),
-            "latest",
+            &scell.image().id()?.to_string(),
+            SCELL_IMAGE_LATEST,
             &scell.container_id()?.to_string(),
             container_config(scell)?,
         )
@@ -247,7 +248,7 @@ fn container_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, Strin
     Ok([
         (
             CONTAINER_METADATA_IMAGE_ID_KEY.to_string(),
-            scell.image_id()?.to_string(),
+            scell.image().id()?.to_string(),
         ),
         (
             CONTAINER_METADATA_DESCRIPTION_KEY.to_string(),

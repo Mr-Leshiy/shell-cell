@@ -30,13 +30,6 @@ impl SCell {
         &self.shell.0
     }
 
-    pub fn image_id(&self) -> color_eyre::Result<SCellId> {
-        SCellId::new(|hasher| {
-            self.image.hash(hasher)?;
-            Ok(())
-        })
-    }
-
     pub fn container_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
             self.image.hash(hasher)?;
