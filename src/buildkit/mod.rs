@@ -30,8 +30,7 @@ use crate::{
     error::WrapUserError,
     pty::Pty,
     scell::{
-        SCell, container::SCellContainer, image::SCellImage,
-        types::target::config::services::ServiceName,
+        SCell, container::SCellContainer, image::SCellImage, types::target::services::ServiceName,
     },
 };
 

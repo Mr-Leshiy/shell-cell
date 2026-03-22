@@ -27,10 +27,11 @@ use crate::{
             name::TargetName,
             target::{
                 TargetStmt,
-                config::{ConfigStmt, services::ServiceName},
+                config::ConfigStmt,
                 copy::CopyStmt,
                 from::{FromStmt, target_ref::TargetRef},
                 hang::HangStmt,
+                services::ServiceName,
                 shell::ShellStmt,
             },
         },
@@ -113,7 +114,6 @@ impl SCell {
         let mut shell = None;
         let mut hang = None;
         let mut config = None;
-        let mut services = Vec::new();
 
         loop {
             // Use only the most recent 'shell` and 'hang' statements from the targets chain.
@@ -125,7 +125,6 @@ impl SCell {
             }
             if config.is_none() {
                 config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
-                services = Vec::new();
             }
             let copy = resolve_copy(
                 &walk_f.location,
@@ -185,7 +184,7 @@ impl SCell {
             }
         }
 
-        Ok((links, shell, hang, config, services))
+        Ok((links, shell, hang, config, Vec::new()))
     }
 }
 

@@ -21,7 +21,7 @@ use crate::scell::{
     link::Link,
     name::SCellId,
     service::Service,
-    types::target::{config::services::ServiceName, shell::ShellStmt},
+    types::target::{services::ServiceName, shell::ShellStmt},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

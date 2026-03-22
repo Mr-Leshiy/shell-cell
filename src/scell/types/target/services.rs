@@ -4,7 +4,7 @@ use crate::scell::types::{name::TargetName, target::TargetStmt};
 
 pub type ServiceName = TargetName;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
 pub struct ServicesStmt(pub BTreeMap<ServiceName, TargetStmt>);
 
 impl Hash for ServicesStmt {
