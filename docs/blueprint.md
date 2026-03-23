@@ -249,32 +249,6 @@ config: {
 }
 ```
 
-#### `services`
-
-Defines companion containers to run alongside the main **Shell-Cell** container,
-similar to [Docker Compose services](https://docs.docker.com/reference/compose-file/services/).
-
-Services are declared as a named map: each key is the service name (following the same naming rules
-as target names — `^[a-z][a-z0-9_-]*$`), and each value is a full target definition (the same
-structure as any other **Shell-Cell** target).
-
-```cue
-config: {
-    services: {
-        db: {
-            from_image: "postgres:16"
-            shell:      "/bin/sh"
-            hang:       "sleep infinity"
-        }
-        cache: {
-            from_image: "redis:7"
-            shell:      "/bin/sh"
-            hang:       "sleep infinity"
-        }
-    }
-}
-```
-
 ## Extra Arguments (`.scell_args.cue`)
 
 **Shell-Cell** supports a companion file `.scell_args.cue` placed in the same directory as `scell.cue`.
