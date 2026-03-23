@@ -196,6 +196,13 @@ config: {
     ports: [
         "<host_port>:<container_port>",
     ]
+    services: {
+        "<service_name>": {
+            from_image: "<image>:<tag>"
+            shell:      "<shell>"
+            hang:       "<hang_command>"
+        }
+    }
 }
 ```
 
@@ -239,6 +246,32 @@ config: {
         "127.0.0.1:9000:9000",
         "6060:6060/udp",
     ]
+}
+```
+
+#### `services`
+
+Defines companion containers to run alongside the main **Shell-Cell** container,
+similar to [Docker Compose services](https://docs.docker.com/reference/compose-file/services/).
+
+Services are declared as a named map: each key is the service name (following the same naming rules
+as target names — `^[a-z][a-z0-9_-]*$`), and each value is a full target definition (the same
+structure as any other **Shell-Cell** target).
+
+```cue
+config: {
+    services: {
+        db: {
+            from_image: "postgres:16"
+            shell:      "/bin/sh"
+            hang:       "sleep infinity"
+        }
+        cache: {
+            from_image: "redis:7"
+            shell:      "/bin/sh"
+            hang:       "sleep infinity"
+        }
+    }
 }
 ```
 

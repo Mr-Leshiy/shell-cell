@@ -4,6 +4,7 @@ pub mod copy;
 pub mod env;
 pub mod from;
 pub mod hang;
+pub mod services;
 pub mod shell;
 pub mod workspace;
 
@@ -11,7 +12,7 @@ use self::{
     build::BuildStmt, config::ConfigStmt, copy::CopyStmt, from::FromStmt, shell::ShellStmt,
     workspace::WorkspaceStmt,
 };
-use crate::scell::types::target::{env::EnvStmt, hang::HangStmt};
+use crate::scell::types::target::{env::EnvStmt, hang::HangStmt, services::ServicesStmt};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct TargetStmt {
@@ -28,4 +29,6 @@ pub struct TargetStmt {
     pub shell: Option<ShellStmt>,
     pub hang: Option<HangStmt>,
     pub config: Option<ConfigStmt>,
+    #[serde(default)]
+    pub services: ServicesStmt,
 }

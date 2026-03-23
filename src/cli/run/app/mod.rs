@@ -206,21 +206,45 @@ impl App {
                 )));
                 let scell = SCell::compile(scell_path, entry)?;
 
-                if buildkit.image_exists(&scell).await? {
+                drop(logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)));
+                if buildkit
+                    .build_image(scell.image(), |msg| {
+                        if !quiet {
+                            drop(logs_tx.send((msg, LogType::SubLog)));
+                        }
+                    })
+                    .await?
+                {
                     drop(logs_tx.send((
                         "⚡ 'Shell-Cell' image already exists, skipping build".to_string(),
                         LogType::MainInfo,
                     )));
-                } else {
-                    drop(
-                        logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)),
-                    );
-                    buildkit
-                        .build_image(&scell, |msg| {
+                }
+
+                for (s_name, s) in scell.services() {
+                    drop(logs_tx.send((
+                        format!("⚙️ Building 'Shell-Cell' service '{s_name}' image"),
+                        LogType::Main,
+                    )));
+                    if buildkit
+                        .build_image(&s.image, |msg| {
                             if !quiet {
                                 drop(logs_tx.send((msg, LogType::SubLog)));
                             }
                         })
+                        .await?
+                    {
+                        drop(logs_tx.send((
+                            format!("⚡ 'Shell-Cell' service '{s_name}' image already exists, skipping build"),
+                            LogType::MainInfo
+                        )));
+                    }
+                    drop(logs_tx.send((
+                        format!("📦 Starting 'Shell-Cell' service '{s_name}' container"),
+                        LogType::Main,
+                    )));
+                    buildkit
+                        .start_service_container(&scell, s_name, &s.image, &s.container)
                         .await?;
                 }
 

@@ -6,7 +6,7 @@ pub mod name;
 pub mod target;
 
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::LazyLock,
 };
@@ -26,9 +26,9 @@ pub const SCELL_SCHEMA: &[u8] = include_bytes!("scell_schema.cue");
 static CUE_CTX: LazyLock<cue_rs::Ctx> =
     LazyLock::new(|| cue_rs::Ctx::new().expect("Cannot initialize `cue_rs::Ctx`"));
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SCellFile {
-    pub cells: HashMap<TargetName, TargetStmt>,
+    pub targets: BTreeMap<TargetName, TargetStmt>,
     pub location: PathBuf,
 }
 
@@ -57,9 +57,9 @@ impl SCellFile {
 
         let scell_json_bytes = scell_cue.to_json_bytes().mark_as_user_err()?;
         let scell_json = serde_json::from_slice(&scell_json_bytes)?;
-        let cells: HashMap<TargetName, TargetStmt> = serde_json::from_value(scell_json)?;
+        let targets: BTreeMap<TargetName, TargetStmt> = serde_json::from_value(scell_json)?;
 
-        Ok(Self { cells, location })
+        Ok(Self { targets, location })
     }
 }
 

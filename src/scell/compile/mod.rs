@@ -20,6 +20,7 @@ use crate::{
         },
         image::SCellImage,
         link::RootNode,
+        service::Service,
         types::{
             SCellFile,
             extra_arguments::SCellExtraArguments,
@@ -30,6 +31,7 @@ use crate::{
                 copy::CopyStmt,
                 from::{FromStmt, target_ref::TargetRef},
                 hang::HangStmt,
+                services::{ServiceName, ServicesStmt},
                 shell::ShellStmt,
             },
         },
@@ -39,11 +41,12 @@ use crate::{
 
 const SCELL_DEFAULT_ENTRY_POINT: &str = "main";
 
-type CompileInnerResult = (
+type CompiledTarget = (
     Vec<Link>,
     Option<ShellStmt>,
     Option<HangStmt>,
     Option<ConfigStmt>,
+    Vec<(ServiceName, Service)>,
 );
 
 impl SCell {
@@ -64,16 +67,17 @@ impl SCell {
             Ok,
         )?;
 
-        let entry_point = scell_f
-            .cells
-            .remove(&entry_point_target)
-            .user_err(MissingEntrypoint(
-                scell_f.location.clone(),
-                entry_point_target.clone(),
-            ))?;
+        let entry_point =
+            scell_f
+                .targets
+                .remove(&entry_point_target)
+                .user_err(MissingEntrypoint(
+                    scell_f.location.clone(),
+                    entry_point_target.clone(),
+                ))?;
 
-        let (links, shell, hang, config) =
-            Self::compile_inner(scell_f, entry_point, entry_point_target)?;
+        let (links, shell, hang, config, services) =
+            compile_target(scell_f, entry_point, entry_point_target)?;
 
         let mut report = Report::new();
         if shell.is_none() {
@@ -90,97 +94,102 @@ impl SCell {
         );
 
         let image = SCellImage::new(links, hang.context("'hang' cannot be 'None'")?)?;
-        let container = SCellContainer { config };
+        let container = SCellContainer::new(config);
         Ok(Self {
             image,
             container,
             shell: shell.context("'shell' cannot be 'None'")?,
+            services,
         })
     }
+}
 
-    fn compile_inner(
-        mut walk_f: SCellFile,
-        mut walk_target: TargetStmt,
-        mut walk_target_name: TargetName,
-    ) -> color_eyre::Result<CompileInnerResult> {
-        // Store processed target's name and location, to detect circular target dependencies
-        let mut visited_targets = HashSet::new();
-        let mut links = Vec::new();
-        let mut shell = None;
-        let mut hang = None;
-        let mut config = None;
+fn compile_target(
+    mut walk_f: SCellFile,
+    mut walk_target: TargetStmt,
+    mut walk_target_name: TargetName,
+) -> color_eyre::Result<CompiledTarget> {
+    // Store processed target's name and location, to detect circular target dependencies
+    let mut visited_targets = HashSet::new();
+    let mut links = Vec::new();
+    let mut shell = None;
+    let mut hang = None;
+    let mut config = None;
 
-        loop {
-            // Use only the most recent 'shell` and 'hang' statements from the targets chain.
-            if shell.is_none() {
-                shell = walk_target.shell;
-            }
-            if hang.is_none() {
-                hang = walk_target.hang;
-            }
-            if config.is_none() {
-                config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
-            }
-            let copy = resolve_copy(
-                &walk_f.location,
-                &walk_target_name,
-                walk_target.copy.clone(),
-            )?;
-            links.push(Link::Node {
-                name: walk_target_name.clone(),
-                location: walk_f.location.clone(),
-                workspace: walk_target.workspace.clone(),
-                copy,
-                build: walk_target.build.clone(),
-                env: walk_target.env.clone(),
-            });
+    // TODO: avoid recursion
+    let services = resolve_services(walk_target.services, &walk_f)?;
 
-            match walk_target.from {
-                FromStmt::Image(docker_image_def) => {
-                    links.push(Link::Root(RootNode::Image(docker_image_def)));
-                    break;
-                },
-                FromStmt::Docker(docker_file_path) => {
-                    let docker_path = resolve_path(&walk_f.location, &docker_file_path).user_err(
-                        DockerfileNotFound(
-                            docker_file_path,
-                            walk_target_name.clone(),
-                            walk_f.location.clone(),
-                        ),
-                    )?;
-                    links.push(Link::Root(RootNode::Dockerfile(docker_path)));
-                    break;
-                },
-                FromStmt::Target(TargetRef { location, name }) => {
-                    if let Some(location) = location {
-                        let location = resolve_path(&walk_f.location, &location).user_err(
-                            DirNotFoundFromStmt(location, name.clone(), walk_f.location.clone()),
-                        )?;
-                        walk_f = SCellFile::from_path(&location, &SCellExtraArguments::new_emtpy())
-                            .wrap_user_err(FileLoadFromStmt(
-                                location.clone(),
-                                name.clone(),
-                                walk_f.location.clone(),
-                            ))?;
-                    }
-
-                    if visited_targets.contains(&(name.clone(), walk_f.location.clone())) {
-                        return UserError::bail(CircularTargets(name.clone(), walk_f.location))?;
-                    }
-
-                    walk_target = walk_f
-                        .cells
-                        .remove(&name)
-                        .user_err(MissingTarget(name.clone(), walk_f.location.clone()))?;
-                    walk_target_name = name;
-
-                    visited_targets.insert((walk_target_name.clone(), walk_f.location.clone()));
-                },
-            }
+    loop {
+        // Use only the most recent 'shell` and 'hang' statements from the targets chain.
+        if shell.is_none() {
+            shell = walk_target.shell;
         }
+        if hang.is_none() {
+            hang = walk_target.hang;
+        }
+        if config.is_none() {
+            config = resolve_config(&walk_f.location, &walk_target_name, walk_target.config)?;
+        }
+        let copy = resolve_copy(
+            &walk_f.location,
+            &walk_target_name,
+            walk_target.copy.clone(),
+        )?;
+        links.push(Link::Node {
+            name: walk_target_name.clone(),
+            location: walk_f.location.clone(),
+            workspace: walk_target.workspace.clone(),
+            copy,
+            build: walk_target.build.clone(),
+            env: walk_target.env.clone(),
+        });
 
-        Ok((links, shell, hang, config))
+        match walk_target.from {
+            FromStmt::Image(docker_image_def) => {
+                links.push(Link::Root(RootNode::Image(docker_image_def)));
+                break;
+            },
+            FromStmt::Docker(docker_file_path) => {
+                let docker_path = resolve_path(&walk_f.location, &docker_file_path).user_err(
+                    DockerfileNotFound(
+                        docker_file_path,
+                        walk_target_name.clone(),
+                        walk_f.location.clone(),
+                    ),
+                )?;
+                links.push(Link::Root(RootNode::Dockerfile(docker_path)));
+                break;
+            },
+            FromStmt::Target(TargetRef { location, name }) => {
+                if let Some(location) = location {
+                    let location = resolve_path(&walk_f.location, &location).user_err(
+                        DirNotFoundFromStmt(location, name.clone(), walk_f.location.clone()),
+                    )?;
+                    walk_f = SCellFile::from_path(&location, &SCellExtraArguments::new_emtpy())
+                        .wrap_user_err(FileLoadFromStmt(
+                            location.clone(),
+                            name.clone(),
+                            walk_f.location.clone(),
+                        ))?;
+                }
+
+                if visited_targets.contains(&(name.clone(), walk_f.location.clone())) {
+                    return UserError::bail(CircularTargets(name.clone(), walk_f.location))?;
+                }
+
+                walk_target = walk_f
+                    .targets
+                    .get(&name)
+                    .user_err(MissingTarget(name.clone(), walk_f.location.clone()))?
+                    .clone();
+                walk_target_name = name;
+
+                visited_targets.insert((walk_target_name.clone(), walk_f.location.clone()));
+            },
+        }
     }
+
+    Ok((links, shell, hang, config, services))
 }
 
 fn resolve_config(
@@ -208,6 +217,25 @@ fn resolve_config(
             color_eyre::eyre::Ok(c)
         })
         .transpose()
+}
+
+fn resolve_services(
+    services: ServicesStmt,
+    f: &SCellFile,
+) -> color_eyre::Result<Vec<(ServiceName, Service)>> {
+    let mut res = Vec::new();
+    for (s_name, s) in services.0 {
+        let (links, _shell, hang, config, services) = compile_target(f.clone(), s, s_name.clone())?;
+        color_eyre::eyre::ensure!(
+            links.len() >= 2,
+            "It must be at least two links in the target chain"
+        );
+        let image = SCellImage::new(links, hang.ok_or(MissingHangStmt).mark_as_user_err()?)?;
+        let container = SCellContainer::new(config);
+        res.push((s_name, Service { image, container }));
+        res.extend(services);
+    }
+    Ok(res)
 }
 
 /// **source paths** and are joined with the target `location` to create absolute or

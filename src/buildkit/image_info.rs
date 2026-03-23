@@ -24,6 +24,12 @@ pub struct SCellImageInfo {
     pub docker_image_id: String,
 }
 
+impl SCellImageInfo {
+    pub fn image_name(id: &SCellId) -> String {
+        format!("{id}:latest")
+    }
+}
+
 impl TryFrom<(String, bollard::models::ImageSummary)> for SCellImageInfo {
     type Error = color_eyre::eyre::Error;
 
@@ -65,7 +71,7 @@ impl TryFrom<(String, bollard::models::ImageSummary)> for SCellImageInfo {
             // Determine if the container is orphaned by comparing the container name
             // with the expected SCellId
             SCell::compile(location, Some(target.clone()))
-                .and_then(|scell| Ok(scell.image_id()? != id))
+                .and_then(|scell| Ok(scell.image().id()? != id))
                 // If compilation fails, consider it orphaned
                 .unwrap_or(true)
         } else {
