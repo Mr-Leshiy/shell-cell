@@ -17,6 +17,7 @@ use super::{
 };
 use crate::scell::{
     link::RootNode,
+    name::SCellId,
     types::target::{env::EnvStmt, hang::HangStmt},
 };
 
@@ -45,6 +46,22 @@ impl SCellImage {
 
     pub fn location(&self) -> &Path {
         &self.blueprint_location
+    }
+
+    pub fn id(&self) -> color_eyre::Result<SCellId> {
+        SCellId::new(|hasher| {
+            self.hash(hasher)?;
+            Ok(())
+        })
+    }
+
+    pub fn hash<H: Hasher>(
+        &self,
+        hasher: &mut H,
+    ) -> color_eyre::Result<()> {
+        self.inner.hash(hasher);
+        self.image_tar_artifact_bytes()?.hash(hasher);
+        Ok(())
     }
 
     pub fn new(
@@ -103,15 +120,6 @@ impl SCellImage {
                 .context("'blueprint_location' cannot be None")?,
             dockerfile,
         })
-    }
-
-    pub fn hash<H: Hasher>(
-        &self,
-        hasher: &mut H,
-    ) -> color_eyre::Result<()> {
-        self.inner.hash(hasher);
-        self.image_tar_artifact_bytes()?.hash(hasher);
-        Ok(())
     }
 
     fn dump_to_string(&self) -> color_eyre::Result<String> {

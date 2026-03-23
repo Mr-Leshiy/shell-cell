@@ -29,10 +29,10 @@ use crate::{
     },
     error::WrapUserError,
     pty::Pty,
-    scell::SCell,
+    scell::{
+        SCell, container::SCellContainer, image::SCellImage, types::target::services::ServiceName,
+    },
 };
-
-pub type ImageId = String;
 
 #[derive(Clone)]
 pub struct BuildKitD {
@@ -57,16 +57,18 @@ impl BuildKitD {
 
     pub async fn build_image(
         &self,
-        scell: &SCell,
+        image: &SCellImage,
         log_fn: impl Fn(String),
-    ) -> color_eyre::Result<ImageId> {
-        let (tar, dockerfile_path) = scell.image().image_tar_artifact_bytes()?;
-        let labels = image_metadata(scell)?;
+    ) -> color_eyre::Result<bool> {
+        if self.image_exists(image).await? {
+            return Ok(true);
+        }
+        let (tar, dockerfile_path) = image.image_tar_artifact_bytes()?;
+        let labels = image_metadata(image)?;
 
-        let image_id = build_image(
+        build_image(
             &self.docker,
-            &scell.image_id()?.to_string(),
-            "latest",
+            &SCellImageInfo::image_name(&image.id()?),
             dockerfile_path,
             tar,
             labels,
@@ -77,15 +79,18 @@ impl BuildKitD {
         .await
         .mark_as_user_err()?;
 
-        Ok(image_id)
+        Ok(false)
     }
 
-    pub async fn image_exists(
+    async fn image_exists(
         &self,
-        scell: &SCell,
+        image: &SCellImage,
     ) -> color_eyre::Result<bool> {
-        let tag = format!("{}:latest", scell.image_id()?);
-        match self.docker.inspect_image(&tag).await {
+        match self
+            .docker
+            .inspect_image(&SCellImageInfo::image_name(&image.id()?))
+            .await
+        {
             Ok(_) => Ok(true),
             Err(bollard::errors::Error::DockerResponseServerError {
                 status_code: 404, ..
@@ -100,10 +105,27 @@ impl BuildKitD {
     ) -> color_eyre::Result<()> {
         start_container(
             &self.docker,
-            &scell.image_id()?.to_string(),
-            "latest",
-            &scell.container_id()?.to_string(),
-            container_config(scell)?,
+            &SCellImageInfo::image_name(&scell.image().id()?),
+            &SCellContainerInfo::container_name(&scell.container_id()?, None),
+            container_config(scell.image(), scell.container())?,
+        )
+        .await
+        .mark_as_user_err()?;
+        Ok(())
+    }
+
+    pub async fn start_service_container(
+        &self,
+        scell: &SCell,
+        name: &ServiceName,
+        image: &SCellImage,
+        container: &SCellContainer,
+    ) -> color_eyre::Result<()> {
+        start_container(
+            &self.docker,
+            &SCellImageInfo::image_name(&image.id()?),
+            &SCellContainerInfo::container_name(&scell.container_id()?, Some(name)),
+            container_config(scell.image(), container)?,
         )
         .await
         .mark_as_user_err()?;
@@ -114,7 +136,11 @@ impl BuildKitD {
         &self,
         container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
-        stop_container(&self.docker, container.id.as_str()).await?;
+        stop_container(
+            &self.docker,
+            &SCellContainerInfo::container_name(&container.id, container.service_name.as_ref()),
+        )
+        .await?;
         Ok(())
     }
 
@@ -122,7 +148,11 @@ impl BuildKitD {
         &self,
         container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
-        remove_container(&self.docker, container.id.as_str()).await?;
+        remove_container(
+            &self.docker,
+            &SCellContainerInfo::container_name(&container.id, container.service_name.as_ref()),
+        )
+        .await?;
         Ok(())
     }
 
@@ -182,15 +212,18 @@ impl BuildKitD {
     }
 }
 
-fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
-    let binds: Vec<String> = scell
+fn container_config(
+    image: &SCellImage,
+    container: &SCellContainer,
+) -> color_eyre::Result<ContainerCreateBody> {
+    let binds: Vec<String> = container
         .mounts()
         .0
         .iter()
         .map(|m| format!("{}:{}", m.host.display(), m.container.display()))
         .collect();
 
-    let ports = scell.ports();
+    let ports = container.ports();
 
     let exposed_ports: Vec<String> = ports
         .0
@@ -218,39 +251,42 @@ fn container_config(scell: &SCell) -> color_eyre::Result<ContainerCreateBody> {
             ..Default::default()
         }),
         exposed_ports: (!exposed_ports.is_empty()).then_some(exposed_ports),
-        labels: Some(container_metadata(scell)?),
+        labels: Some(container_metadata(image, container)?),
         ..Default::default()
     })
 }
 
-fn image_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
+fn image_metadata(image: &SCellImage) -> color_eyre::Result<HashMap<String, String>> {
     Ok([
         (
             IMAGE_METADATA_LOCATION_KEY.to_string(),
-            format!("{}", scell.image().location().display()),
+            format!("{}", image.location().display()),
         ),
         (
             IMAGE_METADATA_ENTRY_POINT_KEY.to_string(),
-            scell.image().entry_point().to_string(),
+            image.entry_point().to_string(),
         ),
         (
             IMAGE_METADATA_DESCRIPTION_KEY.to_string(),
-            encode_object_to_metadata(scell.image())?,
+            encode_object_to_metadata(image)?,
         ),
     ]
     .into_iter()
     .collect())
 }
 
-fn container_metadata(scell: &SCell) -> color_eyre::Result<HashMap<String, String>> {
+fn container_metadata(
+    image: &SCellImage,
+    container: &SCellContainer,
+) -> color_eyre::Result<HashMap<String, String>> {
     Ok([
         (
             CONTAINER_METADATA_IMAGE_ID_KEY.to_string(),
-            scell.image_id()?.to_string(),
+            image.id()?.to_string(),
         ),
         (
             CONTAINER_METADATA_DESCRIPTION_KEY.to_string(),
-            encode_object_to_metadata(scell.container())?,
+            encode_object_to_metadata(container)?,
         ),
     ]
     .into_iter()
@@ -284,8 +320,7 @@ async fn create_and_start_buildkit_container(docker: &Docker) -> color_eyre::Res
     pull_image(docker, BUILDKIT_IMAGE, BUILDKIT_TAG).await?;
     start_container(
         docker,
-        BUILDKIT_IMAGE,
-        BUILDKIT_TAG,
+        &format!("{BUILDKIT_IMAGE}:{BUILDKIT_TAG}"),
         BUILDKIT_CONTAINER_NAME,
         ContainerCreateBody::default(),
     )

@@ -6,21 +6,22 @@
 //! "base" for entire Shell-Cell.
 
 mod compile;
+pub mod container;
 pub mod image;
 mod link;
 pub mod name;
+pub mod service;
 pub mod types;
 
 use std::hash::Hash;
 
 use crate::scell::{
+    container::SCellContainer,
     image::SCellImage,
     link::Link,
     name::SCellId,
-    types::target::{
-        config::{ConfigStmt, mounts::MountsStmt, ports::PortsStmt},
-        shell::ShellStmt,
-    },
+    service::Service,
+    types::target::{services::ServiceName, shell::ShellStmt},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,11 +29,7 @@ pub struct SCell {
     image: SCellImage,
     container: SCellContainer,
     shell: ShellStmt,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize)]
-pub struct SCellContainer {
-    config: Option<ConfigStmt>,
+    services: Vec<(ServiceName, Service)>,
 }
 
 impl SCell {
@@ -41,33 +38,15 @@ impl SCell {
         &self.shell.0
     }
 
-    pub fn mounts(&self) -> MountsStmt {
-        self.container
-            .config
-            .as_ref()
-            .map(|c| c.mounts.clone())
-            .unwrap_or_default()
-    }
-
-    pub fn ports(&self) -> PortsStmt {
-        self.container
-            .config
-            .as_ref()
-            .map(|c| c.ports.clone())
-            .unwrap_or_default()
-    }
-
-    pub fn image_id(&self) -> color_eyre::Result<SCellId> {
-        SCellId::new(|hasher| {
-            self.image.hash(hasher)?;
-            Ok(())
-        })
-    }
-
     pub fn container_id(&self) -> color_eyre::Result<SCellId> {
         SCellId::new(|hasher| {
             self.image.hash(hasher)?;
             self.container.hash(hasher);
+            for (name, service) in &self.services {
+                name.hash(hasher);
+                service.image.hash(hasher)?;
+                service.container.hash(hasher);
+            }
             Ok(())
         })
     }
@@ -78,5 +57,9 @@ impl SCell {
 
     pub fn container(&self) -> &SCellContainer {
         &self.container
+    }
+
+    pub fn services(&self) -> impl Iterator<Item = &(ServiceName, Service)> {
+        self.services.iter()
     }
 }

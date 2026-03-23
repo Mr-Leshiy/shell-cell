@@ -12,15 +12,21 @@ use crate::{
             IMAGE_METADATA_LOCATION_KEY,
         },
     },
-    scell::{SCell, name::SCellId, types::name::TargetName},
+    scell::{
+        SCell,
+        name::SCellId,
+        types::{name::TargetName, target::services::ServiceName},
+    },
 };
 
 pub const CONTAINER_METADATA_IMAGE_ID_KEY: &str = "scell-image-id";
 pub const CONTAINER_METADATA_DESCRIPTION_KEY: &str = "scell-container-description";
+const SERVICE_NAME_DELIMETER: char = '.';
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
     pub id: SCellId,
+    pub service_name: Option<ServiceName>,
     pub orphan: bool,
     pub status: Status,
     pub image_id: Option<SCellId>,
@@ -31,6 +37,18 @@ pub struct SCellContainerInfo {
     pub created_at: Option<DateTime<Utc>>,
     // A Docker image id, not a [`SCellId`]
     pub docker_image_id: String,
+}
+
+impl SCellContainerInfo {
+    pub fn container_name(
+        id: &SCellId,
+        service_name: Option<&ServiceName>,
+    ) -> String {
+        service_name.map_or_else(
+            || id.to_string(),
+            |v| format!("{id}{SERVICE_NAME_DELIMETER}{v}"),
+        )
+    }
 }
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -148,7 +166,12 @@ impl TryFrom<bollard::models::ContainerSummary> for SCellContainerInfo {
             .image_id
             .context("'Shell-Cell' container must have a corresponding Docker/Podman image ID")?;
 
-        let id = container_name.parse()?;
+        let (id, service_name) = match container_name.split_once(SERVICE_NAME_DELIMETER) {
+            Some((id_part, service_name)) => {
+                (id_part.parse::<SCellId>()?, Some(service_name.parse()?))
+            },
+            None => (container_name.parse()?, None),
+        };
 
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
@@ -166,6 +189,7 @@ impl TryFrom<bollard::models::ContainerSummary> for SCellContainerInfo {
 
         Ok(Self {
             id,
+            service_name,
             orphan,
             status,
             image_id,
