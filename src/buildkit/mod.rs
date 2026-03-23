@@ -136,7 +136,11 @@ impl BuildKitD {
         &self,
         container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
-        stop_container(&self.docker, container.id.as_str()).await?;
+        stop_container(
+            &self.docker,
+            &SCellContainerInfo::container_name(&container.id, container.service_name.as_ref()),
+        )
+        .await?;
         Ok(())
     }
 
@@ -144,7 +148,11 @@ impl BuildKitD {
         &self,
         container: &SCellContainerInfo,
     ) -> color_eyre::Result<()> {
-        remove_container(&self.docker, container.id.as_str()).await?;
+        remove_container(
+            &self.docker,
+            &SCellContainerInfo::container_name(&container.id, container.service_name.as_ref()),
+        )
+        .await?;
         Ok(())
     }
 

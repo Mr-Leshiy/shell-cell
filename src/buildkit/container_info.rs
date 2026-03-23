@@ -26,6 +26,7 @@ const SERVICE_NAME_DELIMETER: char = '.';
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SCellContainerInfo {
     pub id: SCellId,
+    pub service_name: Option<ServiceName>,
     pub orphan: bool,
     pub status: Status,
     pub image_id: Option<SCellId>,
@@ -165,10 +166,12 @@ impl TryFrom<bollard::models::ContainerSummary> for SCellContainerInfo {
             .image_id
             .context("'Shell-Cell' container must have a corresponding Docker/Podman image ID")?;
 
-        let id = container_name
-            .split_once(SERVICE_NAME_DELIMETER)
-            .map_or(container_name.as_str(), |(id_part, _)| id_part)
-            .parse()?;
+        let (id, service_name) = match container_name.split_once(SERVICE_NAME_DELIMETER) {
+            Some((id_part, service_name)) => {
+                (id_part.parse::<SCellId>()?, Some(service_name.parse()?))
+            },
+            None => (container_name.parse()?, None),
+        };
 
         let orphan = if let Some(ref location) = location
             && let Some(ref target) = target
@@ -186,6 +189,7 @@ impl TryFrom<bollard::models::ContainerSummary> for SCellContainerInfo {
 
         Ok(Self {
             id,
+            service_name,
             orphan,
             status,
             image_id,
