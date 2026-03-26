@@ -86,9 +86,10 @@
     //     db:    { from_image: "postgres:16", shell: "/bin/sh", hang: "sleep infinity" }
     //     cache: { from_image: "redis:7",     shell: "/bin/sh", hang: "sleep infinity" }
     //   }
-    services?: {
-        [=~"^[a-z][a-z0-9_-]*$"]: #Target
-    }
+    // TODO: enable services feature when it would be ready
+    // services?: {
+    //     [=~"^[a-z][a-z0-9_-]*$"]: #Target
+    // }
 }
 
 // Config defines runtime behaviour of the **Shell-Cell** container.
