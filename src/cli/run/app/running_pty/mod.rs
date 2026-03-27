@@ -1,10 +1,17 @@
 use std::path::PathBuf;
 
+use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
+use terminput::Encoding;
+use terminput_crossterm::to_terminput;
+
 use crate::{
     buildkit::BuildKitD,
-    cli::MIN_FPS,
+    cli::{
+        MIN_FPS,
+        run::app::{App, help_window::HelpWindowState},
+    },
     pty::Pty,
-    scell::{name::SCellId, types::name::TargetName},
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
 
 mod ui;
@@ -19,20 +26,21 @@ pub struct RunningPtyState {
 }
 
 impl RunningPtyState {
-    pub fn new(
+    pub fn run(
         pty: Pty,
-        container_id: SCellId,
-        target_name: TargetName,
-        location: PathBuf,
-    ) -> Self {
-        Self {
-            pty,
-            container_id,
-            target_name,
-            location,
-            prev_height: 0,
-            prev_width: 0,
-        }
+        scell: &SCell,
+    ) -> color_eyre::Result<App> {
+        Ok(App::RunningPty(
+            Self {
+                pty,
+                container_id: scell.container_id()?,
+                target_name: scell.image().entry_point().clone(),
+                location: scell.image().location().to_path_buf(),
+                prev_height: 0,
+                prev_width: 0,
+            }
+            .into(),
+        ))
     }
 
     pub fn scroll_up(&mut self) {
@@ -67,5 +75,42 @@ impl RunningPtyState {
             self.prev_height = curr_height;
             self.prev_width = curr_width;
         }
+    }
+
+    pub fn handle_key_event(
+        mut self: Box<Self>,
+        event: &Event,
+    ) -> color_eyre::Result<App> {
+        if let Event::Key(key) = event
+            && key.kind == KeyEventKind::Press
+        {
+            match key.code {
+                KeyCode::Up | KeyCode::Char('k')
+                    if key.modifiers.contains(KeyModifiers::CONTROL) =>
+                {
+                    self.scroll_up();
+                },
+                KeyCode::Down | KeyCode::Char('j')
+                    if key.modifiers.contains(KeyModifiers::CONTROL) =>
+                {
+                    self.scroll_down();
+                },
+                KeyCode::Char('h') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    return Ok(App::HelpWindow(HelpWindowState(self)));
+                },
+                _ => {
+                    let event = to_terminput(Event::Key(*key))?;
+                    // Convert crossterm event to terminput and encode as stdin bytes
+                    let mut buf = [0u8; 32];
+                    if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
+                        && let Some(bytes) = buf.get(..written)
+                    {
+                        self.pty.process_stdin(bytes);
+                    }
+                },
+            }
+        }
+
+        Ok(App::RunningPty(self))
     }
 }
