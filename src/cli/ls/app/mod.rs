@@ -221,7 +221,7 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Char('s') => {
                 if let Self::Ls(ls_state) = self {
-                    self = Self::Stopping(ls_state.stop_selected()?);
+                    self = ls_state.stop_selected()?;
                 }
             },
             KeyCode::Char('r') => {

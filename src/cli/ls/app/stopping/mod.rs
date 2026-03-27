@@ -23,10 +23,10 @@ pub struct StoppingState<Item> {
 impl StoppingState<SCellContainerInfo> {
     /// Spawns a background task that stops `container` and re-fetches the list,
     /// returning a [`StoppingState`] to track progress.
-    pub fn new(
+    pub fn stop(
         ls_state: LsState<SCellContainerInfo>,
         for_stop: SCellContainerInfo,
-    ) -> Self {
+    ) -> AppInner<SCellContainerInfo> {
         let buildkit = ls_state.buildkit.clone();
         let (tx, rx) = std::sync::mpsc::channel();
         tokio::spawn({
@@ -40,11 +40,11 @@ impl StoppingState<SCellContainerInfo> {
                 drop(tx.send(res));
             }
         });
-        Self {
+        AppInner::Stopping(Self {
             for_stop,
             ls_state,
             rx,
-        }
+        })
     }
 }
 

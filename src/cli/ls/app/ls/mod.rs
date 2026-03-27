@@ -95,7 +95,7 @@ impl LsState<SCellContainerInfo> {
     ///
     /// Spawns an async task that stops the container and then re-fetches
     /// the full container list.
-    pub fn stop_selected(self) -> color_eyre::Result<StoppingState<SCellContainerInfo>> {
+    pub fn stop_selected(self) -> color_eyre::Result<AppInner<SCellContainerInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -105,8 +105,10 @@ impl LsState<SCellContainerInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?
             .clone();
-        Ok(StoppingState::new(self, container))
+        Ok(StoppingState::stop(self, container))
     }
+
+    
 }
 
 impl LsState<SCellImageInfo> {
