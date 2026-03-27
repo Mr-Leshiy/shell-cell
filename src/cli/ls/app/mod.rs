@@ -81,9 +81,7 @@ impl App {
         terminal: &mut Terminal,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::Containers(AppInner::Loading(LoadingState::<SCellContainerInfo>::new(
-            buildkit.clone(),
-        )));
+        let mut app = Self::Containers(LoadingState::<SCellContainerInfo>::load(buildkit.clone()));
 
         loop {
             let new_app = match app {
@@ -127,19 +125,15 @@ impl App {
             match self {
                 Self::Containers(app) => {
                     self = app.handle_key_event(key)?.map_or_else(
-                        || {
-                            Self::Images(AppInner::Loading(LoadingState::<SCellImageInfo>::new(
-                                buildkit.clone(),
-                            )))
-                        },
+                        || Self::Images(LoadingState::<SCellImageInfo>::load(buildkit.clone())),
                         Self::Containers,
                     );
                 },
                 Self::Images(app) => {
                     self = app.handle_key_event(key)?.map_or_else(
                         || {
-                            Self::Containers(AppInner::Loading(
-                                LoadingState::<SCellContainerInfo>::new(buildkit.clone()),
+                            Self::Containers(LoadingState::<SCellContainerInfo>::load(
+                                buildkit.clone(),
                             ))
                         },
                         Self::Images,

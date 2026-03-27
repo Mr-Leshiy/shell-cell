@@ -6,7 +6,8 @@ use ratatui::widgets::TableState;
 use crate::{
     buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::ls::app::{
-        confirm_remove::ConfirmRemoveState, inspect::InspectState, stopping::StoppingState,
+        AppInner, AppItemSuperTrait, confirm_remove::ConfirmRemoveState, inspect::InspectState,
+        stopping::StoppingState,
     },
 };
 
@@ -17,20 +18,20 @@ pub struct LsState<Item> {
     pub buildkit: BuildKitD,
 }
 
-impl<Item: Clone> LsState<Item> {
-    pub fn new(
+impl<Item: Clone + AppItemSuperTrait> LsState<Item> {
+    pub fn ls(
         items: Vec<Item>,
         buildkit: BuildKitD,
-    ) -> Self {
+    ) -> AppInner<Item> {
         let mut table_state = TableState::default();
         if !items.is_empty() {
             table_state.select(Some(0));
         }
-        Self {
+        AppInner::Ls(Self {
             items,
             table_state,
             buildkit,
-        }
+        })
     }
 
     /// Moves the table selection to the next row, wrapping to the top.
