@@ -18,8 +18,7 @@ use crate::{
         },
         terminal::Terminal,
     },
-    pty::Pty,
-    scell::{SCell, types::name::TargetName},
+    scell::types::name::TargetName,
 };
 
 pub enum App {
@@ -43,7 +42,8 @@ impl App {
         P: AsRef<Path> + Send + 'static,
     {
         // First step
-        let mut app = Self::preparing(buildkit.clone(), scell_path, entry_target, detach, quiet);
+        let mut app =
+            PreparingState::new(buildkit.clone(), scell_path, entry_target, detach, quiet);
 
         loop {
             if let App::Preparing(ref mut state) = app
@@ -51,7 +51,7 @@ impl App {
                 && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
                 match res? {
-                    Some((pty, scell)) => app = Self::running_pty(pty, &scell)?,
+                    Some((pty, scell)) => app = RunningPtyState::new(pty, &scell)?,
                     None => app = App::Exit,
                 }
             }
@@ -80,7 +80,6 @@ impl App {
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
         if event::poll(MIN_FPS)? {
             let event = event::read()?;
-
             if let Event::Mouse(_mouse_event) = event {
             } else if let Event::Key(key) = event
                 && key.kind == KeyEventKind::Press
@@ -153,29 +152,5 @@ impl App {
         }
 
         Ok(self)
-    }
-
-    fn preparing<P: AsRef<Path> + Send + 'static>(
-        buildkit: BuildKitD,
-        scell_path: P,
-        entry: Option<TargetName>,
-        detach: bool,
-        quiet: bool,
-    ) -> Self {
-        App::Preparing(PreparingState::new(
-            buildkit, scell_path, entry, detach, quiet,
-        ))
-    }
-
-    fn running_pty(
-        pty: Pty,
-        scell: &SCell,
-    ) -> color_eyre::Result<Self> {
-        Ok(Self::RunningPty(Box::new(RunningPtyState::new(
-            pty,
-            scell.container_id()?,
-            scell.image().entry_point().clone(),
-            scell.image().location().to_path_buf(),
-        ))))
     }
 }

@@ -11,7 +11,7 @@ use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::MIN_FPS,
+    cli::{MIN_FPS, run::app::App},
     error::UserError,
     pty::Pty,
     scell::{SCell, types::name::TargetName},
@@ -42,7 +42,7 @@ impl PreparingState {
         entry: Option<TargetName>,
         detach: bool,
         quiet: bool,
-    ) -> Self {
+    ) -> App {
         let (tx, rx) = std::sync::mpsc::channel();
         let (logs_tx, logs_rx) = std::sync::mpsc::channel();
         tokio::spawn(async move {
@@ -151,12 +151,12 @@ impl PreparingState {
                 Err(e) => drop(tx.send(Err(e))),
             }
         });
-        Self {
+        App::Preparing(Self {
             rx,
             logs_rx,
             logs: VecDeque::new(),
             scroll_view_state: ScrollViewState::new(),
-        }
+        })
     }
 
     pub fn try_update(&mut self) -> bool {

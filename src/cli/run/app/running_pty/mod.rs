@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::MIN_FPS,
+    cli::{MIN_FPS, run::app::App},
     pty::Pty,
-    scell::{name::SCellId, types::name::TargetName},
+    scell::{SCell, name::SCellId, types::name::TargetName},
 };
 
 mod ui;
@@ -21,18 +21,19 @@ pub struct RunningPtyState {
 impl RunningPtyState {
     pub fn new(
         pty: Pty,
-        container_id: SCellId,
-        target_name: TargetName,
-        location: PathBuf,
-    ) -> Self {
-        Self {
-            pty,
-            container_id,
-            target_name,
-            location,
-            prev_height: 0,
-            prev_width: 0,
-        }
+        scell: &SCell,
+    ) -> color_eyre::Result<App> {
+        Ok(App::RunningPty(
+            Self {
+                pty,
+                container_id: scell.container_id()?,
+                target_name: scell.image().entry_point().clone(),
+                location: scell.image().location().to_path_buf(),
+                prev_height: 0,
+                prev_width: 0,
+            }
+            .into(),
+        ))
     }
 
     pub fn scroll_up(&mut self) {
