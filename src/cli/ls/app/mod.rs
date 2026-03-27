@@ -79,8 +79,7 @@ impl App {
     pub fn run(
         buildkit: &BuildKitD,
         terminal: &mut Terminal,
-    ) -> color_eyre::Result<()>
-    {
+    ) -> color_eyre::Result<()> {
         // First step
         let mut app = Self::Containers(AppInner::Loading(LoadingState::<SCellContainerInfo>::new(
             buildkit.clone(),

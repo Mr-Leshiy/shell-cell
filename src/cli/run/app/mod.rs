@@ -3,7 +3,7 @@ mod preparing;
 mod running_pty;
 mod ui;
 
-use std::{fs::OpenOptions, io::Write, path::Path};
+use std::path::Path;
 
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use terminput::Encoding;
@@ -78,80 +78,73 @@ impl App {
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
-        let mut logs = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("logs.txt")?;
-        if event::poll(MIN_FPS)? {
-            let event = event::read()?;
-            logs.write(format!("{event:?}\n").as_bytes())?;
-            if let Event::Key(key) = event
-                && key.kind == KeyEventKind::Press
-            {
-                match self {
-                    Self::RunningPty(ref mut state)
-                        if matches!(key.code, KeyCode::Up | KeyCode::Char('k'))
-                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+        if event::poll(MIN_FPS)?
+            && let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+        {
+            match self {
+                Self::RunningPty(ref mut state)
+                    if matches!(key.code, KeyCode::Up | KeyCode::Char('k'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    state.scroll_up();
+                },
+                Self::RunningPty(ref mut state)
+                    if matches!(key.code, KeyCode::Down | KeyCode::Char('j'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    state.scroll_down();
+                },
+                Self::RunningPty(state)
+                    if matches!(key.code, KeyCode::Char('h'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    self = Self::HelpWindow(HelpWindowState(state));
+                },
+                Self::RunningPty(ref state) => {
+                    let event = to_terminput(Event::Key(key))?;
+                    // Convert crossterm event to terminput and encode as stdin bytes
+                    let mut buf = [0u8; 32];
+                    if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
+                        && let Some(bytes) = buf.get(..written)
                     {
-                        state.scroll_up();
-                    },
-                    Self::RunningPty(ref mut state)
-                        if matches!(key.code, KeyCode::Down | KeyCode::Char('j'))
-                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                    {
-                        state.scroll_down();
-                    },
-                    Self::RunningPty(state)
-                        if matches!(key.code, KeyCode::Char('h'))
-                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                    {
-                        self = Self::HelpWindow(HelpWindowState(state));
-                    },
-                    Self::RunningPty(ref state) => {
-                        let event = to_terminput(Event::Key(key))?;
-                        // Convert crossterm event to terminput and encode as stdin bytes
-                        let mut buf = [0u8; 32];
-                        if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
-                            && let Some(bytes) = buf.get(..written)
+                        state.pty.process_stdin(bytes);
+                    }
+                },
+                Self::HelpWindow(state)
+                    if (matches!(key.code, KeyCode::Char('h'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL))
+                        || matches!(key.code, KeyCode::Esc) =>
+                {
+                    self = Self::RunningPty(state.0);
+                },
+                Self::HelpWindow(_)
+                    if matches!(key.code, KeyCode::Char('d'))
+                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                {
+                    self = Self::Finished;
+                },
+                Self::Preparing(ref mut state) => {
+                    match key.code {
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            state.scroll_down();
+                        },
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            state.scroll_up();
+                        },
+                        KeyCode::Char('c' | 'd')
+                            if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                         {
-                            state.pty.process_stdin(bytes);
-                        }
-                    },
-                    Self::HelpWindow(state)
-                        if (matches!(key.code, KeyCode::Char('h'))
-                            && key.modifiers.contains(event::KeyModifiers::CONTROL))
-                            || matches!(key.code, KeyCode::Esc) =>
-                    {
-                        self = Self::RunningPty(state.0);
-                    },
-                    Self::HelpWindow(_)
-                        if matches!(key.code, KeyCode::Char('d'))
-                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                    {
-                        self = Self::Finished;
-                    },
-                    Self::Preparing(ref mut state) => {
-                        match key.code {
-                            KeyCode::Down | KeyCode::Char('j') => {
-                                state.scroll_down();
-                            },
-                            KeyCode::Up | KeyCode::Char('k') => {
-                                state.scroll_up();
-                            },
-                            KeyCode::Char('c' | 'd')
-                                if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                            {
-                                self = App::Exit;
-                            },
-                            _ => {},
-                        }
-                    },
-                    Self::Finished => {
-                        // Exit on any key if finished
-                        self = App::Exit;
-                    },
-                    _ => {},
-                }
+                            self = App::Exit;
+                        },
+                        _ => {},
+                    }
+                },
+                Self::Finished => {
+                    // Exit on any key if finished
+                    self = App::Exit;
+                },
+                _ => {},
             }
         }
 

@@ -28,8 +28,7 @@ impl App {
         buildkit: &BuildKitD,
         all: bool,
         terminal: &mut Terminal,
-    ) -> color_eyre::Result<()>
-    {
+    ) -> color_eyre::Result<()> {
         // First step
         let mut app = Self::loading(buildkit.clone(), all);
         let mut images_for_removal = Vec::new();

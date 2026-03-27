@@ -25,8 +25,7 @@ impl App {
     pub fn run(
         buildkit: &BuildKitD,
         terminal: &mut Terminal,
-    ) -> color_eyre::Result<()>
-    {
+    ) -> color_eyre::Result<()> {
         // First step
         let mut app = Self::loading(buildkit.clone());
         loop {
