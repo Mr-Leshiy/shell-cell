@@ -23,10 +23,10 @@ pub struct RemovingState<Item> {
 impl RemovingState<SCellContainerInfo> {
     /// Spawns a background task that removes `container` and re-fetches the list,
     /// returning a [`RemovingState`] to track progress.
-    pub fn new(
+    pub fn remove(
         ls_state: LsState<SCellContainerInfo>,
         for_removal: SCellContainerInfo,
-    ) -> Self {
+    ) -> AppInner<SCellContainerInfo> {
         let buildkit = ls_state.buildkit.clone();
         let (tx, rx) = std::sync::mpsc::channel();
         tokio::spawn({
@@ -40,21 +40,21 @@ impl RemovingState<SCellContainerInfo> {
                 drop(tx.send(res));
             }
         });
-        Self {
+        AppInner::Removing(Self {
             for_removal,
             ls_state,
             rx,
-        }
+        })
     }
 }
 
 impl RemovingState<SCellImageInfo> {
     /// Spawns a background task that removes `image` and re-fetches the list,
     /// returning a [`RemovingState`] to track progress.
-    pub fn new(
+    pub fn remove(
         ls_state: LsState<SCellImageInfo>,
         for_removal: SCellImageInfo,
-    ) -> Self {
+    ) -> AppInner<SCellImageInfo> {
         let buildkit = ls_state.buildkit.clone();
         let (tx, rx) = std::sync::mpsc::channel();
         tokio::spawn({
@@ -68,11 +68,11 @@ impl RemovingState<SCellImageInfo> {
                 drop(tx.send(res));
             }
         });
-        Self {
+        AppInner::Removing(Self {
             for_removal,
             ls_state,
             rx,
-        }
+        })
     }
 }
 

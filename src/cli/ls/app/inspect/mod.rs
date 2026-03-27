@@ -4,7 +4,7 @@ use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
-    cli::ls::app::ls::LsState,
+    cli::ls::app::{AppInner, AppItemSuperTrait, ls::LsState},
 };
 
 pub trait ItemToInspect {
@@ -21,16 +21,16 @@ pub struct InspectState<Item: ItemToInspect> {
     scroll_state: ScrollViewState,
 }
 
-impl<Item: ItemToInspect> InspectState<Item> {
-    pub fn new(
+impl<Item: ItemToInspect + AppItemSuperTrait> InspectState<Item> {
+    pub fn inspect(
         ls_state: LsState<Item>,
         item: &Item,
-    ) -> color_eyre::Result<Self> {
-        Ok(Self {
+    ) -> color_eyre::Result<AppInner<Item>> {
+        Ok(AppInner::Inspect(Self {
             ls_state,
             data: item.inspect_data()?,
             scroll_state: ScrollViewState::new(),
-        })
+        }))
     }
 
     /// Scroll up

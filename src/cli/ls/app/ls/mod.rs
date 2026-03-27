@@ -78,7 +78,7 @@ impl<Item: Clone + AppItemSuperTrait> LsState<Item> {
 
 impl LsState<SCellContainerInfo> {
     /// Returns a [`InspectState`] for the currently selected container.
-    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellContainerInfo>> {
+    pub fn inspect(self) -> color_eyre::Result<AppInner<SCellContainerInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -88,7 +88,7 @@ impl LsState<SCellContainerInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?
             .clone();
-        InspectState::new(self, &item)
+        InspectState::inspect(self, &item)
     }
 
     /// Initiates stopping of the currently selected container.
@@ -113,7 +113,7 @@ impl LsState<SCellContainerInfo> {
 
 impl LsState<SCellImageInfo> {
     /// Returns a [`InspectState`] for the currently selected image.
-    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellImageInfo>> {
+    pub fn inspect(self) -> color_eyre::Result<AppInner<SCellImageInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -123,6 +123,6 @@ impl LsState<SCellImageInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?
             .clone();
-        InspectState::new(self, &item)
+        InspectState::inspect(self, &item)
     }
 }
