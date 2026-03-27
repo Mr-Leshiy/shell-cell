@@ -7,6 +7,7 @@ use std::{
     time::Duration,
 };
 
+use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use tui_scrollview::ScrollViewState;
 
 use crate::{
@@ -36,6 +37,7 @@ pub enum LogType {
 
 impl PreparingState {
     #[allow(clippy::too_many_lines)]
+    #[allow(clippy::new_ret_no_self)]
     pub fn new<P: AsRef<Path> + Send + 'static>(
         buildkit: BuildKitD,
         scell_path: P,
@@ -180,5 +182,28 @@ impl PreparingState {
 
     pub fn scroll_down(&mut self) {
         self.scroll_view_state.scroll_down();
+    }
+
+    pub fn handle_key_event(
+        mut self,
+        event: &Event,
+    ) -> App {
+        if let Event::Key(key) = event
+            && key.kind == KeyEventKind::Press
+        {
+            match key.code {
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.scroll_down();
+                },
+                KeyCode::Up | KeyCode::Char('k') => {
+                    self.scroll_up();
+                },
+                KeyCode::Char('c' | 'd') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    return App::Exit;
+                },
+                _ => {},
+            }
+        }
+        App::Preparing(self)
     }
 }
