@@ -1,9 +1,10 @@
-use ratatui::Frame;
+use ratatui::{Frame, crossterm};
 
 pub struct Terminal(ratatui::DefaultTerminal);
 
 impl Terminal {
     pub fn new() -> color_eyre::Result<Self> {
+        crossterm::execute!(std::io::stdout(), crossterm::event::EnableMouseCapture)?;
         Ok(Self(ratatui::try_init()?))
     }
 
