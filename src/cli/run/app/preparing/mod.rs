@@ -37,8 +37,7 @@ pub enum LogType {
 
 impl PreparingState {
     #[allow(clippy::too_many_lines)]
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new<P: AsRef<Path> + Send + 'static>(
+    pub fn prepare<P: AsRef<Path> + Send + 'static>(
         buildkit: BuildKitD,
         scell_path: P,
         entry: Option<TargetName>,

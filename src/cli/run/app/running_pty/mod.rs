@@ -26,8 +26,7 @@ pub struct RunningPtyState {
 }
 
 impl RunningPtyState {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(
+    pub fn run(
         pty: Pty,
         scell: &SCell,
     ) -> color_eyre::Result<App> {

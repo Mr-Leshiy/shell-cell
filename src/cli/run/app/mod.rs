@@ -41,7 +41,7 @@ impl App {
     {
         // First step
         let mut app =
-            PreparingState::new(buildkit.clone(), scell_path, entry_target, detach, quiet);
+            PreparingState::prepare(buildkit.clone(), scell_path, entry_target, detach, quiet);
 
         loop {
             if let App::Preparing(ref mut state) = app
@@ -49,7 +49,7 @@ impl App {
                 && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
             {
                 match res? {
-                    Some((pty, scell)) => app = RunningPtyState::new(pty, &scell)?,
+                    Some((pty, scell)) => app = RunningPtyState::run(pty, &scell)?,
                     None => app = App::Exit,
                 }
             }
