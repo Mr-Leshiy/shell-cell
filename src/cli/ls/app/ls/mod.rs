@@ -6,7 +6,8 @@ use ratatui::widgets::TableState;
 use crate::{
     buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
     cli::ls::app::{
-        confirm_remove::ConfirmRemoveState, inspect::InspectState, stopping::StoppingState,
+        AppInner, AppItemSuperTrait, confirm_remove::ConfirmRemoveState, inspect::InspectState,
+        stopping::StoppingState,
     },
 };
 
@@ -17,20 +18,20 @@ pub struct LsState<Item> {
     pub buildkit: BuildKitD,
 }
 
-impl<Item: Clone> LsState<Item> {
-    pub fn new(
+impl<Item: Clone + AppItemSuperTrait> LsState<Item> {
+    pub fn ls(
         items: Vec<Item>,
         buildkit: BuildKitD,
-    ) -> Self {
+    ) -> AppInner<Item> {
         let mut table_state = TableState::default();
         if !items.is_empty() {
             table_state.select(Some(0));
         }
-        Self {
+        AppInner::Ls(Self {
             items,
             table_state,
             buildkit,
-        }
+        })
     }
 
     /// Moves the table selection to the next row, wrapping to the top.
@@ -77,7 +78,7 @@ impl<Item: Clone> LsState<Item> {
 
 impl LsState<SCellContainerInfo> {
     /// Returns a [`InspectState`] for the currently selected container.
-    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellContainerInfo>> {
+    pub fn inspect(self) -> color_eyre::Result<AppInner<SCellContainerInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -87,14 +88,14 @@ impl LsState<SCellContainerInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?
             .clone();
-        InspectState::new(self, &item)
+        InspectState::inspect(self, &item)
     }
 
     /// Initiates stopping of the currently selected container.
     ///
     /// Spawns an async task that stops the container and then re-fetches
     /// the full container list.
-    pub fn stop_selected(self) -> color_eyre::Result<StoppingState<SCellContainerInfo>> {
+    pub fn stop_selected(self) -> color_eyre::Result<AppInner<SCellContainerInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -104,13 +105,13 @@ impl LsState<SCellContainerInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?
             .clone();
-        Ok(StoppingState::new(self, container))
+        Ok(StoppingState::stop(self, container))
     }
 }
 
 impl LsState<SCellImageInfo> {
     /// Returns a [`InspectState`] for the currently selected image.
-    pub fn inspect(self) -> color_eyre::Result<InspectState<SCellImageInfo>> {
+    pub fn inspect(self) -> color_eyre::Result<AppInner<SCellImageInfo>> {
         let selected = self
             .table_state
             .selected()
@@ -120,6 +121,6 @@ impl LsState<SCellImageInfo> {
             .get(selected)
             .context("Selected item must be present in the list")?
             .clone();
-        InspectState::new(self, &item)
+        InspectState::inspect(self, &item)
     }
 }

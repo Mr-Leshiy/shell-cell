@@ -81,9 +81,7 @@ impl App {
         terminal: &mut Terminal,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::Containers(AppInner::Loading(LoadingState::<SCellContainerInfo>::new(
-            buildkit.clone(),
-        )));
+        let mut app = Self::Containers(LoadingState::<SCellContainerInfo>::load(buildkit.clone()));
 
         loop {
             let new_app = match app {
@@ -127,19 +125,15 @@ impl App {
             match self {
                 Self::Containers(app) => {
                     self = app.handle_key_event(key)?.map_or_else(
-                        || {
-                            Self::Images(AppInner::Loading(LoadingState::<SCellImageInfo>::new(
-                                buildkit.clone(),
-                            )))
-                        },
+                        || Self::Images(LoadingState::<SCellImageInfo>::load(buildkit.clone())),
                         Self::Containers,
                     );
                 },
                 Self::Images(app) => {
                     self = app.handle_key_event(key)?.map_or_else(
                         || {
-                            Self::Containers(AppInner::Loading(
-                                LoadingState::<SCellContainerInfo>::new(buildkit.clone()),
+                            Self::Containers(LoadingState::<SCellContainerInfo>::load(
+                                buildkit.clone(),
                             ))
                         },
                         Self::Images,
@@ -203,7 +197,7 @@ impl AppInner<SCellContainerInfo> {
             KeyCode::Char('i') => {
                 match self {
                     Self::Ls(ls_state) => {
-                        self = Self::Inspect(ls_state.inspect()?);
+                        self = ls_state.inspect()?;
                     },
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
@@ -227,7 +221,7 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Char('s') => {
                 if let Self::Ls(ls_state) = self {
-                    self = Self::Stopping(ls_state.stop_selected()?);
+                    self = ls_state.stop_selected()?;
                 }
             },
             KeyCode::Char('r') => {
@@ -237,12 +231,12 @@ impl AppInner<SCellContainerInfo> {
             },
             KeyCode::Char('y') => {
                 if let Self::ConfirmRemove(confirm_state) = self {
-                    self = Self::Removing(confirm_state.confirm());
+                    self = confirm_state.confirm();
                 }
             },
             KeyCode::Char('n') => {
                 if let Self::ConfirmRemove(confirm_state) = self {
-                    self = Self::Ls(confirm_state.cancel());
+                    self = confirm_state.cancel();
                 }
             },
             KeyCode::Esc => {
@@ -251,7 +245,7 @@ impl AppInner<SCellContainerInfo> {
                     Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
-                        self = Self::Ls(confirm_state.cancel());
+                        self = confirm_state.cancel();
                     },
                     _ => {},
                 }
@@ -290,7 +284,7 @@ impl AppInner<SCellImageInfo> {
             KeyCode::Char('i') => {
                 match self {
                     Self::Ls(ls_state) => {
-                        self = Self::Inspect(ls_state.inspect()?);
+                        self = ls_state.inspect()?;
                     },
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     _ => {},
@@ -319,12 +313,12 @@ impl AppInner<SCellImageInfo> {
             },
             KeyCode::Char('y') => {
                 if let Self::ConfirmRemove(confirm_state) = self {
-                    self = Self::Removing(confirm_state.confirm());
+                    self = confirm_state.confirm();
                 }
             },
             KeyCode::Char('n') => {
                 if let Self::ConfirmRemove(confirm_state) = self {
-                    self = Self::Ls(confirm_state.cancel());
+                    self = confirm_state.cancel();
                 }
             },
             KeyCode::Esc => {
@@ -333,7 +327,7 @@ impl AppInner<SCellImageInfo> {
                     Self::ErrorWindow(error_state) => self = Self::Ls(error_state.ls_state),
                     Self::Inspect(state) => self = Self::Ls(state.ls_state),
                     Self::ConfirmRemove(confirm_state) => {
-                        self = Self::Ls(confirm_state.cancel());
+                        self = confirm_state.cancel();
                     },
                     _ => {},
                 }

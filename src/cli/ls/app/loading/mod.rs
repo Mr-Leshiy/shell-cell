@@ -18,7 +18,7 @@ pub struct LoadingState<Item> {
 impl LoadingState<SCellContainerInfo> {
     /// Creates a new [`LoadingState<SCellContainerInfo>`], spawning an async task
     /// that fetches the current Shell-Cell image list.
-    pub fn new(buildkit: BuildKitD) -> Self {
+    pub fn load(buildkit: BuildKitD) -> AppInner<SCellContainerInfo> {
         let (tx, rx) = std::sync::mpsc::channel();
         tokio::spawn({
             let buildkit = buildkit.clone();
@@ -33,14 +33,14 @@ impl LoadingState<SCellContainerInfo> {
             }
         });
 
-        Self { buildkit, rx }
+        AppInner::Loading(Self { buildkit, rx })
     }
 }
 
 impl LoadingState<SCellImageInfo> {
     /// Creates a new [`LoadingState<SCellImageInfo>`], spawning an async task
     /// that fetches the current Shell-Cell image list.
-    pub fn new(buildkit: BuildKitD) -> Self {
+    pub fn load(buildkit: BuildKitD) -> AppInner<SCellImageInfo> {
         let (tx, rx) = std::sync::mpsc::channel();
 
         tokio::spawn({
@@ -56,7 +56,7 @@ impl LoadingState<SCellImageInfo> {
             }
         });
 
-        Self { buildkit, rx }
+        AppInner::Loading(Self { buildkit, rx })
     }
 }
 
@@ -67,7 +67,7 @@ impl<Item: Clone + AppItemSuperTrait> LoadingState<Item> {
     /// - [`AppInner::Ls`] — stop succeeded; contains the refreshed item list
     pub fn try_recv(self) -> color_eyre::Result<AppInner<Item>> {
         match self.rx.recv_timeout(MIN_FPS) {
-            Ok(Ok(items)) => Ok(AppInner::Ls(LsState::new(items, self.buildkit))),
+            Ok(Ok(items)) => Ok(LsState::ls(items, self.buildkit)),
             Ok(Err(e)) => {
                 color_eyre::eyre::bail!(e)
             },

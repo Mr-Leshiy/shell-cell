@@ -2,7 +2,7 @@ mod ui;
 
 use crate::{
     buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
-    cli::ls::app::{ls::LsState, removing::RemovingState},
+    cli::ls::app::{AppInner, AppItemSuperTrait, ls::LsState, removing::RemovingState},
 };
 
 /// Holds the state while waiting for user confirmation to remove an item.
@@ -14,23 +14,23 @@ pub struct ConfirmRemoveState<Item> {
     pub ls_state: LsState<Item>,
 }
 
-impl<Item> ConfirmRemoveState<Item> {
+impl<Item: AppItemSuperTrait> ConfirmRemoveState<Item> {
     /// User cancelled removal - return to the list view.
-    pub fn cancel(self) -> LsState<Item> {
-        self.ls_state
+    pub fn cancel(self) -> AppInner<Item> {
+        AppInner::Ls(self.ls_state)
     }
 }
 
 impl ConfirmRemoveState<SCellContainerInfo> {
     /// User confirmed removal - initiate the removal process.
-    pub fn confirm(self) -> RemovingState<SCellContainerInfo> {
-        RemovingState::<SCellContainerInfo>::new(self.ls_state, self.selected_to_remove)
+    pub fn confirm(self) -> AppInner<SCellContainerInfo> {
+        RemovingState::<SCellContainerInfo>::remove(self.ls_state, self.selected_to_remove)
     }
 }
 
 impl ConfirmRemoveState<SCellImageInfo> {
     /// User confirmed removal - initiate the removal process.
-    pub fn confirm(self) -> RemovingState<SCellImageInfo> {
-        RemovingState::<SCellImageInfo>::new(self.ls_state, self.selected_to_remove)
+    pub fn confirm(self) -> AppInner<SCellImageInfo> {
+        RemovingState::<SCellImageInfo>::remove(self.ls_state, self.selected_to_remove)
     }
 }
