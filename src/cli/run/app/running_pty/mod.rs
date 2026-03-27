@@ -81,7 +81,9 @@ impl RunningPtyState {
         mut self: Box<Self>,
         event: &Event,
     ) -> color_eyre::Result<App> {
-        if let Event::Key(key) = event
+        if let Event::Paste(to_paste) = event {
+            self.pty.process_stdin(to_paste.as_bytes());
+        } else if let Event::Key(key) = event
             && key.kind == KeyEventKind::Press
         {
             match key.code {
