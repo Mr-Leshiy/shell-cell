@@ -91,6 +91,10 @@ impl Pty {
             .set_scrollback(cur_scrollback.saturating_sub(1));
     }
 
+    pub fn scroll_to_bottom(&mut self) {
+        self.parser.screen_mut().set_scrollback(0);
+    }
+
     pub fn container_session_id(&self) -> &str {
         &self.container_session_id
     }

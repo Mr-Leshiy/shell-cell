@@ -107,6 +107,7 @@ impl RunningPtyState {
                     if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
                         && let Some(bytes) = buf.get(..written)
                     {
+                        self.pty.scroll_to_bottom();
                         self.pty.process_stdin(bytes);
                     }
                 },
