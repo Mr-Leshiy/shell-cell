@@ -5,10 +5,7 @@ mod ui;
 
 use std::{fs::OpenOptions, io::Write, path::Path};
 
-use ratatui::{
-    Terminal,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use terminput::Encoding;
 use terminput_crossterm::to_terminput;
 
@@ -19,6 +16,7 @@ use crate::{
         run::app::{
             help_window::HelpWindowState, preparing::PreparingState, running_pty::RunningPtyState,
         },
+        terminal::Terminal,
     },
     pty::Pty,
     scell::{SCell, types::name::TargetName},
@@ -33,17 +31,15 @@ pub enum App {
 }
 
 impl App {
-    pub fn run<B, P>(
+    pub fn run<P>(
         buildkit: &BuildKitD,
         scell_path: P,
         entry_target: Option<TargetName>,
         detach: bool,
         quiet: bool,
-        terminal: &mut Terminal<B>,
+        terminal: &mut Terminal,
     ) -> color_eyre::Result<()>
     where
-        B: ratatui::backend::Backend,
-        B::Error: Send + Sync + 'static,
         P: AsRef<Path> + Send + 'static,
     {
         // First step
@@ -73,11 +69,9 @@ impl App {
                 return Ok(());
             }
 
-            terminal
-                .draw(|f| {
-                    f.render_widget(&mut app, f.area());
-                })
-                .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+            terminal.draw(|f| {
+                f.render_widget(&mut app, f.area());
+            })?;
 
             app = app.handle_key_event()?;
         }

@@ -5,14 +5,11 @@ use std::{
     sync::mpsc::{Receiver, RecvTimeoutError},
 };
 
-use ratatui::{
-    Terminal,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 
 use crate::{
     buildkit::{BuildKitD, container_info::SCellContainerInfo},
-    cli::MIN_FPS,
+    cli::{MIN_FPS, terminal::Terminal},
 };
 
 pub enum App {
@@ -25,10 +22,11 @@ pub enum App {
 }
 
 impl App {
-    pub fn run<B: ratatui::backend::Backend>(
+    pub fn run(
         buildkit: &BuildKitD,
-        terminal: &mut Terminal<B>,
-    ) -> color_eyre::Result<()> {
+        terminal: &mut Terminal,
+    ) -> color_eyre::Result<()>
+    {
         // First step
         let mut app = Self::loading(buildkit.clone());
         loop {
@@ -53,11 +51,9 @@ impl App {
                 return Ok(());
             }
 
-            terminal
-                .draw(|f| {
-                    f.render_widget(&app, f.area());
-                })
-                .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+            terminal.draw(|f| {
+                f.render_widget(&app, f.area());
+            })?;
 
             app = app.handle_key_event()?;
         }

@@ -8,10 +8,7 @@ mod removing;
 mod stopping;
 mod ui;
 
-use ratatui::{
-    Terminal,
-    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
 use crate::{
     buildkit::{BuildKitD, container_info::SCellContainerInfo, image_info::SCellImageInfo},
@@ -27,6 +24,7 @@ use crate::{
             removing::RemovingState,
             stopping::StoppingState,
         },
+        terminal::Terminal,
     },
 };
 
@@ -78,10 +76,11 @@ pub enum AppInner<Item: AppItemSuperTrait> {
 
 impl App {
     /// Runs the TUI event loop, polling for state transitions and key events.
-    pub fn run<B: ratatui::backend::Backend>(
+    pub fn run(
         buildkit: &BuildKitD,
-        terminal: &mut Terminal<B>,
-    ) -> color_eyre::Result<()> {
+        terminal: &mut Terminal,
+    ) -> color_eyre::Result<()>
+    {
         // First step
         let mut app = Self::Containers(AppInner::Loading(LoadingState::<SCellContainerInfo>::new(
             buildkit.clone(),
@@ -101,18 +100,14 @@ impl App {
 
             match &mut app {
                 Self::Containers(app) => {
-                    terminal
-                        .draw(|f| {
-                            f.render_widget(app, f.area());
-                        })
-                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+                    terminal.draw(|f| {
+                        f.render_widget(app, f.area());
+                    })?;
                 },
                 Self::Images(app) => {
-                    terminal
-                        .draw(|f| {
-                            f.render_widget(app, f.area());
-                        })
-                        .map_err(|e| color_eyre::eyre::eyre!("{e}"))?;
+                    terminal.draw(|f| {
+                        f.render_widget(app, f.area());
+                    })?;
                 },
             }
 

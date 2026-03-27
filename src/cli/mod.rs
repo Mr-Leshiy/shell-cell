@@ -5,6 +5,7 @@ mod init;
 mod ls;
 mod run;
 mod stop;
+mod terminal;
 
 use std::{path::PathBuf, time::Duration};
 
