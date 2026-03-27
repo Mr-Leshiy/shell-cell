@@ -107,8 +107,6 @@ impl LsState<SCellContainerInfo> {
             .clone();
         Ok(StoppingState::stop(self, container))
     }
-
-    
 }
 
 impl LsState<SCellImageInfo> {
