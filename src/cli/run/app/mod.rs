@@ -3,7 +3,7 @@ mod preparing;
 mod running_pty;
 mod ui;
 
-use std::{path::Path, time::Duration};
+use std::{fs::OpenOptions, io::Write, path::Path};
 
 use ratatui::{
     Terminal,
@@ -17,12 +17,9 @@ use crate::{
     cli::{
         MIN_FPS,
         run::app::{
-            help_window::HelpWindowState,
-            preparing::{LogType, PreparingState},
-            running_pty::RunningPtyState,
+            help_window::HelpWindowState, preparing::PreparingState, running_pty::RunningPtyState,
         },
     },
-    error::UserError,
     pty::Pty,
     scell::{SCell, types::name::TargetName},
 };
@@ -87,73 +84,80 @@ impl App {
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
-        if event::poll(MIN_FPS)?
-            && let Event::Key(key) = event::read()?
-            && key.kind == KeyEventKind::Press
-        {
-            match self {
-                Self::RunningPty(ref mut state)
-                    if matches!(key.code, KeyCode::Up | KeyCode::Char('k'))
-                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                {
-                    state.scroll_up();
-                },
-                Self::RunningPty(ref mut state)
-                    if matches!(key.code, KeyCode::Down | KeyCode::Char('j'))
-                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                {
-                    state.scroll_down();
-                },
-                Self::RunningPty(state)
-                    if matches!(key.code, KeyCode::Char('h'))
-                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                {
-                    self = Self::HelpWindow(HelpWindowState(state));
-                },
-                Self::RunningPty(ref state) => {
-                    let event = to_terminput(Event::Key(key))?;
-                    // Convert crossterm event to terminput and encode as stdin bytes
-                    let mut buf = [0u8; 32];
-                    if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
-                        && let Some(bytes) = buf.get(..written)
+        let mut logs = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("logs.txt")?;
+        if event::poll(MIN_FPS)? {
+            let event = event::read()?;
+            logs.write(format!("{event:?}\n").as_bytes())?;
+            if let Event::Key(key) = event
+                && key.kind == KeyEventKind::Press
+            {
+                match self {
+                    Self::RunningPty(ref mut state)
+                        if matches!(key.code, KeyCode::Up | KeyCode::Char('k'))
+                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
                     {
-                        state.pty.process_stdin(bytes);
-                    }
-                },
-                Self::HelpWindow(state)
-                    if (matches!(key.code, KeyCode::Char('h'))
-                        && key.modifiers.contains(event::KeyModifiers::CONTROL))
-                        || matches!(key.code, KeyCode::Esc) =>
-                {
-                    self = Self::RunningPty(state.0);
-                },
-                Self::HelpWindow(_)
-                    if matches!(key.code, KeyCode::Char('d'))
-                        && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                {
-                    self = Self::Finished;
-                },
-                Self::Preparing(ref mut state) => {
-                    match key.code {
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            state.scroll_down();
-                        },
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            state.scroll_up();
-                        },
-                        KeyCode::Char('c' | 'd')
-                            if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                        state.scroll_up();
+                    },
+                    Self::RunningPty(ref mut state)
+                        if matches!(key.code, KeyCode::Down | KeyCode::Char('j'))
+                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                    {
+                        state.scroll_down();
+                    },
+                    Self::RunningPty(state)
+                        if matches!(key.code, KeyCode::Char('h'))
+                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                    {
+                        self = Self::HelpWindow(HelpWindowState(state));
+                    },
+                    Self::RunningPty(ref state) => {
+                        let event = to_terminput(Event::Key(key))?;
+                        // Convert crossterm event to terminput and encode as stdin bytes
+                        let mut buf = [0u8; 32];
+                        if let Ok(written) = event.encode(&mut buf, Encoding::Xterm)
+                            && let Some(bytes) = buf.get(..written)
                         {
-                            self = App::Exit;
-                        },
-                        _ => {},
-                    }
-                },
-                Self::Finished => {
-                    // Exit on any key if finished
-                    self = App::Exit;
-                },
-                _ => {},
+                            state.pty.process_stdin(bytes);
+                        }
+                    },
+                    Self::HelpWindow(state)
+                        if (matches!(key.code, KeyCode::Char('h'))
+                            && key.modifiers.contains(event::KeyModifiers::CONTROL))
+                            || matches!(key.code, KeyCode::Esc) =>
+                    {
+                        self = Self::RunningPty(state.0);
+                    },
+                    Self::HelpWindow(_)
+                        if matches!(key.code, KeyCode::Char('d'))
+                            && key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                    {
+                        self = Self::Finished;
+                    },
+                    Self::Preparing(ref mut state) => {
+                        match key.code {
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                state.scroll_down();
+                            },
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                state.scroll_up();
+                            },
+                            KeyCode::Char('c' | 'd')
+                                if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                            {
+                                self = App::Exit;
+                            },
+                            _ => {},
+                        }
+                    },
+                    Self::Finished => {
+                        // Exit on any key if finished
+                        self = App::Exit;
+                    },
+                    _ => {},
+                }
             }
         }
 
@@ -167,115 +171,9 @@ impl App {
         detach: bool,
         quiet: bool,
     ) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-        let (logs_tx, logs_rx) = std::sync::mpsc::channel();
-        tokio::spawn(async move {
-            let preparing = async || {
-                drop(logs_tx.send((
-                    "🧐 Checking for newer 'Shell-Cell' version".to_string(),
-                    LogType::Main,
-                )));
-
-                match crate::version_check::check_for_newer_version().await {
-                    Ok(Some(newer_version)) => {
-                        drop(logs_tx.send((
-                            format!(
-                                "🆕 A newer version '{newer_version}' of 'Shell-Cell' is available"
-                            ),
-                            LogType::MainInfo,
-                        )));
-                        tokio::time::sleep(Duration::from_secs(1)).await;
-                    },
-                    Ok(None) => {
-                        drop(logs_tx.send((
-                            "🎉 'Shell-Cell' is up to date".to_string(),
-                            LogType::MainInfo,
-                        )));
-                    },
-                    Err(_) => {
-                        drop(
-                            logs_tx
-                                .send(("Cannot check for updates".to_string(), LogType::MainError)),
-                        );
-                    },
-                }
-
-                drop(logs_tx.send((
-                    "📝 Compiling Shell-Cell blueprint".to_string(),
-                    LogType::Main,
-                )));
-                let scell = SCell::compile(scell_path, entry)?;
-
-                drop(logs_tx.send(("⚙️ Building 'Shell-Cell' image".to_string(), LogType::Main)));
-                if buildkit
-                    .build_image(scell.image(), |msg| {
-                        if !quiet {
-                            drop(logs_tx.send((msg, LogType::SubLog)));
-                        }
-                    })
-                    .await?
-                {
-                    drop(logs_tx.send((
-                        "⚡ 'Shell-Cell' image already exists, skipping build".to_string(),
-                        LogType::MainInfo,
-                    )));
-                }
-
-                for (s_name, s) in scell.services() {
-                    drop(logs_tx.send((
-                        format!("⚙️ Building 'Shell-Cell' service '{s_name}' image"),
-                        LogType::Main,
-                    )));
-                    if buildkit
-                        .build_image(&s.image, |msg| {
-                            if !quiet {
-                                drop(logs_tx.send((msg, LogType::SubLog)));
-                            }
-                        })
-                        .await?
-                    {
-                        drop(logs_tx.send((
-                            format!("⚡ 'Shell-Cell' service '{s_name}' image already exists, skipping build"),
-                            LogType::MainInfo
-                        )));
-                    }
-                    drop(logs_tx.send((
-                        format!("📦 Starting 'Shell-Cell' service '{s_name}' container"),
-                        LogType::Main,
-                    )));
-                    buildkit
-                        .start_service_container(&scell, s_name, &s.image, &s.container)
-                        .await?;
-                }
-
-                drop(logs_tx.send((
-                    "📦 Starting 'Shell-Cell' container".to_string(),
-                    LogType::Main,
-                )));
-                buildkit.start_container(&scell).await?;
-
-                if detach {
-                    return color_eyre::eyre::Ok(None);
-                }
-
-                let pty = buildkit.attach_to_shell(&scell).await?;
-
-                drop(logs_tx.send((
-                    "🚀 Starting 'Shell-Cell' session".to_string(),
-                    LogType::Main,
-                )));
-                color_eyre::eyre::Ok(Some((pty, scell)))
-            };
-
-            match preparing().await {
-                Ok(res) => drop(tx.send(Ok(res))),
-                Err(e) if e.is::<UserError>() => {
-                    drop(logs_tx.send((format!("{e}"), LogType::MainError)));
-                },
-                Err(e) => drop(tx.send(Err(e))),
-            }
-        });
-        App::Preparing(PreparingState::new(rx, logs_rx))
+        App::Preparing(PreparingState::new(
+            buildkit, scell_path, entry, detach, quiet,
+        ))
     }
 
     fn running_pty(
