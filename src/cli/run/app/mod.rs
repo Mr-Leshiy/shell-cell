@@ -58,9 +58,7 @@ impl App {
             | App::HelpWindow(HelpWindowState(ref mut state)) = app
             {
                 state.notify_screen_resize(buildkit.clone());
-                if state.try_update() {
-                    app = App::Finished;
-                }
+                state.try_update();
             }
 
             if matches!(app, App::Exit) {

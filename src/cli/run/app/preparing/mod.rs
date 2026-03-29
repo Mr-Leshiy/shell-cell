@@ -61,7 +61,7 @@ impl PreparingState {
                             ),
                             LogType::MainInfo,
                         )));
-                        tokio::time::sleep(Duration::from_secs(1)).await;
+                        tokio::time::sleep(Duration::from_secs(2)).await;
                     },
                     Ok(None) => {
                         drop(logs_tx.send((

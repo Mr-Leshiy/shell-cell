@@ -51,8 +51,8 @@ impl RunningPtyState {
         self.pty.scroll_down();
     }
 
-    pub fn try_update(&mut self) -> bool {
-        self.pty.process_stdout_and_stderr(MIN_FPS)
+    pub fn try_update(&mut self) {
+        self.pty.process_stdout_and_stderr(MIN_FPS);
     }
 
     pub fn notify_screen_resize(
@@ -99,6 +99,9 @@ impl RunningPtyState {
                 },
                 KeyCode::Char('h') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     return Ok(App::HelpWindow(HelpWindowState(self)));
+                },
+                KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    return Ok(App::Finished);
                 },
                 _ => {
                     let event = to_terminput(Event::Key(*key))?;

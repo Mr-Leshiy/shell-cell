@@ -8,7 +8,7 @@ mod tests;
 
 use std::{
     pin::Pin,
-    sync::mpsc::{Receiver, RecvTimeoutError, Sender},
+    sync::mpsc::{Receiver, Sender},
     time::Duration,
 };
 
@@ -118,30 +118,16 @@ impl Pty {
     }
 
     /// Processes new updates from the `stdout` and `stderr` channels.
-    /// Returns `true` if both channels are closed already.
     pub fn process_stdout_and_stderr(
         &mut self,
         timeout: Duration,
-    ) -> bool {
-        let stdout_res = match self.stdout.recv_timeout(timeout) {
-            Ok(bytes) => {
-                self.parser.process(&bytes);
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        };
-
-        let stderr_res = match self.stderr.recv_timeout(timeout) {
-            Ok(bytes) => {
-                self.parser.process(&bytes);
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        };
-
-        stdout_res && stderr_res
+    ) {
+        if let Ok(bytes) = self.stdout.recv_timeout(timeout) {
+            self.parser.process(&bytes);
+        }
+        if let Ok(bytes) = self.stderr.recv_timeout(timeout) {
+            self.parser.process(&bytes);
+        }
     }
 
     pub fn process_stdin(

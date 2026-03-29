@@ -310,7 +310,7 @@ async fn pty_test(stdout: &'static [&[u8]]) -> (String, (u16, u16)) {
     pty.set_size(SCREEN_SIZE_HEIGHT, SCREEN_SIZE_WIDTH);
 
     for _ in stdout {
-        assert!(!pty.process_stdout_and_stderr(TIMEOUT));
+        pty.process_stdout_and_stderr(TIMEOUT);
     }
 
     let mut res = String::new();
@@ -364,7 +364,7 @@ async fn pty_with_response_test(stdout: &'static [&[u8]]) -> Vec<u8> {
     pty.set_size(SCREEN_SIZE_HEIGHT, SCREEN_SIZE_WIDTH);
 
     for _ in stdout {
-        assert!(!pty.process_stdout_and_stderr(TIMEOUT));
+        pty.process_stdout_and_stderr(TIMEOUT);
     }
 
     drop(pty);
