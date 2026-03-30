@@ -28,10 +28,6 @@ impl Widget for &mut RunningPtyState {
 
         // set the proper size for the terminal screen
         self.pty.set_size(inner.height, inner.width);
-        let is_cursor_visible = self.pty.screen().scrollback() == 0;
-        let cursor = tui_term::widget::Cursor::default().visibility(is_cursor_visible);
-        tui_term::widget::PseudoTerminal::new(self.pty.screen())
-            .cursor(cursor)
-            .render(inner, buf);
+        tui_term::widget::PseudoTerminal::new(self.pty.screen()).render(inner, buf);
     }
 }
