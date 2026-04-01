@@ -173,12 +173,7 @@ impl PreparingState {
                 self.scroll_view_state.scroll_to_bottom();
                 return Ok(App::Preparing(self));
             },
-            Err(RecvTimeoutError::Disconnected) => {
-                color_eyre::eyre::bail!(
-                    "PreparingState 'logs_rx' channel cannot be disconnected without returning a result from the 'rx' chanel"
-                )
-            },
-            Err(RecvTimeoutError::Timeout) => {},
+            _ => {},
         }
 
         match self.rx.recv_timeout(MIN_FPS) {
