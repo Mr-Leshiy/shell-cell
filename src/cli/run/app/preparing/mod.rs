@@ -12,7 +12,10 @@ use tui_scrollview::ScrollViewState;
 
 use crate::{
     buildkit::BuildKitD,
-    cli::{MIN_FPS, run::app::App},
+    cli::{
+        MIN_FPS,
+        run::app::{App, running_pty::RunningPtyState},
+    },
     error::UserError,
     pty::Pty,
     scell::{SCell, types::name::TargetName},
@@ -160,18 +163,30 @@ impl PreparingState {
         })
     }
 
-    pub fn try_update(&mut self) -> bool {
-        match self.logs_rx.recv_timeout(MIN_FPS) {
-            Ok(log) => {
-                if self.logs.len() == LOGS_WINDOW {
-                    self.logs.pop_front();
+    pub fn try_update(mut self) -> color_eyre::Result<App> {
+        if let Ok(log) = self.logs_rx.recv_timeout(MIN_FPS) {
+            if self.logs.len() == LOGS_WINDOW {
+                self.logs.pop_front();
+            }
+            self.logs.push_back(log);
+            self.scroll_view_state.scroll_to_bottom();
+            return Ok(App::Preparing(self));
+        }
+
+        match self.rx.recv_timeout(MIN_FPS) {
+            Ok(res) => {
+                if let Some((pty, scell)) = res? {
+                    Ok(RunningPtyState::run(pty, &scell)?)
+                } else {
+                    Ok(App::Exit)
                 }
-                self.logs.push_back(log);
-                self.scroll_view_state.scroll_to_bottom();
-                false
             },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
+            Err(RecvTimeoutError::Timeout) => Ok(App::Preparing(self)),
+            Err(RecvTimeoutError::Disconnected) => {
+                color_eyre::eyre::bail!(
+                    "PreparingState 'rx' channel cannot be disconnected without returning a result"
+                )
+            },
         }
     }
 

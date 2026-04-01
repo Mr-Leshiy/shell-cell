@@ -28,7 +28,7 @@ pub enum App {
 }
 
 impl App {
-    pub fn run<P>(
+    pub async fn run<P>(
         buildkit: &BuildKitD,
         scell_path: P,
         entry_target: Option<TargetName>,
@@ -44,20 +44,14 @@ impl App {
             PreparingState::prepare(buildkit.clone(), scell_path, entry_target, detach, quiet);
 
         loop {
-            if let App::Preparing(ref mut state) = app
-                && state.try_update()
-                && let Ok(res) = state.rx.recv_timeout(MIN_FPS)
-            {
-                match res? {
-                    Some((pty, scell)) => app = RunningPtyState::run(pty, &scell)?,
-                    None => app = App::Exit,
-                }
+            if let App::Preparing(state) = app {
+                app = state.try_update()?;
             }
 
             if let App::RunningPty(ref mut state)
             | App::HelpWindow(HelpWindowState(ref mut state)) = app
             {
-                state.notify_screen_resize(buildkit.clone());
+                state.notify_screen_resize(buildkit).await?;
                 state.try_update();
             }
 
