@@ -16,7 +16,7 @@ pub async fn run<P: AsRef<Path> + Send + 'static>(
 ) -> color_eyre::Result<()> {
     let buildkit = BuildKitD::start().await?;
     let mut terminal = Terminal::new()?;
-    let res = App::run(&buildkit, scell_path, target, detach, quiet, &mut terminal);
+    let res = App::run(&buildkit, scell_path, target, detach, quiet, &mut terminal).await;
     ratatui::try_restore()?;
     res
 }

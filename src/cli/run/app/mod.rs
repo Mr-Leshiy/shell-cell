@@ -28,7 +28,7 @@ pub enum App {
 }
 
 impl App {
-    pub fn run<P>(
+    pub async fn run<P>(
         buildkit: &BuildKitD,
         scell_path: P,
         entry_target: Option<TargetName>,
@@ -51,7 +51,7 @@ impl App {
             if let App::RunningPty(ref mut state)
             | App::HelpWindow(HelpWindowState(ref mut state)) = app
             {
-                state.notify_screen_resize(buildkit.clone());
+                state.notify_screen_resize(buildkit).await?;
                 state.try_update();
             }
 

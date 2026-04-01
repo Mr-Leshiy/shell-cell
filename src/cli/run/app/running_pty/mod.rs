@@ -55,26 +55,22 @@ impl RunningPtyState {
         self.pty.process_stdout_and_stderr(MIN_FPS);
     }
 
-    pub fn notify_screen_resize(
+    /// Notify container's session about screen resize
+    pub async fn notify_screen_resize(
         &mut self,
-        buildkit: BuildKitD,
-    ) {
+        buildkit: &BuildKitD,
+    ) -> color_eyre::Result<()> {
         // Notify container's session about screen resize
         let (curr_height, curr_width) = self.pty.size();
         if curr_height != self.prev_height || curr_width != self.prev_width {
-            tokio::spawn({
-                let session_id = self.pty.container_session_id().to_owned();
-                async move {
-                    buildkit
-                        .resize_shell(&session_id, curr_height, curr_width)
-                        .await?;
-                    color_eyre::eyre::Ok(())
-                }
-            });
-
+            let session_id = self.pty.container_session_id().to_owned();
+            buildkit
+                .resize_shell(&session_id, curr_height, curr_width)
+                .await?;
             self.prev_height = curr_height;
             self.prev_width = curr_width;
         }
+        Ok(())
     }
 
     pub fn handle_key_event(
