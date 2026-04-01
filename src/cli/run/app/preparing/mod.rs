@@ -164,16 +164,13 @@ impl PreparingState {
     }
 
     pub fn try_update(mut self) -> color_eyre::Result<App> {
-        match self.logs_rx.recv_timeout(MIN_FPS) {
-            Ok(log) => {
-                if self.logs.len() == LOGS_WINDOW {
-                    self.logs.pop_front();
-                }
-                self.logs.push_back(log);
-                self.scroll_view_state.scroll_to_bottom();
-                return Ok(App::Preparing(self));
-            },
-            _ => {},
+        if let Ok(log) = self.logs_rx.recv_timeout(MIN_FPS) {
+            if self.logs.len() == LOGS_WINDOW {
+                self.logs.pop_front();
+            }
+            self.logs.push_back(log);
+            self.scroll_view_state.scroll_to_bottom();
+            return Ok(App::Preparing(self));
         }
 
         match self.rx.recv_timeout(MIN_FPS) {
@@ -184,7 +181,6 @@ impl PreparingState {
                     Ok(App::Exit)
                 }
             },
-
             Err(RecvTimeoutError::Timeout) => Ok(App::Preparing(self)),
             Err(RecvTimeoutError::Disconnected) => {
                 color_eyre::eyre::bail!(
