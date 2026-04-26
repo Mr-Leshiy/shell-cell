@@ -47,9 +47,11 @@ impl Pty {
                     LogOutput::StdOut { message }
                     | LogOutput::StdIn { message }
                     | LogOutput::Console { message } => {
+                        drop(crate::debugger::Debugger::log_pty_stdout(&message));
                         stdout_in.send(message)?;
                     },
                     LogOutput::StdErr { message } => {
+                        drop(crate::debugger::Debugger::log_pty_stdout(&message));
                         stderr_in.send(message)?;
                     },
                 }
@@ -60,6 +62,7 @@ impl Pty {
         let (stdin, stdin_out) = std::sync::mpsc::channel::<Bytes>();
         let _jh = tokio::spawn(async move {
             while let Ok(bytes) = stdin_out.recv() {
+                drop(crate::debugger::Debugger::log_pty_stdin(&bytes));
                 input.write_all(&bytes).await?;
                 input.flush().await?;
             }
