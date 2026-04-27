@@ -29,10 +29,12 @@ impl Debugger {
                 }
             })?;
             let id = uuid::Uuid::now_v7();
+            let session_dir = debug_dir.join(id.to_string());
+            std::fs::create_dir(&session_dir)?;
             let pty_stdin_logs =
-                std::fs::File::create_new(debug_dir.join(format!("{id}_pty_stdin.logs")))?;
+                std::fs::File::create_new(session_dir.join("pty_stdin.logs"))?;
             let pty_stdout_logs =
-                std::fs::File::create_new(debug_dir.join(format!("{id}_pty_stdout.logs")))?;
+                std::fs::File::create_new(session_dir.join("pty_stdout.logs"))?;
 
             let debugger = Debugger {
                 id,
