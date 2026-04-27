@@ -19,7 +19,12 @@ impl Widget for &mut PreparingState {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::new().light_magenta())
-            .title("'Shell-Cell'")
+            .title(format!(
+                "'Shell-Cell'{}",
+                crate::debugger::Debugger::session_id()
+                    .map(|id| format!(" | Debug Session: {id}"))
+                    .unwrap_or_default()
+            ))
             .title_bottom("Ctrl-C or Ctrl-D: exit");
         let inner = block.inner(area);
         block.render(area, buf);

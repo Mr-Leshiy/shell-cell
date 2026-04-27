@@ -11,6 +11,7 @@ static DEBUGGER: OnceLock<Debugger> = OnceLock::new();
 
 #[derive(Debug)]
 pub struct Debugger {
+    id: uuid::Uuid,
     pty_stdin_logs: Mutex<std::fs::File>,
     pty_stdout_logs: Mutex<std::fs::File>,
 }
@@ -27,13 +28,14 @@ impl Debugger {
                     Err(e)
                 }
             })?;
-            let date = chrono::Local::now().to_rfc3339();
+            let id = uuid::Uuid::now_v7();
             let pty_stdin_logs =
-                std::fs::File::create_new(debug_dir.join(format!("{date}_pty_stdin.logs")))?;
+                std::fs::File::create_new(debug_dir.join(format!("{id}_pty_stdin.logs")))?;
             let pty_stdout_logs =
-                std::fs::File::create_new(debug_dir.join(format!("{date}_pty_stdout.logs")))?;
+                std::fs::File::create_new(debug_dir.join(format!("{id}_pty_stdout.logs")))?;
 
             let debugger = Debugger {
+                id,
                 pty_stdin_logs: Mutex::new(pty_stdin_logs),
                 pty_stdout_logs: Mutex::new(pty_stdout_logs),
             };
@@ -42,6 +44,10 @@ impl Debugger {
                 .map_err(|_| color_eyre::eyre::eyre!("Debugger already initialised"))?;
         }
         Ok(())
+    }
+
+    pub fn session_id() -> Option<uuid::Uuid> {
+        DEBUGGER.get().map(|dbg| dbg.id)
     }
 
     pub fn log_pty_stdin(bytes: &[u8]) -> color_eyre::Result<()> {

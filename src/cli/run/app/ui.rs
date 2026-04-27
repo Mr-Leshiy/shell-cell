@@ -24,7 +24,12 @@ impl Widget for &mut App {
                 let block = Block::default()
                     .borders(Borders::ALL)
                     .border_style(Style::new().light_magenta())
-                    .title("'Shell-Cell'");
+                    .title(format!(
+                        "'Shell-Cell'{}",
+                        crate::debugger::Debugger::session_id()
+                            .map(|id| format!(" | Debug Session: {id}"))
+                            .unwrap_or_default()
+                    ));
                 let inner = block.inner(area);
                 block.render(area, buf);
 
