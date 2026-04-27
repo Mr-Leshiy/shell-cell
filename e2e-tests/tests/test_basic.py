@@ -3,6 +3,6 @@ from scell import assert_clean_exit, spawn_scell
 
 def test_scell_basic(spawn_scell) -> None:
     scell = spawn_scell(args=["--version"])
-    scell.expect("shell-cell 1.6.2")
+    scell.expect("shell-cell 1.6.3")
 
     assert_clean_exit(scell)
