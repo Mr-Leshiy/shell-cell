@@ -17,10 +17,13 @@ impl Widget for &mut RunningPtyState {
             .borders(Borders::ALL)
             .border_style(Style::new().light_magenta())
             .title(format!(
-                "'Shell-Cell' | {} | {} | {}",
+                "'Shell-Cell' | {} | {} | {}{}",
                 self.container_id,
                 self.target_name,
-                self.location.display()
+                self.location.display(),
+                crate::debugger::Debugger::session_id()
+                    .map(|id| format!(" | Debug Session: {id}"))
+                    .unwrap_or_default()
             ))
             .title_bottom("Ctrl-H: Help");
         let inner = block.inner(area);

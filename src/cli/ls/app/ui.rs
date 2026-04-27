@@ -87,7 +87,12 @@ fn render_main_block(
 ) -> Rect {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(format!("'Shell-Cell' {items_title}"))
+        .title(format!(
+            "'Shell-Cell' {items_title}{}",
+            crate::debugger::Debugger::session_id()
+                .map(|id| format!(" | Debug Session: {id}"))
+                .unwrap_or_default()
+        ))
         .title_bottom("h: Help")
         .border_style(Style::new().light_magenta());
     let inner = block.inner(area);

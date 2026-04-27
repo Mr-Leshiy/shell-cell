@@ -3,6 +3,7 @@
 mod buildkit;
 mod cli;
 mod crate_info;
+mod debugger;
 mod error;
 mod pty;
 mod scell;
@@ -13,7 +14,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use color_eyre::eyre::ContextCompat;
 
-use crate::cli::Cli;
+use crate::{cli::Cli, debugger::Debugger};
 
 fn scell_home_dir() -> color_eyre::Result<PathBuf> {
     const SCELL_HOME_DIR: &str = ".scell";
@@ -26,6 +27,7 @@ fn scell_home_dir() -> color_eyre::Result<PathBuf> {
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
+    Debugger::init()?;
     match Cli::try_parse() {
         Ok(cli) => {
             color_eyre::config::HookBuilder::default()

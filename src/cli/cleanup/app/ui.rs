@@ -276,7 +276,12 @@ fn render_cleaning_images(
 fn main_block() -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
-        .title("Cleaning 'Shell-Cell' Containers and Images")
+        .title(format!(
+            "Cleaning 'Shell-Cell' Containers and Images{}",
+            crate::debugger::Debugger::session_id()
+                .map(|id| format!(" | Debug Session: {id}"))
+                .unwrap_or_default()
+        ))
         .title_bottom("Ctrl-C or Ctrl-D: exit")
         .border_style(Style::new().light_magenta())
 }
