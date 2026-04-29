@@ -151,6 +151,9 @@ impl PreparingState {
                 Ok(res) => drop(tx.send(Ok(res))),
                 Err(e) if e.is::<UserError>() => {
                     drop(logs_tx.send((format!("{e}"), LogType::MainError)));
+                    // Keep tx alive so try_update() stays in PreparingState,
+                    // letting the user read the error before exiting with Ctrl-C/Ctrl-D.
+                    std::future::pending::<()>().await;
                 },
                 Err(e) => drop(tx.send(Err(e))),
             }
