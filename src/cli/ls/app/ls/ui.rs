@@ -24,11 +24,7 @@ impl Widget for &LsState<SCellContainerInfo> {
 
         let rows = self.items.iter().map(|c| {
             let cells = vec![
-                Cell::from(if c.orphan {
-                    format!("{} (orphan)", c.id)
-                } else {
-                    c.id.to_string()
-                }),
+                Cell::from(c.id.to_string()),
                 Cell::from(
                     c.target
                         .as_ref()
@@ -43,7 +39,11 @@ impl Widget for &LsState<SCellContainerInfo> {
                     || "<empty>".to_string(),
                     |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
                 )),
-                Cell::from(c.status.to_string()),
+                Cell::from(if c.orphan {
+                    format!("{} (orphan)", c.status)
+                } else {
+                    c.status.to_string()
+                }),
             ];
             Row::new(cells).height(1)
         });
@@ -77,7 +77,7 @@ impl Widget for &LsState<SCellImageInfo> {
     ) where
         Self: Sized,
     {
-        let header_cells = ["ID", "Target", "Blueprint Location", "Created At"]
+        let header_cells = ["ID", "Target", "Blueprint Location", "Created At", "Status"]
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Cyan)));
         let header = Row::new(header_cells)
@@ -86,11 +86,7 @@ impl Widget for &LsState<SCellImageInfo> {
 
         let rows = self.items.iter().map(|c| {
             let cells = vec![
-                Cell::from(if c.orphan {
-                    format!("{} (orphan)", c.id)
-                } else {
-                    c.id.to_string()
-                }),
+                Cell::from(c.id.to_string()),
                 Cell::from(
                     c.target
                         .as_ref()
@@ -105,6 +101,7 @@ impl Widget for &LsState<SCellImageInfo> {
                     || "<empty>".to_string(),
                     |dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, false),
                 )),
+                Cell::from(if c.orphan { "orphan" } else { "-" }),
             ];
             Row::new(cells).height(1)
         });
@@ -112,8 +109,9 @@ impl Widget for &LsState<SCellImageInfo> {
         let widths = [
             Constraint::Percentage(25),
             Constraint::Percentage(5),
-            Constraint::Percentage(50),
+            Constraint::Percentage(40),
             Constraint::Percentage(20),
+            Constraint::Percentage(10),
         ];
 
         let table = Table::new(rows, widths)

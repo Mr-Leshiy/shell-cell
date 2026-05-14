@@ -68,7 +68,7 @@ fn render_removing(
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            format!("Removing '{item}'",),
+            format!("Removing '{item}'"),
             Style::default().fg(Color::Gray),
         )),
     ];
