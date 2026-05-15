@@ -2667,7 +2667,7 @@ dependencies = [
 
 [[package]]
 name = "shell-cell"
-version = "1.6.4"
+version = "1.6.5"
 dependencies = [
  "base64",
  "bollard",
