@@ -42,7 +42,9 @@ impl Widget for &mut PreparingState {
                         // Adding some extra identation, so the text would always fits, even
                         // while adding some extra prefixes/suffixes etc. for different
                         // `LogType`s
-                        let area_width = area_width.saturating_sub(5);
+                        // `chunks(0)` panics in itertools; clamp to 1 so a
+                        // tiny render area can't crash the UI.
+                        let area_width = area_width.saturating_sub(5).max(1);
 
                         line.chars()
                             .chunks(area_width)

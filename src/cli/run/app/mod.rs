@@ -3,7 +3,7 @@ mod preparing;
 mod running_pty;
 mod ui;
 
-use std::path::Path;
+use std::{path::Path, sync::mpsc::RecvTimeoutError};
 
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
@@ -12,7 +12,9 @@ use crate::{
     cli::{
         MIN_FPS,
         run::app::{
-            help_window::HelpWindowState, preparing::PreparingState, running_pty::RunningPtyState,
+            help_window::HelpWindowState,
+            preparing::{LogType, PreparingState},
+            running_pty::RunningPtyState,
         },
         terminal::Terminal,
     },
@@ -65,6 +67,47 @@ impl App {
 
             app = app.handle_key_event()?;
         }
+    }
+
+    /// Headless variant for `--detach`. No TTY/Terminal required:
+    /// runs the same preparation pipeline as the TUI but streams logs to
+    /// stderr and exits when the container is started.
+    #[allow(clippy::unused_async)] // kept async to match callsite/expectations
+    pub async fn run_headless<P>(
+        buildkit: &BuildKitD,
+        scell_path: P,
+        entry_target: Option<TargetName>,
+        quiet: bool,
+    ) -> color_eyre::Result<()>
+    where
+        P: AsRef<Path> + Send + 'static,
+    {
+        let app = PreparingState::prepare(buildkit.clone(), scell_path, entry_target, true, quiet);
+        let App::Preparing(state) = app else {
+            // PreparingState::prepare always returns App::Preparing
+            return Ok(());
+        };
+
+        loop {
+            match state.logs_rx.recv_timeout(MIN_FPS) {
+                Ok((msg, log_type)) => match log_type {
+                    LogType::MainError => eprintln!("error: {msg}"),
+                    _ => eprintln!("{msg}"),
+                },
+                Err(RecvTimeoutError::Timeout) => {},
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
+
+            match state.rx.try_recv() {
+                Ok(res) => {
+                    res?;
+                    return Ok(());
+                },
+                Err(std::sync::mpsc::TryRecvError::Empty) => {},
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
+            }
+        }
+        Ok(())
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {

@@ -7,7 +7,7 @@ mod run;
 mod stop;
 mod terminal;
 
-use std::{path::PathBuf, time::Duration};
+use std::{io::IsTerminal, path::PathBuf, time::Duration};
 
 use clap::{Parser, Subcommand};
 use color_eyre::Section;
@@ -36,6 +36,11 @@ pub struct Cli {
     /// Suppress Docker build logs
     #[clap(short, long)]
     quiet: bool,
+
+    /// Force headless (non-TUI) mode. Auto-enabled when stdout is not a TTY.
+    /// Implies `--detach` for `run` (no shell session attached).
+    #[clap(long)]
+    headless: bool,
 
     #[clap(subcommand)]
     command: Option<Commands>,
@@ -83,12 +88,20 @@ impl Cli {
     }
 
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
+        // Auto-headless when stdout is not a TTY (CI, scripts, agents,
+        // `nohup`, etc.), or when `--headless` is explicitly requested.
+        let headless = self.headless || !std::io::stdout().is_terminal();
         match self.command {
-            None => run::run(self.scell_path, self.target, self.detach, self.quiet).await?,
+            None => {
+                // Attaching an interactive shell requires a TTY; force detach
+                // in headless mode.
+                let detach = self.detach || headless;
+                run::run(self.scell_path, self.target, detach, self.quiet).await?;
+            },
             Some(Commands::Init { path }) => init::init(path)?,
-            Some(Commands::Ls) => ls::ls().await?,
-            Some(Commands::Stop) => stop::stop().await?,
-            Some(Commands::Cleanup { all }) => cleanup::cleanup(all).await?,
+            Some(Commands::Ls) => ls::ls(headless).await?,
+            Some(Commands::Stop) => stop::stop(headless).await?,
+            Some(Commands::Cleanup { all }) => cleanup::cleanup(all, headless).await?,
         }
         Ok(())
     }
