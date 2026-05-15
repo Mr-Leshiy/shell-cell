@@ -56,7 +56,8 @@ impl Debugger {
     #[allow(dead_code)]
     pub fn log_debug(logs: impl std::fmt::Display) -> color_eyre::Result<()> {
         if let Some(dbg) = DEBUGGER.get() {
-            dbg.debug_logs
+            let _ = dbg
+                .debug_logs
                 .lock()
                 .map_err(|e| color_eyre::eyre::eyre!("{e}"))?
                 .write(format!("{logs}\n").as_bytes())?;
