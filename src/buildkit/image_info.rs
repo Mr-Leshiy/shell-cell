@@ -38,6 +38,11 @@ impl TryFrom<(String, bollard::models::ImageSummary)> for SCellImageInfo {
         let Some((image_name, "latest")) = image_tag.split_once(':') else {
             color_eyre::eyre::bail!("'Shell-Cell' image tag must be '<scell_name>:latest'");
         };
+        // Podman qualifies names with a registry prefix (e.g. docker.io/library/scell-…);
+        // strip everything up to and including the last '/' so we get a bare image name.
+        let image_name = image_name
+            .rsplit_once('/')
+            .map_or(image_name, |(_, name)| name);
 
         let created_at = Some(
             DateTime::from_timestamp_secs(value.created)
