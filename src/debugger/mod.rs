@@ -14,6 +14,7 @@ pub struct Debugger {
     id: uuid::Uuid,
     pty_stdin_logs: Mutex<std::fs::File>,
     pty_stdout_logs: Mutex<std::fs::File>,
+    debug_logs: Mutex<std::fs::File>,
 }
 
 impl Debugger {
@@ -33,11 +34,13 @@ impl Debugger {
             std::fs::create_dir(&session_dir)?;
             let pty_stdin_logs = std::fs::File::create_new(session_dir.join("pty_stdin.logs"))?;
             let pty_stdout_logs = std::fs::File::create_new(session_dir.join("pty_stdout.logs"))?;
+            let debug_logs = std::fs::File::create_new(session_dir.join("debug.logs"))?;
 
             let debugger = Debugger {
                 id,
                 pty_stdin_logs: Mutex::new(pty_stdin_logs),
                 pty_stdout_logs: Mutex::new(pty_stdout_logs),
+                debug_logs: Mutex::new(debug_logs),
             };
             DEBUGGER
                 .set(debugger)
@@ -48,6 +51,18 @@ impl Debugger {
 
     pub fn session_id() -> Option<uuid::Uuid> {
         DEBUGGER.get().map(|dbg| dbg.id)
+    }
+
+    #[allow(dead_code)]
+    pub fn log_debug(logs: impl std::fmt::Display) -> color_eyre::Result<()> {
+        if let Some(dbg) = DEBUGGER.get() {
+            let _ = dbg
+                .debug_logs
+                .lock()
+                .map_err(|e| color_eyre::eyre::eyre!("{e}"))?
+                .write(format!("{logs}\n").as_bytes())?;
+        }
+        Ok(())
     }
 
     pub fn log_pty_stdin(bytes: &[u8]) -> color_eyre::Result<()> {
