@@ -1,3 +1,5 @@
+mod ui;
+
 use std::{
     collections::HashMap,
     sync::mpsc::{Receiver, RecvError, RecvTimeoutError},
