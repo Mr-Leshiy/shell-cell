@@ -1,13 +1,11 @@
 use std::{
     collections::HashMap,
-    sync::mpsc::{Receiver, RecvTimeoutError},
+    sync::mpsc::{Receiver, RecvError, RecvTimeoutError},
+    time::Duration,
 };
 
 use super::App;
-use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo},
-    cli::MIN_FPS,
-};
+use crate::buildkit::{BuildKitD, container_info::SCellContainerInfo};
 
 pub struct StoppingState {
     // TODO: make it private after moving ui functionality under this 'mod' scope
@@ -42,14 +40,27 @@ impl StoppingState {
     }
 
     /// Returns true when the underlying channel has closed (all containers processed).
-    pub fn try_update(&mut self) -> bool {
-        match self.rx.recv_timeout(MIN_FPS) {
-            Ok(update) => {
-                self.containers.insert(update.0, Some(update.1));
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
+    pub fn try_update(
+        &mut self,
+        timeout: Option<Duration>,
+    ) -> bool {
+        if let Some(timeout) = timeout {
+            match self.rx.recv_timeout(timeout) {
+                Ok(update) => {
+                    self.containers.insert(update.0, Some(update.1));
+                    false
+                },
+                Err(RecvTimeoutError::Timeout) => false,
+                Err(RecvTimeoutError::Disconnected) => true,
+            }
+        } else {
+            match self.rx.recv() {
+                Ok(update) => {
+                    self.containers.insert(update.0, Some(update.1));
+                    false
+                },
+                Err(RecvError) => true,
+            }
         }
     }
 }

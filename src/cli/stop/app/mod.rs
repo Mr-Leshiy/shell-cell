@@ -32,7 +32,7 @@ impl App {
             }
 
             if let App::Stopping(ref mut state) = app
-                && state.try_update()
+                && state.try_update(Some(MIN_FPS))
             {
                 app = App::Exit;
             }
