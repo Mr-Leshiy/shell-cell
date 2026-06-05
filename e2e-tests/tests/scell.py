@@ -1,4 +1,5 @@
 import os
+import subprocess
 from typing import Any
 
 import pexpect
@@ -28,16 +29,29 @@ class SCell:
         self._process.close()
 
 
+def get_scell_bin() -> str:
+    scell_bin = os.environ.get("SCELL_BIN")
+    assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
+    return scell_bin
+
+
 def assert_clean_exit(child: SCell) -> None:
     child.expect(pexpect.EOF, timeout=1)
     child.close()
     assert child.exitstatus == 0
 
 
+@pytest.fixture(autouse=True)
+def stop_containers():
+    yield
+    scell_bin = get_scell_bin()
+    result = subprocess.run([scell_bin, "stop"], check=False)
+    assert result.returncode == 0, f"'scell stop' failed with exit code {result.returncode}"
+
+
 @pytest.fixture(scope="session")
 def spawn_scell():
-    scell_bin = os.environ.get("SCELL_BIN")
-    assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
+    scell_bin = get_scell_bin()
 
     def spawn_scell(args: list[str], timeout: int = 10) -> SCell:
         scell_process = pexpect.spawn(
