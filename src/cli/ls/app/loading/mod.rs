@@ -74,7 +74,7 @@ impl<Item: Clone + AppItemSuperTrait> LoadingState<Item> {
             Err(RecvTimeoutError::Timeout) => Ok(AppInner::Loading(self)),
             Err(RecvTimeoutError::Disconnected) => {
                 color_eyre::eyre::bail!(
-                    "StoppingState channel cannot be disconnected without returning a result"
+                    "LoadingState channel cannot be disconnected without returning a result"
                 )
             },
         }

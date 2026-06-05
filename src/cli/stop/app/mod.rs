@@ -1,23 +1,19 @@
-// mod loading;
+mod loading;
 mod stopping;
 mod ui;
 
-use std::sync::mpsc::Receiver;
-
+use loading::LoadingState;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
-pub use stopping::StoppingState;
+use stopping::StoppingState;
 
 use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo},
+    buildkit::BuildKitD,
     cli::{MIN_FPS, terminal::Terminal},
 };
 
 pub enum App {
-    Loading {
-        rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
-        buildkit: BuildKitD,
-    },
-    Stopping(stopping::StoppingState),
+    Loading(LoadingState),
+    Stopping(StoppingState),
     Exit,
 }
 
@@ -27,17 +23,12 @@ impl App {
         terminal: &mut Terminal,
     ) -> color_eyre::Result<()> {
         // First step
-        let mut app = Self::loading(buildkit.clone());
+
+        let mut app = LoadingState::load(buildkit.clone());
         loop {
             // Check for state transitions
-            if let App::Loading {
-                ref rx,
-                ref buildkit,
-            } = app
-                && let Ok(result) = rx.recv_timeout(MIN_FPS)
-            {
-                let containers = result?;
-                app = StoppingState::stop(containers, buildkit.clone());
+            if let App::Loading(state) = app {
+                app = state.try_recv(Some(MIN_FPS))?;
             }
 
             if let App::Stopping(ref mut state) = app
@@ -56,26 +47,6 @@ impl App {
 
             app = app.handle_key_event()?;
         }
-    }
-
-    fn loading(buildkit: BuildKitD) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        // Spawn async task to fetch containers for stop
-        tokio::spawn({
-            let buildkit = buildkit.clone();
-            async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    res
-                }
-                .await;
-                drop(tx.send(result));
-            }
-        });
-
-        App::Loading { rx, buildkit }
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
