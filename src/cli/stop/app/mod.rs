@@ -43,6 +43,8 @@ impl App {
                 return Ok(());
             }
 
+            // If terminal is None (non-interactive mode), use plain stdout prints
+            // instead of the TUI renderer to report progress to the user.
             if let Some(terminal) = &mut terminal {
                 terminal.draw(|f| {
                     f.render_widget(&app, f.area());
