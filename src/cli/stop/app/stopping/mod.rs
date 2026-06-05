@@ -10,8 +10,7 @@ use super::App;
 use crate::buildkit::{BuildKitD, container_info::SCellContainerInfo};
 
 pub struct StoppingState {
-    // TODO: make it private after moving ui functionality under this 'mod' scope
-    pub(super) containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
+    containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
     rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
 }
 
