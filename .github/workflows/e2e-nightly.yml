@@ -1,9 +1,10 @@
 name: E2E Nightly
 
 on:
-  schedule:
-    # Runs every day at 00:00
-    - cron: '0 0 * * *'
+  pull_request:
+  # schedule:
+  #   # Runs every day at 00:00
+  #   - cron: '0 0 * * *'
 
 env:
   CARGO_TERM_COLOR: always
