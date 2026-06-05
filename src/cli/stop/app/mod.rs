@@ -20,19 +20,21 @@ pub enum App {
 impl App {
     pub fn run(
         buildkit: &BuildKitD,
-        terminal: &mut Terminal,
+        mut terminal: Option<Terminal>,
     ) -> color_eyre::Result<()> {
-        // First step
+        // Define a timeout if only terminal is Some(_)
+        let timeout = terminal.as_ref().map(|_| MIN_FPS);
 
+        // First step
         let mut app = LoadingState::load(buildkit.clone());
         loop {
             // Check for state transitions
             if let App::Loading(state) = app {
-                app = state.try_recv(Some(MIN_FPS))?;
+                app = state.try_recv(timeout)?;
             }
 
             if let App::Stopping(ref mut state) = app
-                && state.try_update(Some(MIN_FPS))
+                && state.try_update(timeout)
             {
                 app = App::Exit;
             }
@@ -41,11 +43,12 @@ impl App {
                 return Ok(());
             }
 
-            terminal.draw(|f| {
-                f.render_widget(&app, f.area());
-            })?;
-
-            app = app.handle_key_event()?;
+            if let Some(terminal) = &mut terminal {
+                terminal.draw(|f| {
+                    f.render_widget(&app, f.area());
+                })?;
+                app = app.handle_key_event()?;
+            }
         }
     }
 
