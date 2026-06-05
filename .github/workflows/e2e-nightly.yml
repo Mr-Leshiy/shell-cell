@@ -1,6 +1,7 @@
 name: E2E Nightly
 
 on:
+  # pull_request:
   schedule:
     # Runs every day at 00:00
     - cron: '0 0 * * *'

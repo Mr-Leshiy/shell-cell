@@ -1,4 +1,5 @@
 import os
+import subprocess
 from typing import Any
 
 import pexpect
@@ -18,10 +19,8 @@ class SCell:
     def exitstatus(self) -> int | None:
         return self._process.exitstatus
 
-    def expect(self, pattern: Any, timeout: int | None = None) -> int:
-        if timeout is not None:
-            return self._process.expect(pattern, timeout=timeout)
-        return self._process.expect(pattern)
+    def expect(self, pattern: Any, timeout: int = 30) -> int:
+        return self._process.expect(pattern, timeout=timeout)
 
     def send(self, s: str) -> int:
         return self._process.send(f"{s}\r")
@@ -30,16 +29,22 @@ class SCell:
         self._process.close()
 
 
+def get_scell_bin() -> str:
+    scell_bin = os.environ.get("SCELL_BIN")
+    assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
+    return scell_bin
+
+
 def assert_clean_exit(child: SCell) -> None:
     child.expect(pexpect.EOF, timeout=1)
     child.close()
     assert child.exitstatus == 0
 
 
+
 @pytest.fixture(scope="session")
 def spawn_scell():
-    scell_bin = os.environ.get("SCELL_BIN")
-    assert scell_bin, "Set the 'SCELL_BIN' env var with the path to the 'scell' binary on your machine"
+    scell_bin = get_scell_bin()
 
     def spawn_scell(args: list[str], timeout: int = 10) -> SCell:
         scell_process = pexpect.spawn(
