@@ -1,11 +1,11 @@
+// mod loading;
+mod stopping;
 mod ui;
 
-use std::{
-    collections::HashMap,
-    sync::mpsc::{Receiver, RecvTimeoutError},
-};
+use std::sync::mpsc::Receiver;
 
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+pub use stopping::StoppingState;
 
 use crate::{
     buildkit::{BuildKitD, container_info::SCellContainerInfo},
@@ -17,7 +17,7 @@ pub enum App {
         rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
         buildkit: BuildKitD,
     },
-    Stopping(StoppingState),
+    Stopping(stopping::StoppingState),
     Exit,
 }
 
@@ -37,7 +37,7 @@ impl App {
                 && let Ok(result) = rx.recv_timeout(MIN_FPS)
             {
                 let containers = result?;
-                app = Self::stopping(containers, buildkit.clone());
+                app = StoppingState::stop(containers, buildkit.clone());
             }
 
             if let App::Stopping(ref mut state) = app
@@ -78,28 +78,6 @@ impl App {
         App::Loading { rx, buildkit }
     }
 
-    fn stopping(
-        containers: Vec<SCellContainerInfo>,
-        buildkit: BuildKitD,
-    ) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        // Spawn async task to stop containers
-        tokio::spawn({
-            let containers = containers.clone();
-            async move {
-                for c in containers {
-                    let res = buildkit.stop_container(&c).await;
-                    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-                    drop(tx.send((c, res)));
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-            }
-        });
-
-        App::Stopping(StoppingState::new(containers, rx))
-    }
-
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
         if event::poll(MIN_FPS)?
             && let Event::Key(key) = event::read()?
@@ -111,34 +89,5 @@ impl App {
         }
 
         Ok(self)
-    }
-}
-
-pub struct StoppingState {
-    containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
-    rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
-}
-
-impl StoppingState {
-    pub fn new(
-        containers: Vec<SCellContainerInfo>,
-        rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
-    ) -> Self {
-        Self {
-            containers: containers.into_iter().map(|c| (c, None)).collect(),
-            rx,
-        }
-    }
-
-    /// Returns boolean flag, if the udelrying channel was closed or not
-    fn try_update(&mut self) -> bool {
-        match self.rx.recv_timeout(MIN_FPS) {
-            Ok(update) => {
-                self.containers.insert(update.0, Some(update.1));
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        }
     }
 }
