@@ -18,10 +18,8 @@ class SCell:
     def exitstatus(self) -> int | None:
         return self._process.exitstatus
 
-    def expect(self, pattern: Any, timeout: int | None = None) -> int:
-        if timeout is not None:
-            return self._process.expect(pattern, timeout=timeout)
-        return self._process.expect(pattern)
+    def expect(self, pattern: Any, timeout: int = 30) -> int:
+        return self._process.expect(pattern, timeout=timeout)
 
     def send(self, s: str) -> int:
         return self._process.send(f"{s}\r")
