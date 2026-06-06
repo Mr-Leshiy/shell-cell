@@ -1,22 +1,18 @@
+mod loading;
+mod stopping;
 mod ui;
 
-use std::{
-    collections::HashMap,
-    sync::mpsc::{Receiver, RecvTimeoutError},
-};
-
+use loading::LoadingState;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use stopping::StoppingState;
 
 use crate::{
-    buildkit::{BuildKitD, container_info::SCellContainerInfo},
+    buildkit::BuildKitD,
     cli::{MIN_FPS, terminal::Terminal},
 };
 
 pub enum App {
-    Loading {
-        rx: Receiver<color_eyre::Result<Vec<SCellContainerInfo>>>,
-        buildkit: BuildKitD,
-    },
+    Loading(LoadingState),
     Stopping(StoppingState),
     Exit,
 }
@@ -24,24 +20,21 @@ pub enum App {
 impl App {
     pub fn run(
         buildkit: &BuildKitD,
-        terminal: &mut Terminal,
+        mut terminal: Option<Terminal>,
     ) -> color_eyre::Result<()> {
+        // Define a timeout if only terminal is Some(_)
+        let timeout = terminal.as_ref().map(|_| MIN_FPS);
+
         // First step
-        let mut app = Self::loading(buildkit.clone());
+        let mut app = LoadingState::load(buildkit.clone());
         loop {
             // Check for state transitions
-            if let App::Loading {
-                ref rx,
-                ref buildkit,
-            } = app
-                && let Ok(result) = rx.recv_timeout(MIN_FPS)
-            {
-                let containers = result?;
-                app = Self::stopping(containers, buildkit.clone());
+            if let App::Loading(state) = app {
+                app = state.try_recv(timeout)?;
             }
 
             if let App::Stopping(ref mut state) = app
-                && state.try_update()
+                && state.try_update(timeout)
             {
                 app = App::Exit;
             }
@@ -50,54 +43,15 @@ impl App {
                 return Ok(());
             }
 
-            terminal.draw(|f| {
-                f.render_widget(&app, f.area());
-            })?;
-
-            app = app.handle_key_event()?;
+            // If terminal is None (non-interactive mode), use plain stdout prints
+            // instead of the TUI renderer to report progress to the user.
+            if let Some(terminal) = &mut terminal {
+                terminal.draw(|f| {
+                    f.render_widget(&app, f.area());
+                })?;
+                app = app.handle_key_event()?;
+            }
         }
-    }
-
-    fn loading(buildkit: BuildKitD) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        // Spawn async task to fetch containers for stop
-        tokio::spawn({
-            let buildkit = buildkit.clone();
-            async move {
-                let result = async {
-                    let res = buildkit.list_containers().await;
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    res
-                }
-                .await;
-                drop(tx.send(result));
-            }
-        });
-
-        App::Loading { rx, buildkit }
-    }
-
-    fn stopping(
-        containers: Vec<SCellContainerInfo>,
-        buildkit: BuildKitD,
-    ) -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        // Spawn async task to stop containers
-        tokio::spawn({
-            let containers = containers.clone();
-            async move {
-                for c in containers {
-                    let res = buildkit.stop_container(&c).await;
-                    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-                    drop(tx.send((c, res)));
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-            }
-        });
-
-        App::Stopping(StoppingState::new(containers, rx))
     }
 
     fn handle_key_event(mut self) -> color_eyre::Result<Self> {
@@ -111,34 +65,5 @@ impl App {
         }
 
         Ok(self)
-    }
-}
-
-pub struct StoppingState {
-    containers: HashMap<SCellContainerInfo, Option<color_eyre::Result<()>>>,
-    rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
-}
-
-impl StoppingState {
-    pub fn new(
-        containers: Vec<SCellContainerInfo>,
-        rx: Receiver<(SCellContainerInfo, color_eyre::Result<()>)>,
-    ) -> Self {
-        Self {
-            containers: containers.into_iter().map(|c| (c, None)).collect(),
-            rx,
-        }
-    }
-
-    /// Returns boolean flag, if the udelrying channel was closed or not
-    fn try_update(&mut self) -> bool {
-        match self.rx.recv_timeout(MIN_FPS) {
-            Ok(update) => {
-                self.containers.insert(update.0, Some(update.1));
-                false
-            },
-            Err(RecvTimeoutError::Timeout) => false,
-            Err(RecvTimeoutError::Disconnected) => true,
-        }
     }
 }
