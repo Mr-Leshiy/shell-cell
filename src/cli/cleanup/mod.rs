@@ -5,7 +5,7 @@ use crate::{buildkit::BuildKitD, cli::terminal::Terminal};
 
 pub async fn cleanup(
     all: bool,
-    _cli: bool,
+    _silent: bool,
 ) -> color_eyre::Result<()> {
     let buildkit = BuildKitD::start().await?;
     let mut terminal = Terminal::new()?;

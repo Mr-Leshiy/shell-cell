@@ -5,8 +5,8 @@ use crate::{
     cli::{stop::app::App, terminal::Terminal},
 };
 
-pub async fn stop(cli: bool) -> color_eyre::Result<()> {
+pub async fn stop(silent: bool) -> color_eyre::Result<()> {
     let buildkit = BuildKitD::start().await?;
-    let terminal = if cli { None } else { Some(Terminal::new()?) };
+    let terminal = if silent { None } else { Some(Terminal::new()?) };
     App::run(&buildkit, terminal)
 }
