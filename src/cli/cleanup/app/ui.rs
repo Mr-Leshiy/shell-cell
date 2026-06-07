@@ -7,7 +7,7 @@ use ratatui::{
 
 use crate::{
     buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
-    cli::cleanup::app::{App, CleaningState},
+    cli::cleanup::app::{App, CleanningState},
 };
 
 impl Widget for &App {
@@ -21,10 +21,10 @@ impl Widget for &App {
         if let App::Loading { .. } = self {
             render_loading(area, buf);
         }
-        if let App::CleaningContainers(state) = self {
+        if let App::CleanningContainers(state) = self {
             render_cleaning_containers(state, area, buf);
         }
-        if let App::CleaningImages(state) = self {
+        if let App::CleanningImages(state) = self {
             render_cleaning_images(state, area, buf);
         }
     }
@@ -83,7 +83,7 @@ fn render_loading(
 
 #[allow(clippy::indexing_slicing)]
 fn render_cleaning_containers(
-    state: &CleaningState<SCellContainerInfo>,
+    state: &CleanningState<SCellContainerInfo>,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -179,7 +179,7 @@ fn render_cleaning_containers(
 
 #[allow(clippy::indexing_slicing)]
 fn render_cleaning_images(
-    state: &CleaningState<SCellImageInfo>,
+    state: &CleanningState<SCellImageInfo>,
     area: Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {

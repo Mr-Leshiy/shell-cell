@@ -2,10 +2,9 @@ mod loading;
 mod stopping;
 mod ui;
 
-use loading::LoadingState;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
-use stopping::StoppingState;
 
+use self::{loading::LoadingState, stopping::StoppingState};
 use crate::{
     buildkit::BuildKitD,
     cli::{MIN_FPS, terminal::Terminal},
