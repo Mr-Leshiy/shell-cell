@@ -53,9 +53,9 @@ pub enum Commands {
     Ls,
     /// Stop all running Shell-Cell containers
     Stop {
-        /// Run without TUI — print progress to stdout and wait for completion
-        #[clap(long)]
-        cli: bool,
+        /// Run silently without any output
+        #[clap(short, long)]
+        silent: bool,
     },
     /// Clean up all orphan Shell-Cell containers with their corresponding images and just
     /// single images (those no longer associated with any existing Shell-Cell
@@ -64,9 +64,6 @@ pub enum Commands {
         /// Remove ALL Shell-Cell containers and images, not only orphaned ones
         #[clap(long)]
         all: bool,
-        /// Run without TUI — print progress to stdout and wait for completion
-        #[clap(long)]
-        cli: bool,
     },
 }
 
@@ -94,8 +91,8 @@ impl Cli {
             None => run::run(self.scell_path, self.target, self.detach, self.quiet).await?,
             Some(Commands::Init { path }) => init::init(path)?,
             Some(Commands::Ls) => ls::ls().await?,
-            Some(Commands::Stop { cli }) => stop::stop(cli).await?,
-            Some(Commands::Cleanup { all, cli }) => cleanup::cleanup(all, cli).await?,
+            Some(Commands::Stop { silent }) => stop::stop(silent).await?,
+            Some(Commands::Cleanup { all }) => cleanup::cleanup(all).await?,
         }
         Ok(())
     }
