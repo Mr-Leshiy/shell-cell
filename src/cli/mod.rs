@@ -64,9 +64,6 @@ pub enum Commands {
         /// Remove ALL Shell-Cell containers and images, not only orphaned ones
         #[clap(long)]
         all: bool,
-        /// Run silently without any output
-        #[clap(short, long)]
-        silent: bool,
     },
 }
 
@@ -95,7 +92,7 @@ impl Cli {
             Some(Commands::Init { path }) => init::init(path)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop { silent }) => stop::stop(silent).await?,
-            Some(Commands::Cleanup { all, silent }) => cleanup::cleanup(all, silent).await?,
+            Some(Commands::Cleanup { all }) => cleanup::cleanup(all).await?,
         }
         Ok(())
     }
