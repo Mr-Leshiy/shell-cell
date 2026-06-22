@@ -1,11 +1,11 @@
 mod app;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::{
     buildkit::BuildKitD,
     cli::{run::app::App, terminal::Terminal},
-    scell::types::{SCELL_CUE_FILE_NAME, name::TargetName},
+    scell::types::name::TargetName,
     scell_home_dir,
 };
 
@@ -14,25 +14,18 @@ pub async fn run<P: AsRef<Path> + Send + 'static>(
     target: Option<TargetName>,
     detach: bool,
     quiet: bool,
+    global: bool,
 ) -> color_eyre::Result<()> {
-    let scell_path = resolve_scell_path(scell_path);
+    // When `--global` is set, the global blueprint in the Shell-Cell home directory is used,
+    // ignoring any local `scell.cue`. Otherwise the path provided by the user is used as is.
+    let scell_path = if global {
+        scell_home_dir()?
+    } else {
+        scell_path.as_ref().to_path_buf()
+    };
     let buildkit = BuildKitD::start().await?;
     let mut terminal = Terminal::new()?;
     let res = App::run(&buildkit, scell_path, target, detach, quiet, &mut terminal).await;
     ratatui::try_restore()?;
     res
-}
-
-/// Resolves the blueprint path provided by the user. When the path does not contain a
-/// `scell.cue` file, falls back to the global blueprint located at
-/// `scell_home_dir()/scell.cue` if it exists.
-fn resolve_scell_path<P: AsRef<Path>>(scell_path: P) -> PathBuf {
-    if let Ok(home_dir) = scell_home_dir()
-        && home_dir.join(SCELL_CUE_FILE_NAME).is_file()
-        && !scell_path.as_ref().join(SCELL_CUE_FILE_NAME).is_file()
-    {
-        home_dir
-    } else {
-        scell_path.as_ref().to_path_buf()
-    }
 }

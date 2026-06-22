@@ -37,6 +37,11 @@ pub struct Cli {
     #[clap(short, long)]
     quiet: bool,
 
+    /// Run the session from the global blueprint located in the Shell-Cell home directory
+    /// (`~/.scell`), ignoring any local `scell.cue`
+    #[clap(short, long)]
+    global: bool,
+
     #[clap(subcommand)]
     command: Option<Commands>,
 }
@@ -92,7 +97,16 @@ impl Cli {
 
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
-            None => run::run(self.scell_path, self.target, self.detach, self.quiet).await?,
+            None => {
+                run::run(
+                    self.scell_path,
+                    self.target,
+                    self.detach,
+                    self.quiet,
+                    self.global,
+                )
+                .await?
+            }
             Some(Commands::Init { path, global }) => init::init(path, global)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop { silent }) => stop::stop(silent).await?,
