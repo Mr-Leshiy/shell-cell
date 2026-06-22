@@ -48,6 +48,10 @@ pub enum Commands {
         /// Directory to create the blueprint in (defaults to current directory)
         #[clap(value_name = "PATH", default_value = ".")]
         path: PathBuf,
+
+        /// Create the blueprint in the global Shell-Cell home directory instead of `PATH`
+        #[clap(short, long)]
+        global: bool,
     },
     /// List all existing Shell-Cell containers
     Ls,
@@ -89,7 +93,7 @@ impl Cli {
     pub async fn exec_inner(self) -> color_eyre::Result<()> {
         match self.command {
             None => run::run(self.scell_path, self.target, self.detach, self.quiet).await?,
-            Some(Commands::Init { path }) => init::init(path)?,
+            Some(Commands::Init { path, global }) => init::init(path, global)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop { silent }) => stop::stop(silent).await?,
             Some(Commands::Cleanup { all }) => cleanup::cleanup(all).await?,
