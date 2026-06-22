@@ -2693,7 +2693,7 @@ dependencies = [
 
 [[package]]
 name = "shell-cell"
-version = "1.6.5"
+version = "1.7.0"
 dependencies = [
  "base64",
  "bollard",
