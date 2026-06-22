@@ -106,7 +106,7 @@ impl Cli {
                     self.global,
                 )
                 .await?
-            }
+            },
             Some(Commands::Init { path, global }) => init::init(path, global)?,
             Some(Commands::Ls) => ls::ls().await?,
             Some(Commands::Stop { silent }) => stop::stop(silent).await?,
