@@ -51,13 +51,16 @@ If your configuration file is located elsewhere and you don’t want to change d
 scell ./path/to/the/blueprint/directory
 ```
 
-#### Global blueprint fallback
+#### Global session (`-g`, `--global`)
 
-If the target directory has no `scell.cue` of its own, **Shell-Cell** falls back to the global blueprint located at
-`~/.scell/scell.cue` (when one exists). This lets you keep a default environment that works from anywhere, without
-adding a blueprint to every directory. Create it with [`scell init --global`](#global-blueprint--g---global).
+Pass the `-g`, `--global` flag to start the session from the global blueprint located at
+`~/.scell/scell.cue`, ignoring any local `scell.cue`.
+```shell
+scell --global
+```
 
-A local `scell.cue` always takes precedence over the global one.
+This lets you keep a default environment that works from anywhere, without adding a blueprint to every directory.
+Create the global blueprint with [`scell init --global`](#global-blueprint--g---global).
 
 ### `init` — Create a Blueprint
 
@@ -79,8 +82,8 @@ Pass the `-g`, `--global` flag to create the blueprint in the global **Shell-Cel
 scell init --global
 ```
 
-This global blueprint acts as a fallback that is used by `run` whenever the current directory has no `scell.cue` of its own
-(see [Global blueprint fallback](#global-blueprint-fallback)).
+This global blueprint can be launched from anywhere by running `scell` with the `-g`, `--global` flag
+(see [Global session](#global-session--g---global)).
 
 ### `ls` — List Shell-Cell Containers
 
