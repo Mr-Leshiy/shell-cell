@@ -105,7 +105,7 @@ impl Cli {
                     self.quiet,
                     self.global,
                 )
-                .await?
+                .await?;
             },
             Some(Commands::Init { path, global }) => init::init(path, global)?,
             Some(Commands::Ls) => ls::ls().await?,
