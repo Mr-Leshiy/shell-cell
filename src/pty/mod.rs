@@ -80,18 +80,24 @@ impl Pty {
         }
     }
 
-    pub fn scroll_up(&mut self) {
+    pub fn scroll_up(
+        &mut self,
+        lines: usize,
+    ) {
         let cur_scrollback = self.parser.screen().scrollback();
         self.parser
             .screen_mut()
-            .set_scrollback(cur_scrollback.saturating_add(1));
+            .set_scrollback(cur_scrollback.saturating_add(lines));
     }
 
-    pub fn scroll_down(&mut self) {
+    pub fn scroll_down(
+        &mut self,
+        lines: usize,
+    ) {
         let cur_scrollback = self.parser.screen().scrollback();
         self.parser
             .screen_mut()
-            .set_scrollback(cur_scrollback.saturating_sub(1));
+            .set_scrollback(cur_scrollback.saturating_sub(lines));
     }
 
     pub fn scroll_to_bottom(&mut self) {
