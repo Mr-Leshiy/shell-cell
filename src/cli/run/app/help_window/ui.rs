@@ -41,19 +41,50 @@ impl Widget for &mut HelpWindowState {
             )]),
             Line::from(""),
             Line::from(vec![Span::styled(
-                "Navigation",
+                "Command mode (tmux-style)",
                 Style::default()
                     .fg(Color::LightMagenta)
                     .add_modifier(Modifier::BOLD),
             )]),
             Line::from(vec![
                 Span::styled(
-                    " Ctrl - ↑ / ↓ / k / j ",
+                    "        Ctrl-B        ",
                     Style::default()
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 ),
-                Span::styled("Move selection", Style::default().fg(Color::White)),
+                Span::styled(
+                    "Enter command mode (shown in status bar)",
+                    Style::default().fg(Color::White),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled(
+                    "          d           ",
+                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    "Detach and close the session",
+                    Style::default().fg(Color::White),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled(
+                    "    ↑ / ↓ / k / j      ",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("Scroll the screen", Style::default().fg(Color::White)),
+            ]),
+            Line::from(vec![
+                Span::styled(
+                    "         Esc          ",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("Exit command mode", Style::default().fg(Color::White)),
             ]),
             Line::from(""),
             Line::from(vec![Span::styled(
@@ -64,10 +95,15 @@ impl Widget for &mut HelpWindowState {
             )]),
             Line::from(vec![
                 Span::styled(
-                    "        Ctrl-D        ",
-                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                    "        Ctrl-H        ",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
                 ),
-                Span::styled("Exit", Style::default().fg(Color::White)),
+                Span::styled(
+                    "Open / close this help window",
+                    Style::default().fg(Color::White),
+                ),
             ]),
         ];
 

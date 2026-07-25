@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::cli::run::app::running_pty::RunningPtyState;
+use crate::cli::run::app::running_pty::{InputMode, RunningPtyState};
 
 impl Widget for &mut RunningPtyState {
     fn render(
@@ -13,11 +13,26 @@ impl Widget for &mut RunningPtyState {
     ) where
         Self: Sized,
     {
+        let (border_style, title_bottom) = match self.mode {
+            InputMode::Normal => {
+                (
+                    Style::new().light_magenta(),
+                    "Ctrl-B: commands | Ctrl-H: help".to_owned(),
+                )
+            },
+            InputMode::Command => {
+                (
+                    Style::new().yellow(),
+                    "-- COMMAND -- d: detach | ↑/↓/k/j: scroll | Esc: exit".to_owned(),
+                )
+            },
+        };
+
         let block = Block::default()
             .borders(Borders::ALL)
-            .border_style(Style::new().light_magenta())
+            .border_style(border_style)
             .title(format!(
-                "'Shell-Cell' | {} | {} | {}{}",
+                "{} | {} | {}{}",
                 self.container_id,
                 self.target_name,
                 self.location.display(),
@@ -25,7 +40,7 @@ impl Widget for &mut RunningPtyState {
                     .map(|id| format!(" | Debug Session: {id}"))
                     .unwrap_or_default()
             ))
-            .title_bottom("Ctrl-H: Help");
+            .title_bottom(title_bottom);
         let inner = block.inner(area);
         block.render(area, buf);
 
