@@ -2,7 +2,7 @@ import os
 import subprocess
 import tempfile
 
-from scell import assert_clean_exit, spawn_scell
+from scell import assert_clean_exit, assert_scell_stop_session, spawn_scell
 
 
 def test_init(spawn_scell) -> None:
@@ -20,9 +20,4 @@ def test_init(spawn_scell) -> None:
         scell.expect("/my_project#")
 
         # Stop the session
-        # Send Ctrl-D to the shell to end the session
-        scell.send('\x04')
-        scell.expect("Finished 'Shell-Cell' session")
-        # scell shows "<Press any key to exit>" before quitting — send any key
-        scell.send(' ')
-        assert_clean_exit(scell)
+        assert_scell_stop_session(scell)

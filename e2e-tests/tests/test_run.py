@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from scell import assert_clean_exit, spawn_scell, SCell
+from scell import assert_scell_stop_session, spawn_scell, SCell
 
 
 @dataclass
@@ -99,12 +99,3 @@ def assert_scell_prepare_session(scell: SCell):
     scell.expect("Starting 'Shell-Cell' session", timeout=120)
     scell.expect("root@")
     scell.expect("/app#")
-
-
-def assert_scell_stop_session(scell):
-    # Send Ctrl-D to the shell to end the session
-    scell.send('\x04')
-    scell.expect("Finished 'Shell-Cell' session")
-    # scell shows "<Press any key to exit>" before quitting — send any key
-    scell.send(' ')
-    assert_clean_exit(scell)
