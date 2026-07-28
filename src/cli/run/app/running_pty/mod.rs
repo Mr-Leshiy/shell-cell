@@ -158,6 +158,9 @@ impl RunningPtyState {
                 KeyCode::PageUp => self.scroll_up(PAGE_SCROLL_STEP),
                 KeyCode::PageDown => self.scroll_down(PAGE_SCROLL_STEP),
                 KeyCode::Esc => self.mode = InputMode::Normal,
+                KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    self.mode = InputMode::Normal
+                },
                 _ => {},
             }
         }
