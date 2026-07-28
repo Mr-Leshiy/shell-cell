@@ -1,6 +1,7 @@
 //! Command Line Interface implementation
 
 mod cleanup;
+mod help_window_widget;
 mod init;
 mod ls;
 mod run;

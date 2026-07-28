@@ -17,15 +17,10 @@ impl Widget for &mut RunningPtyState {
             InputMode::Normal => {
                 (
                     Style::new().light_magenta(),
-                    "Ctrl-B: commands | Ctrl-H: help".to_owned(),
+                    "Ctrl-B: command mode | Ctrl-H: help".to_owned(),
                 )
             },
-            InputMode::Command => {
-                (
-                    Style::new().yellow(),
-                    "-- COMMAND -- d: detach | ↑/↓/k/j: scroll | Esc: exit".to_owned(),
-                )
-            },
+            InputMode::Command => (Style::new().yellow(), " COMMAND ".to_owned()),
         };
 
         let block = Block::default()

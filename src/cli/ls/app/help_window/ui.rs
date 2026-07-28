@@ -1,17 +1,93 @@
-use ratatui::{
-    layout::{Constraint, HorizontalAlignment, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph, Widget},
-};
+use ratatui::{layout::Rect, style::Color, widgets::Widget};
 
 use crate::{
     buildkit::{container_info::SCellContainerInfo, image_info::SCellImageInfo},
-    cli::ls::app::help_window::HelpWindowState,
+    cli::{
+        help_window_widget::{HelpEntry, HelpWindow},
+        ls::app::help_window::HelpWindowState,
+    },
 };
 
+/// Hint rendered on the bottom border.
+const FOOTER: &str = "h / Esc: close this window";
+
+const CONTAINER_HELP_ENTRIES: &[HelpEntry] = &[
+    HelpEntry::Title("Keyboard Shortcuts"),
+    HelpEntry::Blank,
+    HelpEntry::Section("Navigation"),
+    HelpEntry::Shortcut {
+        key: "↑ / ↓ / k / j",
+        key_color: Color::Yellow,
+        description: "Move selection",
+    },
+    HelpEntry::Blank,
+    HelpEntry::Section("Actions"),
+    HelpEntry::Shortcut {
+        key: "q",
+        key_color: Color::Yellow,
+        description: "Switch to the images view",
+    },
+    HelpEntry::Shortcut {
+        key: "i",
+        key_color: Color::Yellow,
+        description: "Inspect container definition",
+    },
+    HelpEntry::Shortcut {
+        key: "s",
+        key_color: Color::Yellow,
+        description: "Stop selected container",
+    },
+    HelpEntry::Shortcut {
+        key: "r",
+        key_color: Color::Yellow,
+        description: "Remove selected container",
+    },
+    HelpEntry::Blank,
+    HelpEntry::Section("General"),
+    HelpEntry::Shortcut {
+        key: "Ctrl-C / Ctrl-D",
+        key_color: Color::Red,
+        description: "Exit",
+    },
+];
+
+const IMAGE_HELP_ENTRIES: &[HelpEntry] = &[
+    HelpEntry::Title("Keyboard Shortcuts"),
+    HelpEntry::Blank,
+    HelpEntry::Section("Navigation"),
+    HelpEntry::Shortcut {
+        key: "↑ / ↓ / k / j",
+        key_color: Color::Yellow,
+        description: "Move selection",
+    },
+    HelpEntry::Blank,
+    HelpEntry::Section("Actions"),
+    HelpEntry::Shortcut {
+        key: "q",
+        key_color: Color::Yellow,
+        description: "Switch to the containers view",
+    },
+    HelpEntry::Shortcut {
+        key: "i",
+        key_color: Color::Yellow,
+        description: "Inspect image definition",
+    },
+    HelpEntry::Shortcut {
+        key: "r",
+        key_color: Color::Yellow,
+        description: "Remove selected image",
+    },
+    HelpEntry::Note("(can't remove image, which is in use)"),
+    HelpEntry::Blank,
+    HelpEntry::Section("General"),
+    HelpEntry::Shortcut {
+        key: "Ctrl-C / Ctrl-D",
+        key_color: Color::Red,
+        description: "Exit",
+    },
+];
+
 impl Widget for &HelpWindowState<SCellContainerInfo> {
-    #[allow(clippy::indexing_slicing, clippy::too_many_lines)]
     fn render(
         self,
         area: Rect,
@@ -21,128 +97,13 @@ impl Widget for &HelpWindowState<SCellContainerInfo> {
     {
         self.ls_state.render(area, buf);
 
-        let vertical = Layout::vertical([
-            Constraint::Percentage(15),
-            Constraint::Percentage(70),
-            Constraint::Percentage(15),
-        ])
-        .split(area);
-
-        let horizontal = Layout::horizontal([
-            Constraint::Percentage(25),
-            Constraint::Percentage(50),
-            Constraint::Percentage(25),
-        ])
-        .split(vertical[1]);
-
-        let help_text = vec![
-            Line::from(vec![Span::styled(
-                "Keyboard Shortcuts",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Navigation",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  ↑ / ↓ / k / j     ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Move selection", Style::default().fg(Color::White)),
-            ]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Actions",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  q                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Switch to the images view",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  i                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Inspect container definition",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  s                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Stop selected container", Style::default().fg(Color::White)),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  r                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Remove selected container",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "General",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  Ctrl-C / Ctrl-D  ",
-                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Exit", Style::default().fg(Color::White)),
-            ]),
-        ];
-
-        Widget::render(Clear, horizontal[1], buf);
-
-        let paragraph = Paragraph::new(help_text).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Help ")
-                .title_bottom("h / Esc: close this window")
-                .title_alignment(HorizontalAlignment::Center)
-                .border_style(Style::default().fg(Color::Cyan)),
-        );
-
-        paragraph.render(horizontal[1], buf);
+        HelpWindow::new(CONTAINER_HELP_ENTRIES)
+            .footer(FOOTER)
+            .render(area, buf);
     }
 }
 
 impl Widget for &HelpWindowState<SCellImageInfo> {
-    #[allow(clippy::indexing_slicing, clippy::too_many_lines)]
     fn render(
         self,
         area: Rect,
@@ -152,111 +113,8 @@ impl Widget for &HelpWindowState<SCellImageInfo> {
     {
         self.ls_state.render(area, buf);
 
-        let vertical = Layout::vertical([
-            Constraint::Percentage(15),
-            Constraint::Percentage(70),
-            Constraint::Percentage(15),
-        ])
-        .split(area);
-
-        let horizontal = Layout::horizontal([
-            Constraint::Percentage(25),
-            Constraint::Percentage(50),
-            Constraint::Percentage(25),
-        ])
-        .split(vertical[1]);
-
-        let help_text = vec![
-            Line::from(vec![Span::styled(
-                "Keyboard Shortcuts",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Navigation",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  ↑ / ↓ / k / j     ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Move selection", Style::default().fg(Color::White)),
-            ]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Actions",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  q                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Switch to the containers view",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  i                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(
-                    "Inspect image definition",
-                    Style::default().fg(Color::White),
-                ),
-            ]),
-            Line::from(vec![
-                Span::styled(
-                    "  r                 ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Remove selected image", Style::default().fg(Color::White)),
-            ]),
-            Line::from("                    (can't remove image, which is in use)"),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "General",
-                Style::default()
-                    .fg(Color::LightMagenta)
-                    .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(vec![
-                Span::styled(
-                    "  Ctrl-C / Ctrl-D  ",
-                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("Exit", Style::default().fg(Color::White)),
-            ]),
-        ];
-
-        Widget::render(Clear, horizontal[1], buf);
-
-        let paragraph = Paragraph::new(help_text).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Help ")
-                .title_bottom("h / Esc: close this window")
-                .title_alignment(HorizontalAlignment::Center)
-                .border_style(Style::default().fg(Color::Cyan)),
-        );
-
-        paragraph.render(horizontal[1], buf);
+        HelpWindow::new(IMAGE_HELP_ENTRIES)
+            .footer(FOOTER)
+            .render(area, buf);
     }
 }
