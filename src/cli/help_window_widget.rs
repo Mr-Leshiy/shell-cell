@@ -205,7 +205,7 @@ impl Widget for HelpWindow<'_> {
                             .add_modifier(Modifier::BOLD),
                     )
                     .centered()
-                    .render(*row, buf)
+                    .render(*row, buf);
                 },
                 HelpEntry::Section(text) => {
                     Line::styled(
@@ -215,7 +215,7 @@ impl Widget for HelpWindow<'_> {
                             .add_modifier(Modifier::BOLD),
                     )
                     .centered()
-                    .render(*row, buf)
+                    .render(*row, buf);
                 },
                 HelpEntry::Shortcut {
                     key,
