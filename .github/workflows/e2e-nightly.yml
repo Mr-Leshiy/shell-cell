@@ -2,9 +2,11 @@ name: E2E Nightly
 
 on:
   # pull_request:
-  schedule:
-    # Runs every day at 00:00
-    - cron: '0 0 * * *'
+  # Nightly run is temporarily disabled
+  # schedule:
+  #   # Runs every day at 00:00
+  #   - cron: '0 0 * * *'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
