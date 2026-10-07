@@ -81,7 +81,8 @@ mod tests {
     #[tokio::test]
     async fn test_check_for_newer_version() {
         // This test verifies the function executes without panicking
-        // The result may be Ok(Some(version)), Ok(None), or Err depending on network availability
+        // The result may be Ok(Some(version)), Ok(None), or Err depending on network
+        // availability
         let _result = check_for_newer_version().await;
     }
 }

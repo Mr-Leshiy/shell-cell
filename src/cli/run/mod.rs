@@ -16,8 +16,9 @@ pub async fn run<P: AsRef<Path> + Send + 'static>(
     quiet: bool,
     global: bool,
 ) -> color_eyre::Result<()> {
-    // When `--global` is set, the global blueprint in the Shell-Cell home directory is used,
-    // ignoring any local `scell.cue`. Otherwise the path provided by the user is used as is.
+    // When `--global` is set, the global blueprint in the Shell-Cell home directory is
+    // used, ignoring any local `scell.cue`. Otherwise the path provided by the user
+    // is used as is.
     let scell_path = if global {
         scell_home_dir()?
     } else {
