@@ -15,8 +15,8 @@ impl SCellContainer {
         //             service
         //                 .config
         //                 .as_ref()
-        //                 .is_none_or(|service_config| service_config.services.0.is_empty())
-        //         })
+        //                 .is_none_or(|service_config|
+        // service_config.services.0.is_empty())         })
         //     }),
         //     "Nested services are not allowed"
         // );

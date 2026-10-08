@@ -39,8 +39,9 @@ impl Widget for &mut PreparingState {
                     .lines()
                     .flat_map(|line| {
                         // Splitting each line to lines, if they exceed the `area_width`.
-                        // Adding some extra identation, so the text would always fits, even
-                        // while adding some extra prefixes/suffixes etc. for different
+                        // Adding some extra identation, so the text would always fits,
+                        // even while adding some extra
+                        // prefixes/suffixes etc. for different
                         // `LogType`s
                         let area_width = area_width.saturating_sub(5);
 

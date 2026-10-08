@@ -43,7 +43,8 @@ fn try_init() -> color_eyre::Result<ratatui::Terminal<CrosstermBackend<std::io::
 
 fn restore() {
     if let Err(err) = try_restore() {
-        // There's not much we can do if restoring the terminal fails, so we just print the error
+        // There's not much we can do if restoring the terminal fails, so we just print
+        // the error
         std::eprintln!("Failed to restore terminal: {err}");
     }
 }

@@ -159,7 +159,8 @@ impl SCellImage {
                         );
                         // Tweaking the original item path
                         // Making a path a relative from the root
-                        // e.g. '/some/path/from/root' transforms to 'some/path/from/root'.
+                        // e.g. '/some/path/from/root' transforms to
+                        // 'some/path/from/root'.
                         let item: PathBuf = s
                             .components()
                             .filter(|c| {
